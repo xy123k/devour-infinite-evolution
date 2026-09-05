@@ -1,0 +1,1270 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>吞噬无限进化</title>
+    <style>
+        /* ============================================================
+           CSS变量 - 主题系统
+           ============================================================ */
+        :root {
+            /* 背景色 - 生物实验室深色主题 */
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-popup: #1e293b;
+            --bg-hover: #243044;
+            --bg-input: rgba(0,0,0,0.3);
+            
+            /* 文字色 */
+            --text-primary: #e8f0f0;
+            --text-secondary: #b8d0c8;
+            --text-muted: #8a9a95;
+            --text-faint: #5a6a65;
+            
+            /* 强调色 - 毒绿/荧光青 */
+            --accent-primary: #00d4aa;
+            --accent-primary-dark: #00897b;
+            --accent-success: #66bb6a;
+            --accent-warning: #ffb74d;
+            --accent-danger: #ef5350;
+            --accent-info: #42a5f5;
+            --accent-purple: #ab47bc;
+            --accent-orange: #ff7043;
+            
+            /* 品质色 */
+            --quality-common: #9e9e9e;
+            --quality-rare: #42a5f5;
+            --quality-epic: #ab47bc;
+            --quality-legendary: #ffa726;
+            --quality-mythic: #ef5350;
+            
+            /* 边框色 */
+            --border-primary: #2a3a4a;
+            --border-secondary: #1e2e3e;
+            --border-accent: rgba(0,212,170,0.3);
+            
+            /* 阴影 */
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+            --shadow-glow: 0 0 20px rgba(0,212,170,0.3);
+            
+            /* 圆角 */
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
+            
+            /* 渐变 */
+            --gradient-nav: linear-gradient(180deg, #1a2332 0%, #0a0e17 100%);
+            --gradient-top-bar: linear-gradient(180deg, #1a2332 0%, rgba(10,14,23,0.95) 100%);
+            --gradient-button: linear-gradient(135deg, #00d4aa 0%, #00897b 100%);
+            --gradient-health: linear-gradient(90deg, #ef5350 0%, #e53935 100%);
+            --gradient-energy: linear-gradient(90deg, #42a5f5 0%, #1e88e5 100%);
+            
+            /* 弹窗/卡片背景 */
+            --box-bg: linear-gradient(145deg, rgba(18, 30, 40, 0.85), rgba(12, 22, 30, 0.9));
+            --box-border: rgba(0, 220, 150, 0.12);
+            --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 浅色主题 A：复古标本册（温馨暖调） */
+        [data-theme="warm"] {
+            /* 背景 - 暖米白，复古纸感 */
+            --bg-primary: #f5f0e6;
+            --bg-secondary: #ece4d4;
+            /* 弹窗/卡片背景 - 暖白 */
+            --box-bg: linear-gradient(145deg, rgba(250, 245, 235, 0.95), rgba(240, 232, 218, 0.95));
+            --box-border: rgba(180, 150, 100, 0.2);
+            --box-shadow: 0 8px 32px rgba(100, 80, 50, 0.15), 0 2px 8px rgba(100, 80, 50, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(180, 150, 100, 0.1);
+            /* 导航栏和顶部资源栏 - 暖白 */
+            --gradient-nav: linear-gradient(180deg, #f5f0e6 0%, #ece4d4 100%);
+            --gradient-top-bar: linear-gradient(180deg, #f5f0e6 0%, rgba(236, 228, 212, 0.95) 100%);
+            --bg-card: #faf6ee;
+            --bg-popup: #fffdf8;
+            --bg-hover: #e6dcc8;
+            --bg-input: rgba(255,255,255,0.8);
+            
+            /* 文字 - 暖棕系，和暖底匹配（禁止用纯黑 #000） */
+            --text-primary: #3a322a;
+            --text-secondary: #5a4f42;
+            --text-muted: #7a6e5e;
+            --text-faint: #9a8e7c;
+            
+            /* 强调色 - 低饱和莫兰迪暖调 */
+            --accent-primary: #a8724a;
+            --accent-primary-dark: #8a5c38;
+            --accent-success: #a8924a;
+            --accent-warning: #c08a3a;
+            --accent-danger: #a84a4a;
+            --accent-info: #7a8aa8;
+            --accent-purple: #8a6a8a;
+            --accent-orange: #b8704a;
+            
+            /* 品质色 - 同样暖调灰化 */
+            --quality-common: #8a7e6e;
+            --quality-rare: #7a8aa8;
+            --quality-epic: #8a6a8a;
+            --quality-legendary: #c08a3a;
+            --quality-mythic: #a84a4a;
+            
+            /* 边框 - 暖灰 */
+            --border-primary: #d8cdb8;
+            --border-secondary: #e6dcc8;
+            --border-accent: rgba(168,114,74,0.35);
+            
+            /* 阴影 - 暖灰极淡 */
+            --shadow-sm: 0 1px 4px rgba(58,50,42,0.06);
+            --shadow-md: 0 2px 10px rgba(58,50,42,0.08);
+            --shadow-lg: 0 4px 20px rgba(58,50,42,0.10);
+            --shadow-glow: 0 0 10px rgba(168,114,74,0.2);
+            
+            /* 渐变 */
+            --gradient-nav: linear-gradient(180deg, #fffdf8 0%, #f5f0e6 100%);
+            --gradient-button: linear-gradient(135deg, #a8724a 0%, #8a5c38 100%);
+            --gradient-health: linear-gradient(90deg, #a84a4a 0%, #c98a8a 100%);
+            --gradient-energy: linear-gradient(90deg, #7a8aa8 0%, #a8b8cf 100%);
+        }
+        
+        /* 浅色主题 B：现代清爽（明亮中性） */
+        [data-theme="light"] {
+            /* 背景 - 中性亮白，干净通透 */
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #eef1f5;
+            --bg-card: #ffffff;
+            --bg-popup: #ffffff;
+            --bg-hover: #e8edf2;
+            --bg-input: rgba(255,255,255,0.9);
+            /* 弹窗/卡片背景 - 纯白 */
+            --box-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.98));
+            --box-border: rgba(148, 163, 184, 0.2);
+            --box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1), 0 2px 8px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(148, 163, 184, 0.1);
+            /* 导航栏和顶部资源栏 - 纯白 */
+            --gradient-nav: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            --gradient-top-bar: linear-gradient(180deg, #ffffff 0%, rgba(248, 249, 250, 0.95) 100%);
+            
+            /* 文字 - 冷灰系，和亮白底匹配（禁止用纯黑 #000） */
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --text-faint: #9ca3af;
+            
+            /* 强调色 - 中高饱和，明亮但不刺眼 */
+            --accent-primary: #e8913a;
+            --accent-primary-dark: #c9752a;
+            --accent-success: #0ea5b7;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --accent-info: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f97316;
+            
+            /* 品质色 - 明亮标准色 */
+            --quality-common: #6b7280;
+            --quality-rare: #3b82f6;
+            --quality-epic: #8b5cf6;
+            --quality-legendary: #f59e0b;
+            --quality-mythic: #ef4444;
+            
+            /* 边框 - 冷灰 */
+            --border-primary: #e2e8f0;
+            --border-secondary: #edf2f7;
+            --border-accent: rgba(232,145,58,0.3);
+            
+            /* 阴影 - 冷灰极淡 */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 2px 8px rgba(0,0,0,0.07);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.09);
+            --shadow-glow: 0 0 12px rgba(232,145,58,0.2);
+            
+            /* 渐变 */
+            --gradient-nav: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            --gradient-button: linear-gradient(135deg, #e8913a 0%, #c9752a 100%);
+            --gradient-health: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+            --gradient-energy: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+        }
+        
+        * {margin: 0;padding: 0;box-sizing: border-box;-webkit-tap-highlight-color: transparent;}
+        html {font-size: 16px;}
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 12px 12px 80px 12px;
+            font-size: 16px;
+            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .container {max-width: 100%;margin: 0 auto;min-height: 100vh;}
+        
+        /* 移动端安全区域 */
+        body {
+            padding-bottom: 100px;
+            margin: 0;
+        }
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            body {padding-bottom: calc(100px + env(safe-area-inset-bottom));}
+        }
+        
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--gradient-nav);
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 0;
+            z-index: 1000;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+        .bottom-nav button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 6px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-height: 48px;
+        }
+        .bottom-nav button .nav-icon {font-size: 20px;width: 20px;height: 20px;display: inline-flex;align-items: center;justify-content: center;}
+        .bottom-nav button.active {color: var(--accent-warning);}
+        .bottom-nav button:active {transform: scale(0.95);}
+        .box {
+            background: var(--bg-card);
+            padding: 14px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid var(--border-primary);
+        }
+        button {
+            padding: 12px 16px;
+            background: var(--accent-primary);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            margin: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            min-height: 44px;
+            transition: all 0.15s;
+            font-weight: 500;
+        }
+        button:hover {background: var(--accent-primary-dark);}
+        button:active {transform: scale(0.96);opacity: 0.8;}
+        button:disabled {background: var(--bg-hover);cursor: not-allowed;opacity: 0.6;}
+        .btn-danger {background: var(--accent-danger);}
+        .btn-danger:hover {background: var(--accent-danger);}
+        .btn-success {background: var(--accent-success);}
+        .btn-success:hover {background: var(--accent-success);}
+        .btn-warn {background: var(--accent-orange);}
+        .btn-warn:hover {background: var(--accent-orange);}
+        .screen {display: none; background: var(--bg-primary); min-height: 100vh; width: 100%; box-sizing: border-box; padding-bottom: 150px;}
+        .screen.active {display: block; min-height: 100vh; padding-bottom: 150px;}
+        /* 确保独立页面内容填满整个视口 */
+        #talentScreen > div, #inventoryScreen > div, #shopScreen > div, #settingsScreen > div, #characterScreen > div {
+            min-height: 100vh;
+            height: auto;
+            padding: 16px 12px 250px 12px;
+            box-sizing: border-box;
+        }
+        /* 天赋/背包/商店/人物状态页面内容区域 */
+        #talentScreenContent, #inventoryScreenContent, #shopScreenContent, #characterContent {
+            width: 100%;
+            min-height: calc(100vh - 200px);
+            padding-bottom: 200px; /* 确保内容不被底部导航栏遮挡 */
+            box-sizing: border-box;
+        }
+        h2 {text-align: center;margin: 16px 0;font-size: 22px;}
+        h3 {margin-bottom: 10px;font-size: 17px;}
+        .hp-bar {
+            background: var(--text-secondary);
+            height: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 8px 0;
+            position: relative;
+        }
+        .hp-bar::after {
+            content: attr(data-hp);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            color: var(--text-primary);
+            text-shadow: 0 0 4px rgba(0,0,0,0.8);
+            font-weight: bold;
+        }
+        .hp-fill {
+            background: linear-gradient(90deg, var(--accent-danger), var(--accent-danger));
+            height: 100%;
+            transition: width 0.3s;
+        }
+        .enemy-hp .hp-fill {background: linear-gradient(90deg, var(--quality-epic), var(--quality-epic));}
+        .battle-log {
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: 8px;
+            height: 140px;
+            overflow-y: auto;
+            font-size: 14px;
+            margin: 10px 0;
+            line-height: 1.5;
+            -webkit-overflow-scrolling: touch;
+        }
+        .battle-log p {margin: 3px 0;}
+        .log-damage {color: var(--accent-danger);}
+        .log-heal {color: var(--accent-success);}
+        .log-info {color: var(--accent-info);}
+        .log-victory {color: var(--accent-warning);font-weight: bold;}
+        .action-buttons {display: flex;flex-wrap: wrap;gap: 8px;}
+        .action-buttons button {flex: 1 1 45%;min-width: 45%;min-height: 50px;font-size: 16px;}
+        .stat-row {display: flex;justify-content: space-between;padding: 4px 0;border-bottom: 1px solid var(--border-primary);}
+        .stat-label {color: var(--text-secondary);}
+        .floor-info {text-align: center;color: var(--accent-warning);font-size: 20px;margin: 12px 0;font-weight: bold;}
+        .reward-box {background: var(--bg-card);padding: 10px;border-radius: 6px;margin: 8px 0;}
+        .talent-item {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 56px;
+        }
+        .talent-item:active {background: rgba(255,255,255,0.05);}
+        .talent-name {font-weight: bold;}
+        .talent-desc {font-size: 13px;color: var(--text-muted);}
+        .quality-1 {color: var(--text-primary);}
+        .quality-2 {color: var(--accent-info);}
+        .quality-3 {color: var(--accent-purple);}
+        .quality-4 {color: var(--accent-warning);}
+        .quality-5 {color: var(--accent-danger);}
+        .tabs {display: flex;margin-bottom: 10px;}
+        .tabs button {flex: 1;margin: 0;border-radius: 0;}
+        .tabs button:first-child {border-radius: 4px 0 0 4px;}
+        .tabs button:last-child {border-radius: 0 4px 4px 0;}
+        .tabs button.active {background: var(--quality-rare);}
+        .scroll-area {max-height: none !important;overflow: visible !important;-webkit-overflow-scrolling: touch;padding-bottom: 200px !important;box-sizing: border-box;}
+        #popBox {position: fixed;top: 50%;left: 50%;transform: translate(-50%,-50%);width: 92%;max-width: 500px;max-height: 85vh;overflow-y: auto;z-index: 100;box-shadow: 0 0 30px rgba(0,0,0,0.5);border-radius: 12px;padding: 16px 16px 40px 16px;box-sizing: border-box;}
+        #popBox .scroll-area {max-height: 50vh;overflow-y: auto;padding-bottom: 40px !important;}
+        .overlay {display: none;position: fixed;top:0;left:0;width:100%;height:100%;background: rgba(0,0,0,0.6);z-index: 99;}
+        .overlay.active {display: block;}
+        .stat-alloc {background: var(--bg-card);padding: 10px;border-radius: 6px;margin-top: 10px;border: 1px solid var(--border-primary);}
+        .stat-alloc button {font-size: 13px;padding: 6px 10px;margin: 3px;}
+        .stat-highlight {color: var(--accent-warning);font-weight: bold;}
+        .derived-stat {color: var(--accent-info);font-size: 13px;}
+        .base-stat {color: var(--text-primary);}
+        
+        /* 更多功能展开动画 */
+        #moreFunctionsArea {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        #moreFunctionsArea.show {
+            max-height: 500px;
+        }
+        
+        /* 顶部资源栏 */
+        .top-resource-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--gradient-top-bar);
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-bottom: 1px solid var(--border-primary);
+            margin: -12px -12px 12px -12px;
+            backdrop-filter: blur(10px);
+        }
+        .top-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        .top-bar-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .top-bar-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        .top-bar-value {
+            font-weight: bold;
+            color: var(--accent-warning);
+        }
+        
+        /* 战斗界面优化 */
+        .battle-enemy-section {
+            margin-bottom: 10px;
+        }
+        .battle-player-section {
+            margin-top: 10px;
+        }
+        .battle-actions-section {
+            margin-top: 12px;
+        }
+        
+        /* Tooltip 悬浮提示框 */
+        .tooltip-trigger {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dashed rgba(255,255,255,0.3);
+        }
+        .tooltip-trigger:hover,
+        .tooltip-trigger:active {
+            border-bottom-color: var(--accent-warning);
+        }
+        .tooltip-box {
+            position: fixed;
+            z-index: 9999;
+            background: rgba(20, 20, 40, 0.98);
+            border: 1px solid var(--accent-warning);
+            border-radius: 8px;
+            padding: 12px 14px;
+            max-width: 280px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            backdrop-filter: blur(10px);
+        }
+        .tooltip-box.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .tooltip-title {
+            color: var(--accent-warning);
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid rgba(255,213,79,0.3);
+            padding-bottom: 4px;
+        }
+        .tooltip-section {
+            margin-top: 6px;
+        }
+        .tooltip-label {
+            color: var(--accent-info);
+            font-size: 12px;
+        }
+        .tooltip-value {
+            color: var(--text-primary);
+        }
+        .tooltip-desc {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        /* 顶部资源栏tooltip触发样式 */
+        .top-bar-item {
+            cursor: help;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .top-bar-item:hover,
+        .top-bar-item:active {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* 属性行tooltip触发样式 */
+        .stat-row {
+            cursor: help;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .stat-row:hover,
+        .stat-row:active {
+            background: rgba(255,255,255,0.08);
+        }
+        
+        /* 状态效果标签 */
+        .status-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: help;
+            transition: transform 0.15s;
+        }
+        .status-tag:hover,
+        .status-tag:active {
+            transform: scale(1.1);
+        }
+        .status-poison { background: rgba(76,175,80,0.3); color: var(--accent-success); border: 1px solid var(--accent-success); }
+        .status-burn { background: rgba(255,87,34,0.3); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+        .status-bleed { background: rgba(244,67,54,0.3); color: var(--accent-danger); border: 1px solid var(--accent-danger); }
+        .status-wither { background: rgba(156,39,176,0.3); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+        .status-buff { background: rgba(33,150,243,0.3); color: var(--accent-info); border: 1px solid var(--quality-rare); }
+        .status-debuff { background: rgba(255,193,7,0.3); color: var(--accent-warning); border: 1px solid var(--quality-legendary); }
+        .status-control { background: rgba(0,188,212,0.3); color: var(--accent-info); border: 1px solid var(--accent-info); }
+    
+        /* 新手引导 */
+        #tutorialOverlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:2000;display:none;align-items:center;justify-content:center;}
+        #tutorialOverlay.active {display:flex;}
+        #tutorialBox {background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-secondary) 100%);border:2px solid var(--accent-warning);border-radius:12px;padding:25px;max-width:450px;width:90%;box-shadow:0 0 40px rgba(255,213,79,0.3);}
+        #tutorialTitle {color:var(--accent-warning);font-size:20px;font-weight:bold;margin-bottom:15px;text-align:center;}
+        #tutorialContent {color:var(--text-secondary);font-size:14px;line-height:1.8;margin-bottom:20px;min-height:120px;}
+        #tutorialContent .highlight {color:var(--accent-warning);font-weight:bold;}
+        #tutorialContent .tip {color:var(--accent-info);font-size:13px;margin-top:10px;padding:8px;background:rgba(144,202,249,0.1);border-radius:4px;}
+        #tutorialProgress {display:flex;justify-content:center;gap:8px;margin-bottom:15px;}
+        .tutorial-dot {width:10px;height:10px;border-radius:50%;background:var(--text-secondary);transition:all 0.3s;}
+        .tutorial-dot.active {background:var(--accent-warning);transform:scale(1.3);}
+        #tutorialButtons {display:flex;gap:10px;justify-content:center;}
+        #tutorialButtons button {padding:10px 20px;font-size:14px;border:none;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+        #btnTutorialPrev {background:var(--text-muted);color:var(--text-primary);}
+        #btnTutorialPrev:hover {background:var(--text-faint);}
+        #btnTutorialNext {background:var(--accent-warning);color:var(--bg-card);font-weight:bold;}
+        #btnTutorialNext:hover {background:var(--quality-legendary);}
+        #btnTutorialSkip {background:transparent;color:var(--text-muted);text-decoration:underline;}
+
+        /* ========== UI优化：生物进化主题 ========== */
+        body {
+            background: 
+                radial-gradient(ellipse at 15% 5%, rgba(0, 120, 90, 0.12) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 95%, rgba(0, 80, 120, 0.1) 0%, transparent 45%),
+                radial-gradient(ellipse at 50% 50%, rgba(20, 60, 50, 0.08) 0%, transparent 60%),
+                linear-gradient(160deg, var(--bg-primary) 0%, var(--bg-primary) 30%, var(--bg-primary) 60%, var(--bg-primary) 100%);
+            color: var(--text-secondary);
+            font-family: 'Noto Serif SC', 'ZCOOL XiaoWei', 'PingFang SC', 'Microsoft YaHei', serif;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            line-height: 1.6;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* 背景纹理叠加 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 170, 0.008) 2px, rgba(0, 255, 170, 0.008) 4px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+        .box {
+            background: var(--box-bg);
+            border: 1px solid var(--box-border);
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        button {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dark) 100%);
+            box-shadow: 0 2px 10px rgba(0, 212, 170, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(0, 255, 170, 0.3);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        button:hover {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary) 100%);
+            box-shadow: 0 4px 15px rgba(0, 212, 170, 0.5);
+            transform: translateY(-1px);
+        }
+        button:active {transform: translateY(1px) scale(0.98);}
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-danger) 0%, var(--accent-danger) 100%);
+            box-shadow: 0 2px 10px rgba(255, 82, 82, 0.3);
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, var(--accent-danger) 0%, var(--accent-danger) 100%);
+            box-shadow: 0 4px 15px rgba(255, 82, 82, 0.5);
+        }
+        .btn-warn {
+            background: linear-gradient(135deg, var(--accent-warning) 0%, var(--accent-orange) 100%);
+            box-shadow: 0 2px 10px rgba(255, 183, 77, 0.3);
+        }
+        .btn-warn:hover {
+            background: linear-gradient(135deg, var(--accent-warning) 0%, var(--accent-orange) 100%);
+            box-shadow: 0 4px 15px rgba(255, 183, 77, 0.5);
+        }
+        .hp-bar {
+            background: linear-gradient(90deg, var(--bg-card), var(--bg-card));
+            border: 1px solid rgba(0, 255, 170, 0.2);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            height: 28px;
+        }
+        h2 {
+            color: var(--accent-primary);
+            text-shadow: 0 0 20px rgba(0, 229, 176, 0.3), 0 2px 8px rgba(0, 0, 0, 0.6);
+            letter-spacing: 4px;
+            font-weight: 700;
+            font-size: 26px;
+            font-family: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
+            border-bottom: 1px solid rgba(0, 229, 176, 0.2);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        h3 {
+            color: var(--accent-primary);
+            border-left: 3px solid var(--accent-primary);
+            padding-left: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            font-size: 16px;
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        .bottom-nav {
+            background: var(--gradient-nav);
+            border-top: 1px solid var(--border-accent);
+        }
+        .bottom-nav button.active {
+            color: var(--accent-primary);
+            text-shadow: 0 0 8px rgba(0, 229, 176, 0.5);
+        }
+        .screen {animation: fadeIn 0.3s ease-out;}
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(10px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        ::-webkit-scrollbar {width: 6px;}
+        ::-webkit-scrollbar-track {background: rgba(0, 0, 0, 0.2);}
+        ::-webkit-scrollbar-thumb {background: rgba(0, 229, 176, 0.3); border-radius: 3px;}
+        ::-webkit-scrollbar-thumb:hover {background: rgba(0, 229, 176, 0.5);}
+
+        /* ========== 天赋卡片特色边框 ========== */
+        .talent-card {
+            position: relative;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .talent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0.6;
+        }
+        .talent-card.quality-1 {
+            background: linear-gradient(135deg, rgba(60, 70, 80, 0.4), rgba(40, 50, 60, 0.5));
+            border: 1px solid rgba(150, 160, 170, 0.3);
+            color: var(--text-secondary);
+        }
+        .talent-card.quality-2 {
+            background: linear-gradient(135deg, rgba(30, 60, 90, 0.4), rgba(20, 40, 70, 0.5));
+            border: 1px solid rgba(80, 150, 220, 0.4);
+            color: var(--accent-info);
+            box-shadow: 0 0 12px rgba(60, 130, 200, 0.1);
+        }
+        .talent-card.quality-3 {
+            background: linear-gradient(135deg, rgba(80, 40, 100, 0.4), rgba(60, 20, 80, 0.5));
+            border: 1px solid rgba(180, 100, 220, 0.4);
+            color: var(--accent-purple);
+            box-shadow: 0 0 15px rgba(150, 70, 200, 0.15);
+        }
+        .talent-card.quality-4 {
+            background: linear-gradient(135deg, rgba(100, 70, 20, 0.4), rgba(80, 50, 10, 0.5));
+            border: 1px solid rgba(255, 180, 60, 0.5);
+            color: var(--accent-warning);
+            box-shadow: 0 0 18px rgba(255, 160, 40, 0.2);
+        }
+        .talent-card.quality-5 {
+            background: linear-gradient(135deg, rgba(120, 30, 60, 0.4), rgba(60, 20, 80, 0.5), rgba(20, 60, 80, 0.4));
+            border: 1px solid rgba(255, 100, 150, 0.5);
+            color: var(--accent-danger);
+            box-shadow: 0 0 20px rgba(255, 80, 130, 0.25);
+            animation: mythicGlow 3s ease-in-out infinite;
+        }
+        @keyframes mythicGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 80, 130, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(255, 100, 150, 0.4); }
+        }
+        .talent-card:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+        .talent-card .talent-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .talent-card .talent-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+    /* 响应式适配：电脑端（大屏幕） */
+    @media (min-width: 768px) {
+        #talentScreen > div, #inventoryScreen > div, #shopScreen > div, #settingsScreen > div, #characterScreen > div {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 20px 150px 20px;
+        }
+        .talent-card {
+            padding: 14px;
+        }
+        h2 {
+            font-size: 26px;
+        }
+        h3 {
+            font-size: 19px;
+        }
+    }
+    
+    /* 响应式适配：手机端（小屏幕） */
+    @media (max-width: 767px) {
+        #talentScreen > div, #inventoryScreen > div, #shopScreen > div, #settingsScreen > div, #characterScreen > div {
+            max-width: 100%;
+            padding: 12px 10px 150px 10px;
+        }
+        .talent-card {
+            padding: 10px;
+        }
+        h2 {
+            font-size: 20px;
+        }
+        h3 {
+            font-size: 16px;
+        }
+        button {
+            font-size: 13px;
+            padding: 8px 12px;
+        }
+    }
+    
+    /* 底部导航栏适配 */
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+    /* 确保页面填满整个视口 */
+    html, body {
+        min-height: 100%;
+        margin: 0;
+        padding: 0 0 120px 0; /* 底部留出120px空间，避免被底部导航栏遮挡 */
+        box-sizing: border-box;
+    }
+    .container {
+        min-height: 100%;
+        height: auto;
+        padding-bottom: 150px; /* 确保所有页面底部内容不被导航栏遮挡 */
+    }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ========== 主界面 ========== -->
+    <div id="mainScreen" class="screen active">
+        <!-- 顶部资源栏 -->
+        <div class="top-resource-bar" id="topResourceBar">
+            <div class="top-bar-item">
+                <span class="top-bar-icon"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z"/><path d="M5 8h14"/><path d="M5 16h14"/></svg></span></span>
+                <span class="top-bar-value">0</span>
+            </div>
+            <div class="top-bar-item">
+                <span class="top-bar-icon"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg></span></span>
+                <span class="top-bar-value">0</span>
+            </div>
+            <div class="top-bar-item">
+                <span class="top-bar-icon"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span></span>
+                <span class="top-bar-value">1-1层</span>
+            </div>
+        </div>
+        
+        <h2 style="margin-top:0">吞噬无限进化</h2>
+        <div class="floor-info" id="floorInfo">第 1 层</div>
+
+        <div class="box">
+            <h3>玩家信息</h3>
+            <div id="playerInfo"></div>
+            <div id="statAlloc" style="display:none"></div>
+        </div>
+
+        <div class="box">
+            <div id="storyText"></div>
+        </div>
+
+        <div id="encounterArea" style="display:none;text-align:center;margin:10px 0">
+            <p style="color:var(--accent-orange);font-size:14px;margin-bottom:8px"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> 遭遇敌人，是否进入战斗？</p>
+            <div id="encounterEnemyInfo" style="text-align:left;background:var(--bg-card);padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid var(--border-primary)"></div>
+            <button onclick="game.enterBattle()" class="btn-danger" style="font-size:16px;padding:10px 30px"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg></span>进入战斗</button>
+            <button onclick="game.fleeBattle()" style="font-size:14px;padding:8px 20px;margin-left:10px"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="13" cy="4" r="2"/><path d="M4 22v-2a4 4 0 0 1 4-4h1"/><path d="M11 22v-1a4 4 0 0 1 4-4h2"/><path d="M13 10l-2 5 3 2"/><path d="M9 10l2-3 3 1"/></svg></span> 逃跑（损失20%生命）</button>
+        </div>
+
+        <!-- 商人模式区域 -->
+        <div id="merchantArea" style="display:none;margin:10px 0">
+            <div class="box" style="border-left:4px solid var(--accent-success);background:linear-gradient(135deg,var(--bg-card),var(--bg-secondary))">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="color:var(--accent-success);font-size:16px;font-weight:bold"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M2 12c0-4 4-6 10-6s10 2 10 6v2c0 4-4 6-10 6s-10-2-10-6z"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><path d="M10 16c.5.5 1.5.5 2 0s1.5-.5 2 0"/></svg></span> 流浪商人</span>
+                    <span style="color:var(--accent-warning);font-size:13px">8折优惠中</span>
+                </div>
+                <p id="merchantDesc" style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;line-height:1.6"></p>
+                <div style="display:flex;gap:10px">
+                    <button onclick="game.openShop('all')" style="flex:1;padding:12px;font-size:15px;font-weight:bold;background:var(--accent-success);color:white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> 继续购物</button>
+                    <button onclick="game.leaveMerchant()" style="flex:1;padding:12px;font-size:15px;background:var(--text-secondary);color:var(--text-secondary)"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></span> 离开商人</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 随机事件区域 -->
+        <div id="eventArea" style="display:none">
+            <div class="box">
+                <h3 id="eventTitle" style="color:var(--accent-warning)">随机事件</h3>
+                <p id="eventDesc" style="color:var(--text-muted);font-size:14px;line-height:1.6"></p>
+                <div id="eventOptions" style="margin-top:15px"></div>
+            </div>
+        </div>
+
+        <!-- Boss层休整区域 -->
+        <div id="bossRestArea" style="display:none">
+            <div class="box" style="border-color:var(--accent-danger)">
+                <h3 style="color:var(--accent-danger)"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> Boss层休整</h3>
+                <p style="color:var(--text-muted);font-size:14px">前方是强大的Boss，选择你的备战方式：</p>
+                <div id="bossRestOptions" style="margin-top:15px"></div>
+            </div>
+        </div>
+
+        <!-- 核心操作：探索前进 -->
+        <div class="box" style="text-align:center;padding:16px">
+            <button id="exploreBtn" onclick="game.goExplore()" class="btn-success" 
+                style="width:100%;font-size:18px;padding:16px;min-height:56px;font-weight:bold">
+                <span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span> 探索前进
+            </button>
+        </div>
+        
+        <!-- 核心功能：天赋、状态、背包、共生体 -->
+        <div class="box">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <button onclick="game.openInRunTalentPanel()" 
+                    style="font-size:15px;min-height:50px;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:6px">
+                    <span style="width:18px;height:18px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/></svg></span>天赋
+                </button>
+                <button onclick="game.openStatus()" 
+                    style="font-size:15px;min-height:50px;display:flex;align-items:center;justify-content:center;gap:6px">
+                    <span style="width:18px;height:18px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>状态
+                </button>
+                <button onclick="game.openInventory()" 
+                    style="font-size:15px;min-height:50px;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:6px">
+                    <span style="width:18px;height:18px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>背包
+                </button>
+                <button onclick="game.openSymbiontPanel()" 
+                    style="font-size:15px;min-height:50px;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:6px">
+                    <span style="width:18px;height:18px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="3"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.93 4.93l2.12 2.12"/><path d="M16.95 16.95l2.12 2.12"/><path d="M4.93 19.07l2.12-2.12"/><path d="M16.95 7.05l2.12-2.12"/></svg></span>共生体
+                </button>
+            </div>
+        </div>
+        
+        <!-- 更多功能：展开/收起 -->
+        <div class="box">
+            <button onclick="game.toggleMoreFunctions()" 
+                style="width:100%;background:var(--border-primary);font-size:15px;min-height:48px;margin:0;display:flex;align-items:center;justify-content:center;gap:6px">
+                <span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>更多功能 <span id="moreFunctionsArrow">▼</span>
+            </button>
+            <div id="moreFunctionsArea" style="display:none;margin-top:12px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <button onclick="game.openStatusGuide()" style="font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>效果图鉴</button>
+                    <button onclick="game.openShop()" style="font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>商店</button>
+                    <button onclick="game.openTalentPanel()" style="font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>天赋图鉴</button>
+                    <button onclick="game.openAchievementPanel()" style="font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>成就</button>
+                    <button onclick="game.openDailyTaskPanel()" style="font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg></span>任务</button>
+                    <button onclick="game.openLeaderboardPanel()" style="font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>排行</button>
+                    <button onclick="game.openSettings()" style="font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>设置</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="box" style="text-align:center">
+            <button id="growthBtn" onclick="game.openGrowth()" class="btn-warn">局外成长（轮回空间）</button>
+            <button id="suicideBtn" onclick="game.suicide()" class="btn-danger" style="margin-top:8px;width:100%;display:none;align-items:center;justify-content:center;gap:6px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>结束轮回（自杀）</button>
+            <p id="growthHint" style="font-size:12px;color:var(--text-muted);margin-top:6px;display:none">轮回空间仅在死亡后可进入，当前探索进度将保留</p>
+        </div>
+    </div>
+
+    <!-- ========== 战斗界面 ========== -->
+    <div id="battleScreen" class="screen">
+        <!-- 顶部资源栏 -->
+        <div class="top-resource-bar" id="battleTopBar">
+            <div class="top-bar-item">
+                <span class="top-bar-icon"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span></span>
+                <span class="top-bar-value" id="battleTopHp">100/100</span>
+            </div>
+            <div class="top-bar-item">
+                <span class="top-bar-icon"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span></span>
+                <span class="top-bar-value" id="battleTopEnergy">100/100</span>
+            </div>
+            <div class="top-bar-item">
+                <span class="top-bar-icon"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span></span>
+                <span class="top-bar-value" id="battleTopFloor">1-1层</span>
+            </div>
+        </div>
+        
+        <h2 style="margin-top:0">战斗</h2>
+        <div class="floor-info" id="battleFloorInfo">第 1 层</div>
+
+        <!-- 敌人信息（上） -->
+        <div class="box battle-enemy-section">
+            <h3 id="enemyName">敌人</h3>
+            <div class="hp-bar enemy-hp" data-hp="">
+                <div class="hp-fill" id="enemyHpFill" style="width:100%"></div>
+            </div>
+            <div id="enemyStats"></div>
+        </div>
+
+        <!-- 战斗日志（中） -->
+        <div class="battle-log" id="battleLog"></div>
+
+        <!-- 玩家信息（下） -->
+        <div class="box battle-player-section">
+            <h3>玩家</h3>
+            <div class="hp-bar" data-hp="">
+                <div class="hp-fill" id="playerHpFill" style="width:100%"></div>
+            </div>
+            <div id="battlePlayerStats"></div>
+        </div>
+
+        <!-- 操作按钮（最下） -->
+        <div class="box action-buttons battle-actions-section" id="battleActions">
+            <button onclick="game.playerAttack()" class="btn-danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg> 普攻</button>
+            <button onclick="game.openSkillPanel()"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg></span> 技能</button>
+            <button onclick="game.useItem()" disabled><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span> 物品</button>
+            <button onclick="game.tryEscape()" class="btn-warn"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="13" cy="4" r="2"/><path d="M4 22v-2a4 4 0 0 1 4-4h1"/><path d="M11 22v-1a4 4 0 0 1 4-4h2"/><path d="M13 10l-2 5 3 2"/><path d="M9 10l2-3 3 1"/></svg></span> 逃跑</button>
+            <button id="quickHuntBtn" onclick="game.quickHunt()" class="btn-success" style="display:none;width:100%;margin-top:6px"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>快速狩猎（一击必杀，获得70%碎片）</button>
+        </div>
+    </div>
+
+    <!-- ========== 死亡结算界面 ========== -->
+    <div id="deathScreen" class="screen">
+        <h2 style="color:var(--accent-danger)">你死了</h2>
+        <div class="box">
+            <h3>本次轮回成绩</h3>
+            <div id="deathStats"></div>
+        </div>
+        <div class="box">
+            <h3 style="color:var(--accent-warning)">死亡转化</h3>
+            <div id="deathConversion"></div>
+        </div>
+        <div style="text-align:center;margin:20px 0">
+            <button onclick="game.goToGrowth()" class="btn-warn" style="font-size:18px;padding:12px 30px">进入基因记忆库</button>
+        </div>
+    </div>
+
+    <!-- ========== 局外成长界面 ========== -->
+    <div id="growthScreen" class="screen">
+        <h2>基因记忆库</h2>
+
+        <div class="box">
+            <h3>前世记忆</h3>
+            <div id="permanentStats"></div>
+            <div style="margin-top:10px;color:var(--accent-warning)">
+                可用前世记忆：<span id="freePointsDisplay">0</span>
+            </div>
+            <div style="margin-top:8px">
+                <button onclick="game.allocatePermanentPoint('strength')">力量 +1</button>
+                <button onclick="game.allocatePermanentPoint('agility')">敏捷 +1</button>
+                <button onclick="game.allocatePermanentPoint('vitality')">体质 +1</button>
+                <button onclick="game.allocatePermanentPoint('perception')">感知 +1</button>
+                <button onclick="game.allocatePermanentPoint('evolution')">进化 +1</button>
+            </div>
+        </div>
+
+        <div class="box">
+            <h3><span style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg></span> 进化残留强化</h3>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">进化残留通过死亡结算（剩余基因精华30%转化）获得，用于局外百分比永久强化</p>
+            <div id="essenceDisplay"></div>
+            <div id="essenceUpgradeArea" style="margin-top:10px"></div>
+        </div>
+
+        <div class="box">
+            <h3>基因碎片</h3>
+            <div id="fragmentsDisplay"></div>
+        </div>
+
+        <div class="box">
+            <h3>天赋图鉴（局外）</h3>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">按品质和体系标签筛选，解锁/升级/进化天赋</p>
+            <button onclick="game.openTalentPanel()" style="font-size:14px;padding:10px 20px;background:var(--accent-purple);color:white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> 打开天赋图鉴（带筛选）</button>
+        </div>
+
+        <div style="text-align:center;margin:20px 0">
+            <div style="margin-bottom:15px;padding-top:15px;border-top:1px solid var(--border-primary)">
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px">重置功能（方便体验不同流派）</p>
+                <button onclick="game.resetPermanentStats()" style="font-size:13px;margin:0 5px">重置前世记忆（返还记忆点）</button>
+                <button onclick="game.resetUnlockedTalents()" style="font-size:13px;margin:0 5px">重置已解锁天赋（全额返还碎片）</button>
+            </div>
+            <button onclick="game.startNewRun()" class="btn-success" style="font-size:18px;padding:12px 30px">开启新的轮回</button>
+        </div>
+    </div>
+
+<!-- ========== 设置页面（独立） ========== -->
+<div id="settingsScreen" class="screen">
+    <div style="width:100%;box-sizing:border-box">
+        <h2 style="margin-bottom:20px"><span style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> 游戏设置</h2>
+        
+        <!-- 游戏玩法设置 -->
+        <div class="box" style="margin-bottom:16px">
+            <h3 style="margin-bottom:12px"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="18" y1="10" x2="18.01" y2="10"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg></span> 游戏玩法</h3>
+            
+            <div style="margin-bottom:14px">
+                <div style="color:var(--text-muted);font-size:14px;margin-bottom:6px">事件结果显示</div>
+                <div style="display:flex;gap:8px">
+                    <button id="btnEventDetail" onclick="game.toggleEventDetail(true)" style="flex:1;padding:10px;font-size:13px">显示具体数值</button>
+                    <button id="btnEventHide" onclick="game.toggleEventDetail(false)" style="flex:1;padding:10px;font-size:13px">隐藏数值（模糊描述）</button>
+                </div>
+            </div>
+            
+            <div style="margin-bottom:14px">
+                <div style="color:var(--text-muted);font-size:14px;margin-bottom:6px">战斗速度</div>
+                <div style="display:flex;gap:8px">
+                    <button id="btnSpeedSlow" onclick="game.setBattleSpeed('slow')" style="flex:1;padding:10px;font-size:13px">慢速<br><span style="font-size:11px;opacity:0.7">0.5x 速度</span></button>
+                    <button id="btnSpeedNormal" onclick="game.setBattleSpeed('normal')" style="flex:1;padding:10px;font-size:13px">正常<br><span style="font-size:11px;opacity:0.7">1.0x 速度</span></button>
+                    <button id="btnSpeedFast" onclick="game.setBattleSpeed('fast')" style="flex:1;padding:10px;font-size:13px">快速<br><span style="font-size:11px;opacity:0.7">2.0x 速度</span></button>
+                </div>
+            </div>
+            
+            <div style="margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="color:var(--text-muted);font-size:14px">自动跳过战斗动画</span>
+                    <button id="btnAutoSkip" onclick="game.toggleAutoSkip()" style="padding:6px 16px;font-size:13px;min-width:60px">关闭</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 音频设置 -->
+        <div class="box" style="margin-bottom:16px">
+            <h3 style="margin-bottom:12px"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span> 音频设置</h3>
+            <div style="margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="color:var(--text-muted);font-size:14px">音效</span>
+                    <button id="btnSfx" onclick="game.toggleSfx()" style="padding:6px 16px;font-size:13px;min-width:60px">开启</button>
+                </div>
+            </div>
+            <p style="color:var(--text-faint);font-size:11px;margin-top:8px">背景音乐功能开发中，敬请期待</p>
+        </div>
+        
+        <!-- 显示设置 -->
+        <div class="box" style="margin-bottom:16px">
+            <h3 style="margin-bottom:12px"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span> 显示设置</h3>
+            <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="color:var(--text-muted);font-size:14px">显示伤害数字</span>
+                    <button id="btnDamageNumbers" onclick="game.toggleDamageNumbers()" style="padding:6px 16px;font-size:13px;min-width:60px">开启</button>
+                </div>
+            </div>
+            <div style="margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="color:var(--text-muted);font-size:14px">简化战斗日志</span>
+                    <button id="btnSimpleLog" onclick="game.toggleSimpleLog()" style="padding:6px 16px;font-size:13px;min-width:60px">关闭</button>
+                </div>
+            </div>
+            
+            <!-- 主题切换 -->
+            <div style="margin-bottom:8px;padding-top:12px;border-top:1px solid var(--border-secondary)">
+                <div style="color:var(--text-muted);font-size:14px;margin-bottom:8px">界面主题</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button id="btnThemeDark" onclick="game.setTheme('dark')" style="flex:1;min-width:100px;padding:10px;font-size:13px;background:var(--bg-secondary);color:var(--accent-primary);border:2px solid var(--accent-primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> 深色</button>
+                    <button id="btnThemeWarm" onclick="game.setTheme('warm')" style="flex:1;min-width:100px;padding:10px;font-size:13px;background:var(--bg-secondary);color:var(--text-secondary);border:2px solid var(--text-secondary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> 复古</button>
+                    <button id="btnThemeLight" onclick="game.setTheme('light')" style="flex:1;min-width:100px;padding:10px;font-size:13px;background:var(--bg-secondary);color:var(--text-secondary);border:2px solid var(--text-secondary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> 清爽</button>
+                </div>
+                <p style="color:var(--text-faint);font-size:11px;margin-top:6px">切换即时生效，主题选择会自动保存</p>
+            </div>
+        </div>
+        
+        <!-- 数据管理 -->
+        <div class="box" style="margin-bottom:16px">
+            <h3 style="margin-bottom:12px"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span> 数据管理</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button onclick="game.exportSave()" style="flex:1;min-width:120px;padding:10px;font-size:13px;background:var(--quality-rare)">导出存档</button>
+                <button onclick="game.importSave()" style="flex:1;min-width:120px;padding:10px;font-size:13px;background:var(--accent-success)">导入存档</button>
+                <button onclick="game.clearSave()" style="flex:1;min-width:120px;padding:10px;font-size:13px;background:var(--accent-danger)">清除存档</button>
+            </div>
+            <p style="color:var(--text-muted);font-size:11px;margin-top:8px">导出存档会复制存档代码到剪贴板，导入存档需要粘贴存档代码</p>
+        </div>
+        
+        <!-- 关于游戏 -->
+        <div class="box" style="margin-bottom:16px">
+            <h3 style="margin-bottom:12px"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> 关于游戏</h3>
+            <div style="color:var(--text-secondary);font-size:13px;line-height:1.8">
+                <div><span style="color:var(--accent-primary)">游戏名称：</span>无限吞噬进化</div>
+                <div><span style="color:var(--accent-primary)">游戏类型：</span>单机文字冒险RPG</div>
+                <div><span style="color:var(--accent-primary)">核心玩法：</span>吞噬→获取基因→解锁天赋→无限变强→轮回再战</div>
+                <div><span style="color:var(--accent-primary)">版本号：</span>v0.4.0（开发中）</div>
+                <div><span style="color:var(--accent-primary)">目标平台：</span>TapTap小游戏</div>
+            </div>
+        </div>
+        
+        <div style="text-align:center;margin-top:20px;padding-bottom:20px;display:none">
+        </div>
+    </div>
+</div>
+
+<!-- ========== 天赋页面（独立） ========== -->
+<div id="talentScreen" class="screen">
+    <div style="width:100%;box-sizing:border-box">
+        <div style="margin-bottom:16px">
+            <h2 style="margin:0"><span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z"/><path d="M5 8h14"/><path d="M5 16h14"/></svg></span> 天赋系统</h2>
+        </div>
+        <div id="talentScreenContent">
+            <div style="text-align:center;color:var(--text-faint);padding:40px">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 背包页面（独立） ========== -->
+<div id="inventoryScreen" class="screen">
+    <div style="width:100%;box-sizing:border-box">
+        <div style="margin-bottom:16px">
+            <h2 style="margin:0"><span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span> 背包</h2>
+        </div>
+        <div id="inventoryScreenContent">
+            <div style="text-align:center;color:var(--text-faint);padding:40px">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 商店页面（独立） ========== -->
+<div id="shopScreen" class="screen">
+    <div style="width:100%;box-sizing:border-box">
+        <div style="margin-bottom:16px">
+            <h2 style="margin:0"><span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 21v-6h6v6"/></svg></span> 商店</h2>
+        </div>
+        <div id="shopScreenContent">
+            <div style="text-align:center;color:var(--text-faint);padding:40px">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 人物状态界面（独立） ========== -->
+<div id="characterScreen" class="screen">
+    <div style="width:100%;box-sizing:border-box">
+        <div style="margin-bottom:16px">
+            <h2 style="margin:0;display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>人物状态</h2>
+        </div>
+        <!-- 标签页导航 -->
+        <div id="characterTabs" style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap">
+            <button onclick="game.setCharacterTab('status')" id="charTabStatus" style="flex:1;min-width:70px;padding:8px;font-size:13px;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>状态</button>
+            <button onclick="game.setCharacterTab('equipment')" id="charTabEquipment" style="flex:1;min-width:70px;padding:8px;font-size:13px;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>装备</button>
+            <button onclick="game.setCharacterTab('talents')" id="charTabTalents" style="flex:1;min-width:70px;padding:8px;font-size:13px;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/></svg></span>天赋</button>
+            <button onclick="game.setCharacterTab('skills')" id="charTabSkills" style="flex:1;min-width:70px;padding:8px;font-size:13px;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg></span>技能</button>
+            <button onclick="game.setCharacterTab('inventory')" id="charTabInventory" style="flex:1;min-width:70px;padding:8px;font-size:13px;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;gap:4px"><span style="width:16px;height:16px;display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>背包</button>
+        </div>
+        <!-- 标签页内容 -->
+        <div id="characterContent">
+            <div style="text-align:center;color:var(--text-faint);padding:40px">加载中...</div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- 弹窗遮罩 -->
+<div class="overlay" id="overlay" onclick="game.closePop()"></div>
+<!-- 通用弹窗 -->
+<div class="box" id="popBox" style="display:none;"></div>
+
+<script src="game.js?v=20260905_hybrid_slots_complete"></script>
+
+<!-- 设置面板 -->
+<div id="settingsPanel" class="popup-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+    <div class="box" style="max-width:400px;width:90%;padding:20px">
+        <h3 style="color:var(--accent-warning);margin-bottom:15px"><span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> 游戏设置</h3>
+        <div style="margin-bottom:15px">
+            <div style="color:var(--text-primary);margin-bottom:8px">事件结果显示方式</div>
+            <div style="display:flex;gap:10px">
+                <button id="btnEventDetail" onclick="game.toggleEventDetail(true)" style="flex:1;padding:8px;font-size:13px">显示具体数值</button>
+                <button id="btnEventHide" onclick="game.toggleEventDetail(false)" style="flex:1;padding:8px;font-size:13px">隐藏数值（模糊描述）</button>
+            </div>
+            <div style="color:var(--text-muted);font-size:12px;margin-top:5px">显示数值：如"恢复26点生命，获得15点经验"；隐藏数值：如"你感到一股力量在体内涌动"</div>
+        </div>
+        <div style="margin-bottom:15px">
+            <div style="color:var(--text-primary);margin-bottom:8px">战斗速度 <span style="color:var(--text-muted);font-size:12px">（当前选中高亮）</span></div>
+            <div style="display:flex;gap:10px">
+                <button id="btnSpeedSlow" onclick="game.setBattleSpeed('slow')" style="flex:1;padding:8px;font-size:13px">慢速<br><span style="font-size:11px;color:var(--text-secondary)">0.5x 速度</span></button>
+                <button id="btnSpeedNormal" onclick="game.setBattleSpeed('normal')" style="flex:1;padding:8px;font-size:13px">正常<br><span style="font-size:11px;color:var(--text-secondary)">1.0x 速度</span></button>
+                <button id="btnSpeedFast" onclick="game.setBattleSpeed('fast')" style="flex:1;padding:8px;font-size:13px">快速<br><span style="font-size:11px;color:var(--text-secondary)">2.0x 速度</span></button>
+            </div>
+            <div style="color:var(--text-muted);font-size:12px;margin-top:5px">影响敌人回合等待、战斗结束跳转等延迟</div>
+        </div>
+        <button onclick="game.closeSettings()" class="btn-success" style="width:100%;padding:10px;margin-top:10px">关闭</button>
+    </div>
+</div>
+
+<!-- 新手引导弹窗 -->
+<div id="tutorialOverlay">
+    <div id="tutorialBox">
+        <div id="tutorialTitle">欢迎来到吞噬无限进化</div>
+        <div id="tutorialProgress"></div>
+        <div id="tutorialContent"></div>
+        <div id="tutorialButtons">
+            <button id="btnTutorialSkip" onclick="game.skipTutorial()">跳过引导</button>
+            <button id="btnTutorialPrev" onclick="game.prevTutorial()" style="display:none">上一步</button>
+            <button id="btnTutorialNext" onclick="game.nextTutorial()">开始游戏</button>
+        </div>
+    </div>
+</div>
+
+<!-- 底部导航栏 -->
+<div class="bottom-nav" id="bottomNav">
+    <button onclick="game.showScreen('mainScreen');game.refreshMainUI();" class="active" data-screen="mainScreen">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+        <span>主页</span>
+    </button>
+    <button onclick="game.openTalentPanel();" data-screen="talentScreen">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M4 4c4 0 4 16 8 16s4-16 8-16"/><path d="M4 20c4 0 4-16 8-16s4 16 8 16"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="16" x2="17" y2="16"/></svg></span>
+        <span>天赋</span>
+    </button>
+    <button onclick="game.openCharacterPanel();" data-screen="characterScreen">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span>角色</span>
+    </button>
+    <button onclick="game.openSettingsPage();" data-screen="settingsScreen">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        <span>设置</span>
+    </button>
+</div>
+
+    <!-- Tooltip 悬浮提示框容器 -->
+    <div id="tooltipBox" class="tooltip-box"></div>
+
+</body>
+</html>

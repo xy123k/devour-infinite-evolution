@@ -1,0 +1,392 @@
+{
+  "symbionts": [
+    {
+      "id": "sym_core_1",
+      "name": "原始细胞核",
+      "slot": "core",
+      "quality": 1,
+      "stats": {
+        "maxHp": 3,
+        "defense": 1
+      },
+      "desc": "最原始的细胞核心，提供基础生命保障"
+    },
+    {
+      "id": "sym_core_2",
+      "name": "稳定核膜",
+      "slot": "core",
+      "quality": 2,
+      "stats": {
+        "maxHp": 6,
+        "defense": 3
+      },
+      "desc": "稳定的核膜结构，提升生命和防御"
+    },
+    {
+      "id": "sym_core_3",
+      "name": "硬化核膜",
+      "slot": "core",
+      "quality": 3,
+      "stats": {
+        "maxHp": 12,
+        "defense": 6
+      },
+      "special": "hpRegen",
+      "specialValue": 3,
+      "desc": "硬化的核膜结构，每回合回复3点生命"
+    },
+    {
+      "id": "sym_core_4",
+      "name": "龙之心核",
+      "slot": "core",
+      "quality": 4,
+      "stats": {
+        "maxHp": 20,
+        "defense": 10
+      },
+      "special": "healOnKill",
+      "specialValue": 5,
+      "desc": "巨龙的心脏核心，击杀敌人回复5%生命"
+    },
+    {
+      "id": "sym_core_5",
+      "name": "混沌原核",
+      "slot": "core",
+      "quality": 5,
+      "stats": {
+        "maxHp": 30,
+        "defense": 15
+      },
+      "special": "damageReduction",
+      "specialValue": 10,
+      "desc": "混沌之源的原核，受到伤害减少10%"
+    },
+    {
+      "id": "sym_pred_1",
+      "name": "锐利口器",
+      "slot": "predator",
+      "quality": 1,
+      "stats": {
+        "attack": 3,
+        "crit": 1
+      },
+      "desc": "基础的锐利口器，提升攻击和暴击"
+    },
+    {
+      "id": "sym_pred_2",
+      "name": "撕裂颚",
+      "slot": "predator",
+      "quality": 2,
+      "stats": {
+        "attack": 6,
+        "crit": 3
+      },
+      "desc": "强力的撕裂颚，显著提升攻击"
+    },
+    {
+      "id": "sym_pred_3",
+      "name": "毒牙",
+      "slot": "predator",
+      "quality": 3,
+      "stats": {
+        "attack": 12,
+        "crit": 6
+      },
+      "special": "dotOnHit",
+      "specialValue": 2,
+      "desc": "剧毒的獠牙，攻击附加2层中毒"
+    },
+    {
+      "id": "sym_pred_4",
+      "name": "毁灭之爪",
+      "slot": "predator",
+      "quality": 4,
+      "stats": {
+        "attack": 20,
+        "crit": 10
+      },
+      "special": "critDamage",
+      "specialValue": 20,
+      "desc": "毁灭之力凝聚的利爪，暴击伤害+20%"
+    },
+    {
+      "id": "sym_pred_5",
+      "name": "吞噬之口",
+      "slot": "predator",
+      "quality": 5,
+      "stats": {
+        "attack": 30,
+        "crit": 15
+      },
+      "special": "lifeSteal",
+      "specialValue": 10,
+      "desc": "吞噬一切的巨口，吸取造成伤害的10%为生命"
+    },
+    {
+      "id": "sym_sensor_1",
+      "name": "感光点",
+      "slot": "sensor",
+      "quality": 1,
+      "stats": {
+        "hit": 3,
+        "perception": 1
+      },
+      "desc": "基础的感光点，提升命中和感知"
+    },
+    {
+      "id": "sym_sensor_2",
+      "name": "复眼",
+      "slot": "sensor",
+      "quality": 2,
+      "stats": {
+        "hit": 6,
+        "perception": 3
+      },
+      "desc": "复杂的复眼结构，大幅提升命中"
+    },
+    {
+      "id": "sym_sensor_3",
+      "name": "热感应器官",
+      "slot": "sensor",
+      "quality": 3,
+      "stats": {
+        "hit": 12,
+        "perception": 6
+      },
+      "special": "firstStrike",
+      "specialValue": 5,
+      "desc": "热感应器官，先手攻击伤害+5%"
+    },
+    {
+      "id": "sym_sensor_4",
+      "name": "天眼",
+      "slot": "sensor",
+      "quality": 4,
+      "stats": {
+        "hit": 20,
+        "perception": 10
+      },
+      "special": "dodgeBonus",
+      "specialValue": 5,
+      "desc": "洞察一切的天眼，闪避率+5%"
+    },
+    {
+      "id": "sym_sensor_5",
+      "name": "全知之眼",
+      "slot": "sensor",
+      "quality": 5,
+      "stats": {
+        "hit": 30,
+        "perception": 15
+      },
+      "special": "critChance",
+      "specialValue": 10,
+      "desc": "全知全能的眼睛，暴击率+10%"
+    },
+    {
+      "id": "sym_motor_1",
+      "name": "纤毛",
+      "slot": "motor",
+      "quality": 1,
+      "stats": {
+        "speed": 3,
+        "agility": 1
+      },
+      "desc": "基础的运动纤毛，提升先手和敏捷"
+    },
+    {
+      "id": "sym_motor_2",
+      "name": "鞭毛",
+      "slot": "motor",
+      "quality": 2,
+      "stats": {
+        "speed": 6,
+        "agility": 3
+      },
+      "desc": "强力的鞭毛，显著提升移动速度"
+    },
+    {
+      "id": "sym_motor_3",
+      "name": "喷水管",
+      "slot": "motor",
+      "quality": 3,
+      "stats": {
+        "speed": 12,
+        "agility": 6
+      },
+      "special": "extraAttack",
+      "specialValue": 5,
+      "desc": "喷水推进器官，5%概率额外行动"
+    },
+    {
+      "id": "sym_motor_4",
+      "name": "瞬步肌",
+      "slot": "motor",
+      "quality": 4,
+      "stats": {
+        "speed": 20,
+        "agility": 10
+      },
+      "special": "dodgeBonus",
+      "specialValue": 8,
+      "desc": "瞬步肌肉，闪避率+8%"
+    },
+    {
+      "id": "sym_motor_5",
+      "name": "时脉腺",
+      "slot": "motor",
+      "quality": 5,
+      "stats": {
+        "speed": 30,
+        "agility": 15
+      },
+      "special": "cooldownReduction",
+      "specialValue": 10,
+      "desc": "操控时间的腺体，技能冷却-10%"
+    },
+    {
+      "id": "sym_energy_1",
+      "name": "线粒体",
+      "slot": "energy",
+      "quality": 1,
+      "stats": {
+        "maxEnergy": 3,
+        "energyRegen": 1
+      },
+      "desc": "基础的线粒体，提升能量上限和回复"
+    },
+    {
+      "id": "sym_energy_2",
+      "name": "能量囊",
+      "slot": "energy",
+      "quality": 2,
+      "stats": {
+        "maxEnergy": 6,
+        "energyRegen": 3
+      },
+      "desc": "储存能量的囊泡，大幅提升能量容量"
+    },
+    {
+      "id": "sym_energy_3",
+      "name": "高能线粒体",
+      "slot": "energy",
+      "quality": 3,
+      "stats": {
+        "maxEnergy": 12,
+        "energyRegen": 6
+      },
+      "special": "energyOnHit",
+      "specialValue": 5,
+      "desc": "高能线粒体，攻击命中回复5点能量"
+    },
+    {
+      "id": "sym_energy_4",
+      "name": "暗能线粒体",
+      "slot": "energy",
+      "quality": 4,
+      "stats": {
+        "maxEnergy": 20,
+        "energyRegen": 10
+      },
+      "special": "damagePct",
+      "specialValue": 8,
+      "desc": "暗能线粒体，造成伤害+8%"
+    },
+    {
+      "id": "sym_energy_5",
+      "name": "奇点线粒体",
+      "slot": "energy",
+      "quality": 5,
+      "stats": {
+        "maxEnergy": 30,
+        "energyRegen": 15
+      },
+      "special": "energyRegen",
+      "specialValue": 5,
+      "desc": "奇点线粒体，每回合额外回复5点能量"
+    },
+    {
+      "id": "sym_evo_1",
+      "name": "进化芽",
+      "slot": "evolution",
+      "quality": 1,
+      "stats": {
+        "evolution": 3,
+        "talentPower": 1
+      },
+      "desc": "基础的进化芽，提升进化和天赋强度"
+    },
+    {
+      "id": "sym_evo_2",
+      "name": "基因重组腺",
+      "slot": "evolution",
+      "quality": 2,
+      "stats": {
+        "evolution": 6,
+        "talentPower": 3
+      },
+      "desc": "基因重组腺体，加速进化进程"
+    },
+    {
+      "id": "sym_evo_3",
+      "name": "超速进化腺",
+      "slot": "evolution",
+      "quality": 3,
+      "stats": {
+        "evolution": 12,
+        "talentPower": 6
+      },
+      "special": "expBonus",
+      "specialValue": 10,
+      "desc": "超速进化腺体，获得经验+10%"
+    },
+    {
+      "id": "sym_evo_4",
+      "name": "始祖基因",
+      "slot": "evolution",
+      "quality": 4,
+      "stats": {
+        "evolution": 20,
+        "talentPower": 10
+      },
+      "special": "allStatPct",
+      "specialValue": 3,
+      "desc": "始祖生物的基因，所有属性+3%"
+    },
+    {
+      "id": "sym_evo_5",
+      "name": "无限进化腺",
+      "slot": "evolution",
+      "quality": 5,
+      "stats": {
+        "evolution": 30,
+        "talentPower": 15
+      },
+      "special": "talentPower",
+      "specialValue": 10,
+      "desc": "无限进化的腺体，天赋效果强度+10%"
+    }
+  ],
+  "slotNames": {
+    "core": "核心",
+    "predator": "猎食器官",
+    "sensor": "感知器官",
+    "motor": "运动器官",
+    "energy": "能量器官",
+    "evolution": "进化腺体"
+  },
+  "qualityNames": {
+    "1": "普通",
+    "2": "稀有",
+    "3": "史诗",
+    "4": "传说",
+    "5": "神话"
+  },
+  "qualityColors": {
+    "1": "#9e9e9e",
+    "2": "#64b5f6",
+    "3": "#ba68c8",
+    "4": "#ffb74d",
+    "5": "#f06292"
+  }
+}
