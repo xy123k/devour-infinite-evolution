@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 //  吞噬无限进化 - 五维属性系统
 //  力量/敏捷/体质/感知/进化 → 衍生战斗属性
 // ============================================================
@@ -696,7 +696,30 @@ const game = {
         
         // 显示特殊效果
         if (itemData.special) {
-            html += '<div style="font-size:12px;color:var(--accent-warning);margin-bottom:8px">特殊：' + itemData.special + (itemData.specialValue ? ' ' + itemData.specialValue : '') + '</div>';
+            const specialNames = {
+                hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'伤害减免', 
+                dotOnHit:'攻击附加中毒', critDamage:'暴击伤害', lifeSteal:'吸血', 
+                firstStrike:'先手攻击伤害', dodgeBonus:'闪避加成', critChance:'暴击率',
+                extraAttack:'额外攻击概率', cooldownReduction:'冷却缩减', energyOnHit:'攻击回能',
+                damagePct:'伤害加成', expBonus:'经验加成', allStatPct:'全属性加成',
+                talentPower:'天赋强度', energyRegen:'能量恢复', dodge:'闪避率', hit:'命中率',
+                crit:'暴击率', attack:'攻击力', defense:'防御力', maxHp:'最大生命',
+                maxEnergy:'能量上限', speed:'先手值', agility:'敏捷', strength:'力量',
+                vitality:'体质', perception:'感知', evolution:'进化', dotDamage:'Dot伤害',
+                armorPenetration:'护甲穿透', critResistance:'暴击抗性', reflectDamage:'反伤',
+                shield:'护盾', bleedOnHit:'攻击附加流血', poisonOnHit:'攻击附加中毒',
+                burnOnHit:'攻击附加灼烧', freezeOnHit:'攻击附加冰冻', stunOnHit:'攻击附加眩晕',
+                paralyzeOnHit:'攻击附加麻痹', slowOnHit:'攻击附加减速', hpOnKill:'击杀回血',
+                energyOnKill:'击杀回能', talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
+                goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成',
+                talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性',
+                physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性',
+                poisonResist:'毒素抗性', lightningResist:'雷电抗性', physicalPenetration:'物理穿透',
+                firePenetration:'火焰穿透', icePenetration:'冰霜穿透', poisonPenetration:'毒素穿透',
+                lightningPenetration:'雷电穿透'
+            };
+            const specialName = specialNames[itemData.special] || itemData.special;
+            html += '<div style="font-size:12px;color:var(--accent-warning);margin-bottom:8px">特殊：' + specialName + (itemData.specialValue ? ' +' + itemData.specialValue : '') + '</div>';
         }
         
         // 显示描述
@@ -867,7 +890,17 @@ const game = {
                     }
                 }
             });
-            setTimeout(() => this.showGameAlert('成就解锁', msg), 500);
+            setTimeout(() => {
+                // 若击杀奖励弹窗仍在显示，等它关闭后再展示成就，避免顶掉击杀奖励
+                const showWhenReady = () => {
+                    if (document.getElementById('killDropPopup')) {
+                        setTimeout(showWhenReady, 300);
+                    } else {
+                        this.showGameAlert('成就解锁', msg);
+                    }
+                };
+                showWhenReady();
+            }, 500);
         }
         return newlyUnlocked;
     },
@@ -5397,6 +5430,13 @@ const game = {
             
             // 显示掉落弹窗，关闭后跳转回主界面
             this.showKillDropPopup(killDrops, () => {
+                // 重置战斗状态
+                this.battleEnding = false;
+                this.inBattle = false;
+                this.playerTurn = true;
+                // 重置按钮状态
+                const battleButtons = document.querySelectorAll('#battleActions button');
+                battleButtons.forEach(b => b.disabled = false);
                 this.showScreen('mainScreen');
                 this.refreshMainUI();
                 this.showRandomStory();
@@ -5450,8 +5490,8 @@ ${transition.buff.desc}`);
         const settingsPanel = document.getElementById('settingsPanel');
         if (settingsPanel) settingsPanel.style.display = 'none';
         
-        let html = '<div onclick="game.closeKillDropPopup()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer">';
-        html += '<div onclick="event.stopPropagation()" style="background:linear-gradient(135deg,var(--bg-card),var(--bg-secondary));border:2px solid var(--accent-primary);border-radius:16px;padding:25px;max-width:400px;width:90%;box-shadow:0 0 40px rgba(0,212,170,0.3)">';
+        let html = '<div id="killDropOverlay" onclick="game.closeKillDropPopup()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent">';
+        html += '<div onclick="event.stopPropagation()" style="background:linear-gradient(135deg,var(--bg-card),var(--bg-secondary));border:2px solid var(--accent-primary);border-radius:16px;padding:20px;max-width:400px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 0 40px rgba(0,212,170,0.3);-webkit-overflow-scrolling:touch">';
         html += '<h3 style="color:var(--accent-primary);text-align:center;margin-bottom:15px;font-size:18px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M5.8 11.3L2 22l10.7-3.8\"/><path d=\"M4 3h.01\"/><path d=\"M22 8h.01\"/><path d=\"M15 2h.01\"/><path d=\"M22 20h.01\"/><path d=\"m18 13 4-4-4-4-4 4z\"/><path d=\"m2 17 4-4 4 4-4 4z\"/></svg> 击杀奖励</h3>';
         html += '<div style="margin-bottom:15px">';
         
@@ -5472,7 +5512,8 @@ ${transition.buff.desc}`);
         });
         
         html += '</div>';
-        html += '<div style="text-align:center;color:var(--text-faint);font-size:12px;margin-top:10px">点击任意处关闭</div>';
+        html += '<button onclick="game.closeKillDropPopup()" style="width:100%;padding:14px;margin-top:12px;background:var(--accent-primary);color:var(--bg-card);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent">确认领取</button>';
+        html += '<div style="text-align:center;color:var(--text-faint);font-size:11px;margin-top:8px">点击任意处或按钮关闭</div>';
         html += '</div></div>';
         
         // 存储掉落物品信息，供tooltip使用
@@ -5521,7 +5562,8 @@ ${transition.buff.desc}`);
             const cb = this._killDropCallback;
             this._killDropCallback = null;
             this._currentKillDrops = null;
-            cb();
+            // 确保回调在DOM更新后执行
+            setTimeout(() => cb(), 50);
         }
     },
 
@@ -6742,7 +6784,7 @@ ${transition.buff.desc}`);
         
         const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
         const qualityColors = ['', 'var(--quality-common)', 'var(--accent-info)', 'var(--accent-purple)', 'var(--accent-warning)', 'var(--accent-orange)'];
-        const typeNames = {passive: '纯被动', passive_active: '被动+主动技能'};
+        const typeNames = {1: '防御系', 2: '控制/辅助系', 3: '攻击系', passive: '纯被动', passive_active: '被动+主动技能', 'undefined': '融合类', 'null': '融合类'};
         
         const isUnlocked = this.permanent.unlockedTalents.includes(talentId);
         const lv = this.getTalentLevel(talentId);
@@ -7694,6 +7736,8 @@ ${transition.buff.desc}`);
         const contentDiv = document.getElementById('talentScreenContent');
         if (contentDiv) {
             contentDiv.innerHTML = html;
+            // 绑定天赋/技能/物品名称的Tooltip点击事件（手机端无hover，必须支持点击查看详情）
+            setTimeout(() => this.bindItemTooltips(contentDiv), 50);
         }
         this.showScreen('talentScreen');
     },
@@ -10192,8 +10236,13 @@ ${transition.buff.desc}`);
 
     skipTutorial() {
         const self = this;
+        // 先隐藏新手教程，避免确认弹窗被覆盖
+        document.getElementById('tutorialOverlay').classList.remove('active');
         this.showGameConfirm('跳过新手引导', '确定要跳过新手引导吗？', () => {
             self.completeTutorial();
+        }, () => {
+            // 取消时重新显示新手教程
+            document.getElementById('tutorialOverlay').classList.add('active');
         });
     },
 
