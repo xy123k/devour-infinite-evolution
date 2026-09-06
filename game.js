@@ -300,27 +300,61 @@ const game = {
             if (callback) callback();
             return;
         }
+        // 如果不在主界面，先切换到主界面
+        if (document.getElementById('mainScreen').classList.contains('active')) {
+            // 已经在主界面
+        } else {
+            this.showScreen('mainScreen');
+        }
+        
         let currentLine = 0;
         const self = this;
+        const totalLines = storyLines.length;
+        
         const showNextLine = () => {
-            if (currentLine >= storyLines.length) {
+            if (currentLine >= totalLines) {
+                // 剧情阅读完成，恢复显示环境法则
+                self.showRandomStory();
                 if (callback) callback();
                 return;
             }
             const line = storyLines[currentLine];
-            const isLast = currentLine >= storyLines.length - 1;
-            self.showPopup('剧情', line, [
-                {
-                    text: isLast ? '开始' : '继续',
-                    action: () => {
-                        currentLine++;
-                        self.closePop();
-                        setTimeout(showNextLine, 100);
-                    }
-                }
-            ]);
+            const isLast = currentLine >= totalLines - 1;
+            const lineNum = currentLine + 1;
+            
+            // 在主界面的storyText元素中显示剧情
+            const storyText = document.getElementById('storyText');
+            if (storyText) {
+                let html = '<div style="padding:15px;background:linear-gradient(135deg,rgba(0,60,50,0.6),rgba(0,30,40,0.6));border-left:4px solid var(--accent-primary);border-radius:8px;margin:10px 0">';
+                html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+                html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;color:var(--accent-primary)"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+                html += '<span style="color:var(--accent-primary);font-weight:bold;font-size:16px">剧情</span>';
+                html += '<span style="color:var(--text-faint);font-size:12px;margin-left:auto">' + lineNum + '/' + totalLines + '</span>';
+                html += '</div>';
+                html += '<div style="color:var(--text-secondary);font-size:14px;line-height:1.8;margin-bottom:12px;white-space:pre-line">' + line + '</div>';
+                html += '<div style="display:flex;gap:10px;align-items:center">';
+                html += '<button onclick="game._storyNext()" style="padding:8px 16px;background:var(--accent-primary);color:var(--bg-card);border:none;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;min-height:36px">' + (isLast ? '完成' : '下一段') + '</button>';
+                html += '<span style="color:var(--text-faint);font-size:12px">点击继续阅读，或直接探索跳过</span>';
+                html += '</div>';
+                html += '</div>';
+                storyText.innerHTML = html;
+            }
+            
+            // 保存回调
+            self._storyCallback = () => {
+                currentLine++;
+                showNextLine();
+            };
+            self._storyFinalCallback = callback;
         };
         showNextLine();
+    },
+    
+    // 剧情下一步
+    _storyNext() {
+        if (this._storyCallback) {
+            this._storyCallback();
+        }
     },
 
     // ========== 局内状态 ==========
@@ -1433,6 +1467,13 @@ const game = {
         if (killDropPopup) killDropPopup.remove();
         const dropTooltip = document.getElementById('dropTooltip');
         if (dropTooltip) dropTooltip.remove();
+        // 关闭所有tooltip（防止切换界面后tooltip残留）
+        const tooltipBox = document.getElementById('tooltipBox');
+        if (tooltipBox) tooltipBox.classList.remove('show');
+        this.currentTooltipKey = null;
+        // 关闭天赋详情tooltip
+        const talentTooltip = document.getElementById('talentTooltip');
+        if (talentTooltip) talentTooltip.remove();
         
         // 记录切换前的页面ID（用于判断是否需要自动渲染）
         const prevActive = document.querySelector('.screen.active');
@@ -2706,6 +2747,8 @@ const game = {
         this.closePop();
         const merchantArea = document.getElementById('merchantArea');
         if (merchantArea) merchantArea.style.display = 'none';
+        // 设置标志，防止立即又触发商人事件（软保底保护）
+        this.exploreSinceSpecial = 3;
         // 继续探索
         this.goExplore();
     },
@@ -2734,7 +2777,7 @@ const game = {
 
         html += `<div style="display:flex;gap:10px;margin-bottom:12px">`;
         html += `<button onclick="game.playGachaEvent()" ${canAfford?'':'disabled'} style="flex:1;padding:12px;font-size:14px;border-radius:8px;font-weight:bold;background:${canAfford?'var(--accent-purple)':'var(--text-faint)'};color:${canAfford?'white':'var(--text-muted)'}"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/></svg> 启动装置（${gachaCost}精华）</button>`;
-        html += `<button onclick="game.closePop()" style="flex:1;padding:12px;font-size:14px;border-radius:8px;background:var(--text-faint);color:var(--text-secondary)">离开</button>`;
+        html += `<button onclick="game.leaveMerchant()" style="flex:1;padding:12px;font-size:14px;border-radius:8px;background:var(--text-faint);color:var(--text-secondary)">离开商人</button>`;
         html += `</div>`;
 
         this.showPopup(html);
@@ -5415,21 +5458,21 @@ const game = {
                 });
             }
             
-            // 显示共生体获得提醒（如果有）
-            if (this._pendingSymbiontDrop) {
-                const sym = this._pendingSymbiontDrop;
-                this._pendingSymbiontDrop = null;
-                const self = this;
-                setTimeout(() => {
-                    self.showItemObtainedPopup('symbiont', sym, () => {
-                        self.equipSymbiont(sym.id);
-                        self.refreshMainUI();
-                    });
-                }, 800);
-            }
-            
             // 显示掉落弹窗，关闭后跳转回主界面
             this.showKillDropPopup(killDrops, () => {
+                // 显示共生体获得提醒（如果有）- 移到击杀掉落弹窗关闭后再显示
+                if (this._pendingSymbiontDrop) {
+                    const sym = this._pendingSymbiontDrop;
+                    this._pendingSymbiontDrop = null;
+                    const self = this;
+                    setTimeout(() => {
+                        self.showItemObtainedPopup('symbiont', sym, () => {
+                            self.equipSymbiont(sym.id);
+                            self.refreshMainUI();
+                        });
+                    }, 500);
+                }
+
                 // 重置战斗状态
                 this.battleEnding = false;
                 this.inBattle = false;
