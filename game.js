@@ -1544,11 +1544,12 @@ const game = {
     // ============================================================
     startNewRun() {
         const b = this.permanent.bonusStats;
-        // 显示开场剧情（第一次游戏显示完整版，后续轮回显示简化版）
+        // 显示开场剧情（每次开始新轮回都显示，第一次完整版，后续简化版）
         const isFirstRun = !this.permanent.achievementStats || this.permanent.achievementStats.battlesCompleted === 0;
-        if (isFirstRun && this.storyData && this.storyData.opening) {
+        if (this.storyData && this.storyData.opening) {
+            const openingLines = isFirstRun ? this.storyData.opening : this.storyData.opening.slice(-2); // 后续轮回只显示最后两段
             setTimeout(() => {
-                this.showStory(this.storyData.opening);
+                this.showStory(openingLines);
             }, 300);
         }
         // 成就统计：轮回次数（不是第一次开始）
@@ -2070,16 +2071,16 @@ const game = {
         const envEff = this.getEnvironmentEffect();
         if (currentMap && envEff) {
             const isBossFloor = this.currentLayer >= (currentMap.totalLayers || 3);
-            const bossHint = isBossFloor ? "\n\n<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg> 前方是Boss层，做好准备！" : "";
-            document.getElementById('storyText').innerText = `【${currentMap.name}】\n环境法则：${envEff.name}\n${envEff.desc}${bossHint}`;
+            const bossHint = isBossFloor ? "<br><br><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent-danger)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg> <span style=\"color:var(--accent-danger)\">前方是Boss层，做好准备！</span>" : "";
+            document.getElementById('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${envEff.name}<br>${envEff.desc}${bossHint}`;
             return;
         }
         if (currentMap && currentMap.environmentLaw) {
             const law = currentMap.environmentLaw;
-            document.getElementById('storyText').innerText = `【${currentMap.name}】\n环境法则：${law.name}\n${law.effect}`;
+            document.getElementById('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${law.name}<br>${law.effect}`;
             return;
         }
-        document.getElementById('storyText').innerText = "继续探索，寻找更强的猎物...";
+        document.getElementById('storyText').innerHTML = "继续探索，寻找更强的猎物...";
     },
 
     // ============================================================
@@ -2635,11 +2636,11 @@ const game = {
                 return;
             } else if (eventRoll < eventChance + merchantChance) {
                 this.showMerchantEvent();
-                this.exploreSinceSpecial = 0; // 重置软保底
+                this.exploreSinceSpecial = 5; // 商人冷却期：接下来5次探索不会触发商人/抽奖
                 return;
             } else if (eventRoll < eventChance + merchantChance + gachaChance) {
                 this.showGachaEvent();
-                this.exploreSinceSpecial = 0; // 重置软保底
+                this.exploreSinceSpecial = 3; // 抽奖冷却期：接下来3次探索不会触发商人/抽奖
                 return;
             }
             this.exploreSinceSpecial++;
@@ -2752,7 +2753,7 @@ const game = {
         setTimeout(() => this.openShop('all'), 100);
     },
 
-    // 离开商人，继续探索
+    // 离开商人，回到主界面（不立即探索，让玩家手动点击探索前进）
     leaveMerchant() {
         this.merchantMode = false;
         this.currentMerchant = null;
@@ -2761,8 +2762,10 @@ const game = {
         if (merchantArea) merchantArea.style.display = 'none';
         // 设置标志，防止立即又触发商人事件（软保底保护）
         this.exploreSinceSpecial = 3;
-        // 继续探索
-        this.goExplore();
+        // 回到主界面，显示环境法则，让玩家手动点击探索前进
+        this.showScreen('mainScreen');
+        this.showRandomStory();
+        this.refreshMainUI();
     },
 
     // 基因转盘抽奖事件
@@ -3066,17 +3069,18 @@ const game = {
         return pool[Math.floor(Math.random() * pool.length)];
     },
 
-    // 装备共生体
+    // 装备共生体（如果该部位已有共生体，显示替换确认界面）
     equipSymbiont(symId) {
         const tpl = this.getSymbiontTemplate(symId);
         if (!tpl) return {success: false, msg: '共生体不存在'};
         // 检查背包中是否有
         const idx = this.permanent.symbionts.indexOf(symId);
         if (idx < 0) return {success: false, msg: '背包中没有此共生体'};
-        // 如果该部位已有装备，先卸下
+        // 如果该部位已有装备，显示替换确认界面
         const oldId = this.permanent.equippedSymbionts[tpl.slot];
-        if (oldId) {
-            this.permanent.symbionts.push(oldId);
+        if (oldId && oldId !== symId) {
+            this.showSymbiontReplaceConfirm(symId, oldId);
+            return {success: false, msg: '需要确认替换'};
         }
         // 装备
         this.permanent.symbionts.splice(idx, 1);
@@ -3189,7 +3193,28 @@ const game = {
                         cooldownReduction:'冷却缩减', talentPower:'天赋强度',
                         dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率',
                         energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成',
-                        allStatPct:'全属性加成'
+                        allStatPct:'全属性加成', extraAttackChance:'额外攻击概率',
+                        reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透',
+                        critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘',
+                        hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能',
+                        talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
+                        goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成',
+                        talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性',
+                        physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性',
+                        poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性',
+                        holyResist:'神圣抗性', arcaneResist:'奥术抗性',
+                        physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透',
+                        poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透',
+                        holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透',
+                        bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧',
+                        freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹',
+                        slowOnHit:'攻击附带减速', healMod:'治疗效果', damageMod:'伤害加成',
+                        damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成',
+                        perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比',
+                        vitality:'体质', first_strike:'先手值', talent_power:'天赋强度',
+                        energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血',
+                        reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透',
+                        dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'
                     };
                     statsText += (specialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
                 }
@@ -3235,8 +3260,36 @@ const game = {
                 if (tpl.special) {
                     const bagSpecialNames = {
                         hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤', 
-                        lifeSteal:'吸血', critDamage:'暴伤', dodge:'闪避',
-                        firstStrike:'先手', hit:'命中', energyRegen:'能量回复'
+                        lifeSteal:'吸血', critDamage:'暴伤', dodge:'闪避', dodgeBonus:'闪避加成',
+                        firstStrike:'先手', hit:'命中', energyRegen:'能量回复',
+                        maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击',
+                        speed:'速度', agility:'敏捷', strength:'力量', perception:'感知',
+                        evolution:'进化', maxEnergy:'能量', dotDamage:'Dot伤害',
+                        cooldownReduction:'冷却缩减', talentPower:'天赋强度',
+                        dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率',
+                        energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成',
+                        allStatPct:'全属性加成', extraAttackChance:'额外攻击概率',
+                        reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透',
+                        critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘',
+                        hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能',
+                        talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
+                        goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成',
+                        talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性',
+                        physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性',
+                        poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性',
+                        holyResist:'神圣抗性', arcaneResist:'奥术抗性',
+                        physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透',
+                        poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透',
+                        holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透',
+                        bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧',
+                        freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹',
+                        slowOnHit:'攻击附带减速', healMod:'治疗效果', damageMod:'伤害加成',
+                        damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成',
+                        perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比',
+                        vitality:'体质', first_strike:'先手值', talent_power:'天赋强度',
+                        energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血',
+                        reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透',
+                        dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'
                     };
                     bagStatsText += (bagSpecialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
                 }
@@ -3259,6 +3312,11 @@ const game = {
 
     equipSymbiontAndRefresh(symId) {
         const r = this.equipSymbiont(symId);
+        // 如果需要确认替换，不重新打开面板，让玩家在替换确认界面中操作
+        if (r.msg === '需要确认替换') {
+            this.refreshMainUI();
+            return;
+        }
         if (r.success) this.appendBattleLog(r.msg);
         else if (r.msg) this.showGameAlert("提示", r.msg);
         const self = this;
@@ -5479,8 +5537,11 @@ const game = {
                     const self = this;
                     setTimeout(() => {
                         self.showItemObtainedPopup('symbiont', sym, () => {
-                            self.equipSymbiont(sym.id);
-                            self.refreshMainUI();
+                            const result = self.equipSymbiont(sym.id);
+                            if (result.success) {
+                                self.refreshMainUI();
+                            }
+                            // 如果需要确认替换（result.success为false且msg为'需要确认替换'），不关闭弹窗，让玩家在替换确认界面中操作
                         });
                     }, 500);
                 }
@@ -6856,7 +6917,12 @@ ${transition.buff.desc}`);
         
         // 解锁条件
         const cost = talent.unlockCost || {fragQuality: talent.quality, fragCount: 10};
-        let unlockText = `${cost.fragCount}个${qualityNames[cost.fragQuality]}碎片`;
+        const talentTag = (talent.tags && talent.tags.length > 0) ? talent.tags[0] : 1;
+        const tagFragCount = this.getTagFragmentCount(talentTag, cost.fragQuality);
+        const tagName = this.tagNames[talentTag] || ('标签'+talentTag);
+        const universalFragCount = this.permanent.universalFragments[cost.fragQuality] || 0;
+        let unlockText = `${cost.fragCount}个【${tagName}】${qualityNames[cost.fragQuality]}碎片`;
+        unlockText += `<br><span style="font-size:11px;color:var(--text-muted)">专属：${tagFragCount} + 万能：${universalFragCount} = ${tagFragCount + universalFragCount}</span>`;
         if (cost.bossCore) {
             unlockText += ` + 1个对应Boss核心`;
         }
@@ -8956,13 +9022,31 @@ ${transition.buff.desc}`);
             html += '</div>';
         }
 
-        // Boss核心
+        // Boss核心（显示具体每个Boss核心的名称和数量）
         const bossCores = this.permanent.bossCores || {};
         const coreCount = Object.values(bossCores).reduce((a, b) => a + b, 0);
         if (coreCount > 0) {
             html += '<div style="margin-bottom:15px">';
             html += '<div style="color:var(--accent-danger);font-size:14px;font-weight:bold;margin-bottom:8px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M6 3h12l4 6-10 13L2 9z\"/><path d=\"M11 3 8 9l4 13 4-13-3-6\"/><path d=\"M2 9h20\"/></svg> Boss核心（' + coreCount + '）</div>';
-            html += '<div style="color:var(--text-secondary);font-size:12px">用于解锁神话天赋和高级合成</div>';
+            html += '<div style="color:var(--text-secondary);font-size:12px;margin-bottom:8px">用于解锁神话天赋和高级合成</div>';
+            // 显示具体每个Boss核心
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+            const allEnemies = this.data.enemies ? (this.data.enemies.enemies || this.data.enemies) : [];
+            for (let bossId in bossCores) {
+                const count = bossCores[bossId];
+                if (count <= 0) continue;
+                const bossData = allEnemies.find(e => e.id === bossId);
+                const bossName = bossData ? bossData.name : bossId;
+                const bossDesc = bossData ? (bossData.description || '') : '';
+                html += '<div style="background:var(--bg-card);padding:8px;border-radius:6px;border-left:3px solid var(--accent-danger)" title="' + bossDesc + '">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+                html += '<span style="color:var(--text-primary);font-size:12px;font-weight:bold">' + bossName + '</span>';
+                html += '<span style="color:var(--accent-danger);font-size:13px;font-weight:bold">×' + count + '</span>';
+                html += '</div>';
+                if (bossDesc) html += '<div style="color:var(--text-faint);font-size:10px;margin-top:2px;line-height:1.3">' + bossDesc.substring(0, 30) + (bossDesc.length > 30 ? '...' : '') + '</div>';
+                html += '</div>';
+            }
+            html += '</div>';
             html += '</div>';
         }
         
@@ -9532,21 +9616,149 @@ ${transition.buff.desc}`);
             // 卸下：移到背包
             delete equippedSymbionts[slot];
             if (!symbiontIds.includes(id)) symbiontIds.push(id);
+            this.permanent.equippedSymbionts = equippedSymbionts;
+            this.permanent.symbionts = symbiontIds;
+            this.savePermanent();
+            this.renderCharacterPanel();
+        } else if (equippedSymbionts[slot]) {
+            // 该部位已有共生体，显示对比界面让玩家选择是否替换
+            this.showSymbiontReplaceConfirm(id, equippedSymbionts[slot]);
         } else {
-            // 装备：先卸下同部位的其他共生体
-            const oldId = equippedSymbionts[slot];
-            if (oldId && !symbiontIds.includes(oldId)) symbiontIds.push(oldId);
-            // 从背包中移除
-            const idx = symbiontIds.indexOf(id);
-            if (idx >= 0) symbiontIds.splice(idx, 1);
-            // 装备
-            equippedSymbionts[slot] = id;
+            // 直接装备
+            this.doEquipSymbiont(id);
         }
+    },
+    
+    // 执行装备共生体（内部函数）
+    doEquipSymbiont(id) {
+        const allSymbionts = this.data.symbionts ? (this.data.symbionts.symbionts || this.data.symbionts) : [];
+        const s = allSymbionts.find(x => x.id === id);
+        if (!s) return;
+        
+        const slot = s.slot;
+        const equippedSymbionts = this.permanent.equippedSymbionts || {};
+        const symbiontIds = this.permanent.symbionts || [];
+        
+        // 先卸下同部位的其他共生体
+        const oldId = equippedSymbionts[slot];
+        if (oldId && !symbiontIds.includes(oldId)) symbiontIds.push(oldId);
+        // 从背包中移除
+        const idx = symbiontIds.indexOf(id);
+        if (idx >= 0) symbiontIds.splice(idx, 1);
+        // 装备
+        equippedSymbionts[slot] = id;
         
         this.permanent.equippedSymbionts = equippedSymbionts;
         this.permanent.symbionts = symbiontIds;
         this.savePermanent();
         this.renderCharacterPanel();
+    },
+    
+    // 显示共生体替换确认界面（对比两个共生体的属性）
+    showSymbiontReplaceConfirm(newId, oldId) {
+        const allSymbionts = this.data.symbionts ? (this.data.symbionts.symbionts || this.data.symbionts) : [];
+        const newSym = allSymbionts.find(x => x.id === newId);
+        const oldSym = allSymbionts.find(x => x.id === oldId);
+        if (!newSym || !oldSym) return;
+        
+        const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
+        const qualityColors = ['', 'var(--quality-common)', 'var(--accent-info)', 'var(--accent-purple)', 'var(--accent-orange)', 'var(--accent-danger)'];
+        const statNames = {maxHp:'生命', defense:'防御', attack:'攻击', speed:'先手值', crit:'暴击率', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', talentPower:'天赋强度', firstStrike:'先手值', hp:'生命', hpRegen:'生命恢复', dotDamage:'Dot伤害', cooldownReduction:'冷却缩减', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾', thorns:'荆棘'};
+        const specialNames = {
+            firstStrike:'先手值', first_strike:'先手值', talentPower:'天赋强度', talent_power:'天赋强度',
+            energyRegen:'能量恢复', energy_regen:'能量恢复', hpRegen:'生命恢复', hp_regen:'生命恢复',
+            lifeSteal:'吸血', life_steal:'吸血', reflectDamage:'反伤', reflect_damage:'反伤',
+            critDamage:'暴击伤害', crit_damage:'暴击伤害', armorPenetration:'护甲穿透', armor_penetration:'护甲穿透',
+            dotDamage:'Dot伤害', dot_damage:'Dot伤害', cooldownReduction:'冷却缩减', cooldown_reduction:'冷却缩减',
+            shield:'护盾', dodge:'闪避率', dodgeBonus:'闪避加成', hit:'命中率', crit:'暴击率',
+            attack:'攻击力', defense:'防御力', maxHp:'最大生命', maxEnergy:'能量上限', speed:'先手值',
+            extraAttack:'额外攻击', extraAttackChance:'额外攻击概率', damagePct:'伤害百分比',
+            damageReduction:'伤害减免', reflectPct:'反伤百分比', energyOnHit:'攻击回能',
+            critChance:'暴击率', hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能',
+            talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
+            expBonus:'经验加成', goldBonus:'金币加成', essenceBonus:'进化精粹加成',
+            fragmentBonus:'碎片加成', talentPointBonus:'天赋点加成', allStats:'全属性',
+            allResist:'全抗性', physicalResist:'物理抗性', fireResist:'火焰抗性',
+            iceResist:'冰霜抗性', poisonResist:'毒素抗性', lightningResist:'雷电抗性',
+            shadowResist:'暗影抗性', holyResist:'神圣抗性', arcaneResist:'奥术抗性',
+            physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透',
+            poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透',
+            holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透',
+            dotOnHit:'攻击附带Dot', bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒',
+            burnOnHit:'攻击附带灼烧', freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕',
+            paralyzeOnHit:'攻击附带麻痹', slowOnHit:'攻击附带减速',
+            agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化',
+            critResistance:'暴击抗性', thorns:'荆棘', healMod:'治疗效果', damageMod:'伤害加成',
+            damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成',
+            perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比'
+        };
+        
+        // 收集所有属性key
+        const allStats = new Set();
+        if (newSym.stats) Object.keys(newSym.stats).forEach(k => allStats.add(k));
+        if (oldSym.stats) Object.keys(oldSym.stats).forEach(k => allStats.add(k));
+        
+        // 生成属性对比HTML
+        let statsHtml = '';
+        allStats.forEach(key => {
+            const newVal = newSym.stats ? (newSym.stats[key] || 0) : 0;
+            const oldVal = oldSym.stats ? (oldSym.stats[key] || 0) : 0;
+            const name = statNames[key] || key;
+            const diff = newVal - oldVal;
+            const diffColor = diff > 0 ? 'var(--accent-success)' : (diff < 0 ? 'var(--accent-danger)' : 'var(--text-muted)');
+            const diffText = diff > 0 ? '+' + diff : (diff < 0 ? diff.toString() : '—');
+            statsHtml += `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-primary)">
+                <span style="color:var(--text-secondary);font-size:12px">${name}</span>
+                <span style="font-size:12px">
+                    <span style="color:var(--text-muted)">${oldVal}</span>
+                    <span style="color:var(--text-faint);margin:0 6px">→</span>
+                    <span style="color:var(--text-primary)">${newVal}</span>
+                    <span style="color:${diffColor};margin-left:6px;font-size:11px">(${diffText})</span>
+                </span>
+            </div>`;
+        });
+        
+        // 特殊效果对比
+        let specialHtml = '';
+        const newSpecial = newSym.special ? (specialNames[newSym.special] || newSym.special) + (newSym.specialValue ? ' +' + newSym.specialValue : '') : '无';
+        const oldSpecial = oldSym.special ? (specialNames[oldSym.special] || oldSym.special) + (oldSym.specialValue ? ' +' + oldSym.specialValue : '') : '无';
+        if (newSym.special || oldSym.special) {
+            specialHtml = `<div style="margin-top:10px;padding:8px;background:var(--bg-card);border-radius:6px">
+                <div style="color:var(--accent-warning);font-size:12px;font-weight:bold;margin-bottom:4px">特殊效果</div>
+                <div style="font-size:11px;color:var(--text-muted)">当前：${oldSpecial}</div>
+                <div style="font-size:11px;color:var(--text-primary)">替换后：${newSpecial}</div>
+            </div>`;
+        }
+        
+        const html = `<div style="min-width:320px;max-width:400px">
+            <h3 style="color:var(--accent-warning);margin-bottom:12px;text-align:center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 替换共生体确认
+            </h3>
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-bottom:12px">
+                <div style="text-align:center;padding:8px;background:var(--bg-card);border-radius:8px;border-left:3px solid ${qualityColors[oldSym.quality || 1]}">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">当前装备</div>
+                    <div style="color:var(--text-primary);font-weight:bold;font-size:13px">${oldSym.name}</div>
+                    <div style="font-size:10px;color:${qualityColors[oldSym.quality || 1]}">${qualityNames[oldSym.quality || 1]}</div>
+                </div>
+                <div style="color:var(--accent-warning);font-size:20px">⇄</div>
+                <div style="text-align:center;padding:8px;background:var(--bg-card);border-radius:8px;border-left:3px solid ${qualityColors[newSym.quality || 1]}">
+                    <div style="font-size:11px;color:var(--accent-success);margin-bottom:2px">待装备</div>
+                    <div style="color:var(--text-primary);font-weight:bold;font-size:13px">${newSym.name}</div>
+                    <div style="font-size:10px;color:${qualityColors[newSym.quality || 1]}">${qualityNames[newSym.quality || 1]}</div>
+                </div>
+            </div>
+            <div style="margin-bottom:10px">
+                <div style="color:var(--text-primary);font-size:12px;font-weight:bold;margin-bottom:6px">属性对比</div>
+                ${statsHtml || '<div style="color:var(--text-faint);font-size:11px;text-align:center;padding:8px">无属性加成</div>'}
+            </div>
+            ${specialHtml}
+            <div style="display:flex;gap:10px;margin-top:15px">
+                <button onclick="game.closePop()" style="flex:1;padding:10px;border-radius:6px;background:var(--text-faint);color:var(--text-secondary);font-size:13px">取消</button>
+                <button onclick="game.doEquipSymbiont('${newId}');game.closePop()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white;font-size:13px;font-weight:bold">确认替换</button>
+            </div>
+        </div>`;
+        
+        this.showPopup(html);
     },
 
     // 切换共生体装备状态（旧函数，保留兼容）
@@ -9787,7 +9999,39 @@ ${transition.buff.desc}`);
                     }
                 }
                 if (tpl.special) {
-                    const specialNames = {hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤', lifeSteal:'吸血', critDamage:'暴伤', dodge:'闪避', dodgeBonus:'闪避加成', firstStrike:'先手', hit:'命中', energyRegen:'能量回复'};
+                    const specialNames = {
+                        hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤',
+                        lifeSteal:'吸血', critDamage:'暴伤', dodge:'闪避', dodgeBonus:'闪避加成',
+                        firstStrike:'先手', hit:'命中', energyRegen:'能量回复',
+                        maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击',
+                        speed:'速度', agility:'敏捷', strength:'力量', perception:'感知',
+                        evolution:'进化', maxEnergy:'能量', dotDamage:'Dot伤害',
+                        cooldownReduction:'冷却缩减', talentPower:'天赋强度',
+                        dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率',
+                        energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成',
+                        allStatPct:'全属性加成', extraAttackChance:'额外攻击概率',
+                        reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透',
+                        critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘',
+                        hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能',
+                        talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
+                        goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成',
+                        talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性',
+                        physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性',
+                        poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性',
+                        holyResist:'神圣抗性', arcaneResist:'奥术抗性',
+                        physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透',
+                        poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透',
+                        holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透',
+                        bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧',
+                        freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹',
+                        slowOnHit:'攻击附带减速', healMod:'治疗效果', damageMod:'伤害加成',
+                        damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成',
+                        perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比',
+                        vitality:'体质', first_strike:'先手值', talent_power:'天赋强度',
+                        energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血',
+                        reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透',
+                        dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'
+                    };
                     statsText += (specialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
                 }
                 if (statsText) html += '<div style="color:var(--accent-primary);font-size:11px;margin-top:2px">' + statsText.trim() + '</div>';
@@ -9796,6 +10040,34 @@ ${transition.buff.desc}`);
             html += '</div>';
         }
         html += '</div>';
+        
+        // Boss核心（显示具体每个Boss核心的名称和数量）
+        const bossCores = this.permanent.bossCores || {};
+        const coreCount = Object.values(bossCores).reduce((a, b) => a + b, 0);
+        if (coreCount > 0) {
+            html += '<div class="box" style="margin-bottom:16px">';
+            html += '<h3 style="margin-bottom:12px;color:var(--accent-danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg> Boss核心（' + coreCount + '）</h3>';
+            html += '<div style="color:var(--text-secondary);font-size:12px;margin-bottom:8px">用于解锁神话天赋和高级合成</div>';
+            // 显示具体每个Boss核心
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+            const allEnemies = this.data.enemies ? (this.data.enemies.enemies || this.data.enemies) : [];
+            for (let bossId in bossCores) {
+                const count = bossCores[bossId];
+                if (count <= 0) continue;
+                const bossData = allEnemies.find(e => e.id === bossId);
+                const bossName = bossData ? bossData.name : bossId;
+                const bossDesc = bossData ? (bossData.description || '') : '';
+                html += '<div style="background:var(--bg-card);padding:10px;border-radius:8px;border-left:3px solid var(--accent-danger)" title="' + bossDesc + '">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+                html += '<span style="color:var(--text-primary);font-size:13px;font-weight:bold">' + bossName + '</span>';
+                html += '<span style="color:var(--accent-danger);font-size:14px;font-weight:bold">×' + count + '</span>';
+                html += '</div>';
+                if (bossDesc) html += '<div style="color:var(--text-faint);font-size:11px;line-height:1.4">' + bossDesc.substring(0, 40) + (bossDesc.length > 40 ? '...' : '') + '</div>';
+                html += '</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+        }
         
         html += '<button onclick="game.openShopFromCharacter()" style="width:100%;padding:10px;font-size:13px;background:var(--accent-warning);color:white;border-radius:6px">打开商店</button>';
         
