@@ -1514,6 +1514,18 @@ const game = {
 
     // 根据当前状态返回上一个页面（战斗中返回战斗页面，否则返回主页面或指定页面）
     goBack() {
+        // 先关闭所有弹窗
+        this.closePop();
+        // 关闭击杀奖励弹窗（如果存在）
+        const killDropPopup = document.getElementById('killDropPopup');
+        if (killDropPopup) killDropPopup.remove();
+        const dropTooltip = document.getElementById('dropTooltip');
+        if (dropTooltip) dropTooltip.remove();
+        // 关闭所有tooltip
+        const tooltipBox = document.getElementById('tooltipBox');
+        if (tooltipBox) tooltipBox.classList.remove('show');
+        this.currentTooltipKey = null;
+        
         if (this.inBattle) {
             this.showScreen('battleScreen');
         } else if (this.returnToScreen) {
@@ -7501,7 +7513,7 @@ ${transition.buff.desc}`);
 
         let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
         html += '<h3 style="margin:0"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 天赋系统</h3>';
-        html += '<button onclick="game.goBack()" style="padding:8px 16px;font-size:13px;background:var(--accent-success);color:white;border-radius:6px">← 返回</button>';
+        html += '<button onclick="' + (this.merchantMode ? 'game.leaveMerchant()' : 'game.goBack()') + '" style="padding:8px 16px;font-size:13px;background:var(--accent-success);color:white;border-radius:6px">← 返回</button>';
         html += '</div>';
         
         // 筛选栏固定顶部（sticky）
@@ -8543,7 +8555,7 @@ ${transition.buff.desc}`);
 
         let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
         html += '<h3 style="margin:0;color:var(--accent-warning)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 基因共生体商人</h3>';
-        html += '<button onclick="game.goBack()" style="padding:8px 16px;font-size:13px;background:var(--accent-success);color:white;border-radius:6px">← 返回</button>';
+        html += '<button onclick="' + (this.merchantMode ? 'game.leaveMerchant()' : 'game.goBack()') + '" style="padding:8px 16px;font-size:13px;background:var(--accent-success);color:white;border-radius:6px">← 返回</button>';
         html += '</div>';
         if (this.merchantMode) {
             html += '<p style="color:var(--accent-success);font-size:13px;margin-bottom:10px;line-height:1.6;font-weight:bold"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M2 12c0-4 4-6 10-6s10 2 10 6v2c0 4-4 6-10 6s-10-2-10-6z\"/><circle cx=\"8\" cy=\"12\" r=\"1.5\"/><circle cx=\"16\" cy=\"12\" r=\"1.5\"/><path d=\"M10 16c.5.5 1.5.5 2 0s1.5-.5 2 0\"/></svg> 流浪商人特惠！所有商品8折优惠！</p>';
@@ -10041,6 +10053,18 @@ ${transition.buff.desc}`);
     closePop() {
         document.getElementById('popBox').style.display = 'none';
         document.getElementById('overlay').classList.remove('active');
+        // 关闭所有tooltip（防止关闭弹窗后tooltip残留）
+        const tooltipBox = document.getElementById('tooltipBox');
+        if (tooltipBox) tooltipBox.classList.remove('show');
+        this.currentTooltipKey = null;
+        // 关闭天赋详情tooltip
+        const talentTooltip = document.getElementById('talentTooltip');
+        if (talentTooltip) talentTooltip.remove();
+        // 关闭击杀奖励弹窗（如果存在）
+        const killDropPopup = document.getElementById('killDropPopup');
+        if (killDropPopup) killDropPopup.remove();
+        const dropTooltip = document.getElementById('dropTooltip');
+        if (dropTooltip) dropTooltip.remove();
     },
 
     // ============================================================
