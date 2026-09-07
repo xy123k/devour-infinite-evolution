@@ -1,0 +1,851 @@
+{
+  "sets": [
+    {
+      "id": "set_physical",
+      "name": "蛮力精通",
+      "tag": 1,
+      "description": "物理系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "造成的伤害+15%"
+        },
+        {
+          "count": 3,
+          "effect": "暴击伤害+30"
+        },
+        {
+          "count": 4,
+          "effect": "攻击无视30%防御"
+        }
+      ]
+    },
+    {
+      "id": "set_blood",
+      "name": "血脉觉醒",
+      "tag": 2,
+      "description": "血系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "吸取造成伤害的10%为生命"
+        },
+        {
+          "count": 3,
+          "effect": "击杀敌人时回复10%最大生命"
+        },
+        {
+          "count": 4,
+          "effect": "生命低于30%时造成的伤害+50%"
+        }
+      ]
+    },
+    {
+      "id": "set_poison",
+      "name": "剧毒精通",
+      "tag": 3,
+      "description": "毒系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "所有Dot伤害+20%"
+        },
+        {
+          "count": 3,
+          "effect": "中毒层数无上限"
+        },
+        {
+          "count": 4,
+          "effect": "所有Dot伤害+50%"
+        }
+      ]
+    },
+    {
+      "id": "set_thunder",
+      "name": "超载回路",
+      "tag": 4,
+      "description": "雷系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "暴击时15%概率追加攻击"
+        },
+        {
+          "count": 3,
+          "effect": "所有控制时间+20%"
+        },
+        {
+          "count": 4,
+          "effect": "暴击时30%概率追加攻击"
+        }
+      ]
+    },
+    {
+      "id": "set_bind",
+      "name": "蛛网缠绕",
+      "tag": 5,
+      "description": "缚系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "所有控制时间+20%"
+        },
+        {
+          "count": 3,
+          "effect": "攻击时25%概率束缚"
+        },
+        {
+          "count": 4,
+          "effect": "所有控制时间+50%"
+        }
+      ]
+    },
+    {
+      "id": "set_fire",
+      "name": "烈焰精通",
+      "tag": 6,
+      "description": "火系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "所有Dot伤害+20%"
+        },
+        {
+          "count": 3,
+          "effect": "灼烧不衰减"
+        },
+        {
+          "count": 4,
+          "effect": "灼烧伤害+100%"
+        }
+      ]
+    },
+    {
+      "id": "set_ice",
+      "name": "寒冰精通",
+      "tag": 7,
+      "description": "冰系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "受到的伤害-15%"
+        },
+        {
+          "count": 3,
+          "effect": "攻击时20%概率冻结"
+        },
+        {
+          "count": 4,
+          "effect": "受到的伤害-30%"
+        }
+      ]
+    },
+    {
+      "id": "set_body",
+      "name": "钢筋铁骨",
+      "tag": 8,
+      "description": "体魄系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "最大生命+100"
+        },
+        {
+          "count": 3,
+          "effect": "防御+10"
+        },
+        {
+          "count": 4,
+          "effect": "最大生命+300，防御+20"
+        }
+      ]
+    },
+    {
+      "id": "set_shell",
+      "name": "坚甲壁垒",
+      "tag": 9,
+      "description": "甲壳系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "防御+15"
+        },
+        {
+          "count": 3,
+          "effect": "受到的伤害-10%"
+        },
+        {
+          "count": 4,
+          "effect": "受到的伤害-25%，近战攻击反弹50点伤害"
+        }
+      ]
+    },
+    {
+      "id": "set_regen",
+      "name": "不死之躯",
+      "tag": 10,
+      "description": "再生系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "每回合回复10点生命"
+        },
+        {
+          "count": 3,
+          "effect": "击杀敌人时回复15%最大生命"
+        },
+        {
+          "count": 4,
+          "effect": "生命低于50%时每回合回复5%最大生命"
+        }
+      ]
+    },
+    {
+      "id": "set_mimic",
+      "name": "千变万化",
+      "tag": 11,
+      "description": "拟态系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "闪避率+10"
+        },
+        {
+          "count": 3,
+          "effect": "受到的伤害-10%"
+        },
+        {
+          "count": 4,
+          "effect": "闪避时30%概率反击"
+        }
+      ]
+    },
+    {
+      "id": "set_reflect",
+      "name": "荆棘之甲",
+      "tag": 12,
+      "description": "反伤系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "受到攻击时20%概率反弹20%伤害"
+        },
+        {
+          "count": 3,
+          "effect": "近战攻击反弹30点伤害"
+        },
+        {
+          "count": 4,
+          "effect": "受到的伤害-15%，反弹伤害+50%"
+        }
+      ]
+    },
+    {
+      "id": "set_bone",
+      "name": "骨刺丛生",
+      "tag": 13,
+      "description": "骨骼系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "攻击力+10"
+        },
+        {
+          "count": 3,
+          "effect": "暴击伤害+20"
+        },
+        {
+          "count": 4,
+          "effect": "攻击时20%概率造成流血"
+        }
+      ]
+    },
+    {
+      "id": "set_wing",
+      "name": "疾风之翼",
+      "tag": 14,
+      "description": "翼系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "先手+10"
+        },
+        {
+          "count": 3,
+          "effect": "闪避率+8"
+        },
+        {
+          "count": 4,
+          "effect": "先手攻击额外伤害+30%"
+        }
+      ]
+    },
+    {
+      "id": "set_speed",
+      "name": "闪电突袭",
+      "tag": 15,
+      "description": "速系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "先手+15"
+        },
+        {
+          "count": 3,
+          "effect": "造成的伤害+10%"
+        },
+        {
+          "count": 4,
+          "effect": "每回合20%概率额外行动"
+        }
+      ]
+    },
+    {
+      "id": "set_shadow",
+      "name": "暗影潜行",
+      "tag": 17,
+      "description": "影系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "暴击率+10"
+        },
+        {
+          "count": 3,
+          "effect": "对低血量目标伤害+20%"
+        },
+        {
+          "count": 4,
+          "effect": "暴击伤害+50，暴击时15%概率追加攻击"
+        }
+      ]
+    },
+    {
+      "id": "set_water",
+      "name": "流水不腐",
+      "tag": 18,
+      "description": "水系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "每回合回复5点生命"
+        },
+        {
+          "count": 3,
+          "effect": "受到的伤害-10%"
+        },
+        {
+          "count": 4,
+          "effect": "技能冷却-20%，每回合回复10点生命"
+        }
+      ]
+    },
+    {
+      "id": "set_thermal",
+      "name": "热感追踪",
+      "tag": 20,
+      "description": "热感系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "命中率+10"
+        },
+        {
+          "count": 3,
+          "effect": "暴击率+5"
+        },
+        {
+          "count": 4,
+          "effect": "攻击时25%概率造成灼烧"
+        }
+      ]
+    },
+    {
+      "id": "set_perception",
+      "name": "全知感知",
+      "tag": 21,
+      "description": "感知系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "命中率+15"
+        },
+        {
+          "count": 3,
+          "effect": "暴击率+8"
+        },
+        {
+          "count": 4,
+          "effect": "所有属性+5%"
+        }
+      ]
+    },
+    {
+      "id": "set_sound",
+      "name": "音波震荡",
+      "tag": 22,
+      "description": "声系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "攻击时15%概率眩晕"
+        },
+        {
+          "count": 3,
+          "effect": "所有控制时间+15%"
+        },
+        {
+          "count": 4,
+          "effect": "攻击时20%概率麻痹"
+        }
+      ]
+    },
+    {
+      "id": "set_psychic",
+      "name": "灵能掌控",
+      "tag": 23,
+      "description": "灵能系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "所有控制时间+20%"
+        },
+        {
+          "count": 3,
+          "effect": "攻击时15%概率眩晕"
+        },
+        {
+          "count": 4,
+          "effect": "所有控制时间+50%，攻击无法被闪避"
+        }
+      ]
+    },
+    {
+      "id": "set_evolution",
+      "name": "进化之源",
+      "tag": 24,
+      "description": "进化系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "所有属性+5%"
+        },
+        {
+          "count": 3,
+          "effect": "获得经验+30%"
+        },
+        {
+          "count": 4,
+          "effect": "所有属性+15%，每回合10%概率额外行动"
+        }
+      ]
+    },
+    {
+      "id": "set_divine",
+      "name": "神之庇护",
+      "tag": 25,
+      "description": "神系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "受到的伤害-15%"
+        },
+        {
+          "count": 3,
+          "effect": "每回合回复5%最大生命"
+        },
+        {
+          "count": 4,
+          "effect": "受到致命伤害时30%概率保留1点生命，每局限3次"
+        }
+      ]
+    },
+    {
+      "id": "set_ultimate",
+      "name": "终极形态",
+      "tag": 26,
+      "description": "终极系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "造成的伤害+20%"
+        },
+        {
+          "count": 3,
+          "effect": "暴击伤害+50"
+        },
+        {
+          "count": 4,
+          "effect": "造成的伤害+40%，暴击时50%概率追加攻击"
+        }
+      ]
+    },
+    {
+      "id": "set_behemoth",
+      "name": "巨兽之躯",
+      "tag": 27,
+      "description": "巨兽系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "最大生命+200"
+        },
+        {
+          "count": 3,
+          "effect": "防御+15，攻击力+10"
+        },
+        {
+          "count": 4,
+          "effect": "最大生命+500，受到的伤害-25%，近战攻击反弹100点伤害"
+        }
+      ]
+    },
+    {
+      "id": "set_swarm",
+      "name": "群体意识",
+      "tag": 28,
+      "description": "群体系天赋套装",
+      "thresholds": [
+        {
+          "count": 2,
+          "effect": "攻击时20%概率追加攻击"
+        },
+        {
+          "count": 3,
+          "effect": "每回合15%概率额外行动"
+        },
+        {
+          "count": 4,
+          "effect": "攻击时40%概率追加攻击，每回合30%概率额外行动"
+        }
+      ]
+    }
+  ],
+  "crossSets": [
+    {
+      "id": "cross_ice_fire",
+      "name": "冰火交融",
+      "requires": [
+        7,
+        6
+      ],
+      "effect": "所有Dot伤害+15%",
+      "description": "冰系+火系"
+    },
+    {
+      "id": "cross_poison_bind",
+      "name": "毒缚共生",
+      "requires": [
+        3,
+        5
+      ],
+      "effect": "所有控制时间+15%",
+      "description": "毒系+缚系"
+    },
+    {
+      "id": "cross_blood_thunder",
+      "name": "血雷共鸣",
+      "requires": [
+        2,
+        4
+      ],
+      "effect": "暴击时10%概率追加攻击",
+      "description": "血系+雷系"
+    },
+    {
+      "id": "cross_physical_body",
+      "name": "蛮力护体",
+      "requires": [
+        1,
+        8
+      ],
+      "effect": "造成的伤害+10%",
+      "description": "物理系+体魄系"
+    },
+    {
+      "id": "cross_fire_thunder",
+      "name": "烈焰雷霆",
+      "requires": [
+        6,
+        4
+      ],
+      "effect": "暴击伤害+20",
+      "description": "火系+雷系"
+    },
+    {
+      "id": "cross_poison_fire",
+      "name": "毒火燃烧",
+      "requires": [
+        3,
+        6
+      ],
+      "effect": "所有Dot伤害+25%",
+      "description": "毒系+火系"
+    },
+    {
+      "id": "cross_ice_thunder",
+      "name": "冰雷交加",
+      "requires": [
+        7,
+        4
+      ],
+      "effect": "攻击时15%概率冻结",
+      "description": "冰系+雷系"
+    },
+    {
+      "id": "cross_speed_shadow",
+      "name": "疾风暗影",
+      "requires": [
+        15,
+        17
+      ],
+      "effect": "暴击率+10，先手+10",
+      "description": "速系+影系"
+    },
+    {
+      "id": "cross_regen_water",
+      "name": "生命之泉",
+      "requires": [
+        10,
+        18
+      ],
+      "effect": "每回合回复15点生命",
+      "description": "再生系+水系"
+    },
+    {
+      "id": "cross_shell_body",
+      "name": "铜墙铁壁",
+      "requires": [
+        9,
+        8
+      ],
+      "effect": "防御+20，受到的伤害-15%",
+      "description": "甲壳系+体魄系"
+    },
+    {
+      "id": "cross_wing_speed",
+      "name": "飞天遁地",
+      "requires": [
+        14,
+        15
+      ],
+      "effect": "先手+20，闪避率+10",
+      "description": "翼系+速系"
+    },
+    {
+      "id": "cross_bone_reflect",
+      "name": "骨刺反伤",
+      "requires": [
+        13,
+        12
+      ],
+      "effect": "近战攻击反弹50点伤害",
+      "description": "骨骼系+反伤系"
+    },
+    {
+      "id": "cross_thermal_perception",
+      "name": "热感全知",
+      "requires": [
+        20,
+        21
+      ],
+      "effect": "命中率+20，暴击率+10",
+      "description": "热感系+感知系"
+    },
+    {
+      "id": "cross_sound_bind",
+      "name": "音波束缚",
+      "requires": [
+        22,
+        5
+      ],
+      "effect": "所有控制时间+30%",
+      "description": "声系+缚系"
+    },
+    {
+      "id": "cross_mimic_regen",
+      "name": "拟态再生",
+      "requires": [
+        11,
+        10
+      ],
+      "effect": "闪避时回复5%最大生命",
+      "description": "拟态系+再生系"
+    },
+    {
+      "id": "cross_psychic_ultimate",
+      "name": "灵能终极",
+      "requires": [
+        23,
+        26
+      ],
+      "effect": "所有控制时间+30%，造成的伤害+20%",
+      "description": "灵能系+终极系"
+    },
+    {
+      "id": "cross_divine_behemoth",
+      "name": "神圣巨兽",
+      "requires": [
+        25,
+        27
+      ],
+      "effect": "最大生命+300，受到的伤害-20%",
+      "description": "神系+巨兽系"
+    },
+    {
+      "id": "cross_evolution_swarm",
+      "name": "进化群体",
+      "requires": [
+        24,
+        28
+      ],
+      "effect": "获得经验+50%，攻击时25%概率追加攻击",
+      "description": "进化系+群体系"
+    },
+    {
+      "id": "cross_physical_ultimate",
+      "name": "蛮力终极",
+      "requires": [
+        1,
+        26
+      ],
+      "effect": "造成的伤害+30%，暴击伤害+30",
+      "description": "物理系+终极系"
+    },
+    {
+      "id": "cross_blood_divine",
+      "name": "血神共鸣",
+      "requires": [
+        2,
+        25
+      ],
+      "effect": "吸取造成伤害的15%为生命，每回合回复3%最大生命",
+      "description": "血系+神系"
+    }
+  ],
+  "combos": [
+    {
+      "id": "combo_poison_fang",
+      "name": "剧毒獠牙",
+      "symbiontId": "sym_pred_3",
+      "requires": [
+        3
+      ],
+      "effect": "所有Dot伤害+30%",
+      "description": "毒牙共生体+毒系天赋"
+    },
+    {
+      "id": "combo_fire_claw",
+      "name": "烈焰利爪",
+      "symbiontId": "sym_pred_4",
+      "requires": [
+        6
+      ],
+      "effect": "攻击时30%概率造成灼烧",
+      "description": "火焰爪共生体+火系天赋"
+    },
+    {
+      "id": "combo_ice_scale",
+      "name": "寒冰鳞片",
+      "symbiontId": "sym_core_5",
+      "requires": [
+        7
+      ],
+      "effect": "受到的伤害-20%",
+      "description": "冰鳞共生体+冰系天赋"
+    },
+    {
+      "id": "combo_thunder_horn",
+      "name": "雷霆之角",
+      "symbiontId": "sym_motor_3",
+      "requires": [
+        4
+      ],
+      "effect": "暴击时20%概率追加攻击",
+      "description": "雷角共生体+雷系天赋"
+    },
+    {
+      "id": "combo_blood_heart",
+      "name": "血怒之心",
+      "symbiontId": "sym_pred_5",
+      "requires": [
+        2
+      ],
+      "effect": "吸取造成伤害的15%为生命",
+      "description": "血心共生体+血系天赋"
+    },
+    {
+      "id": "combo_physical_fist",
+      "name": "蛮力之拳",
+      "symbiontId": "sym_energy_4",
+      "requires": [
+        1
+      ],
+      "effect": "造成的伤害+20%",
+      "description": "力量拳共生体+物理系天赋"
+    },
+    {
+      "id": "combo_speed_leg",
+      "name": "疾风之腿",
+      "symbiontId": "sym_motor_2",
+      "requires": [
+        15
+      ],
+      "effect": "先手+20",
+      "description": "速腿共生体+速系天赋"
+    },
+    {
+      "id": "combo_shell_armor",
+      "name": "重甲壁垒",
+      "symbiontId": "sym_core_3",
+      "requires": [
+        9
+      ],
+      "effect": "防御+25",
+      "description": "甲壳共生体+甲壳系天赋"
+    },
+    {
+      "id": "combo_ice_wing",
+      "name": "冰霜之翼",
+      "symbiontId": "sym_motor_4",
+      "requires": [
+        7,
+        14
+      ],
+      "effect": "闪避率+15，攻击时20%概率冻结",
+      "description": "冰翼共生体+冰系+翼系"
+    },
+    {
+      "id": "combo_thunder_sensor",
+      "name": "雷霆感知",
+      "symbiontId": "sym_sensor_5",
+      "requires": [
+        4,
+        21
+      ],
+      "effect": "命中率+20，暴击率+10",
+      "description": "雷感器共生体+雷系+感知系"
+    },
+    {
+      "id": "combo_poison_core",
+      "name": "剧毒核心",
+      "symbiontId": "sym_core_1",
+      "requires": [
+        3
+      ],
+      "effect": "所有Dot伤害+40%，中毒层数无上限",
+      "description": "毒核共生体+毒系"
+    },
+    {
+      "id": "combo_fire_motor",
+      "name": "烈焰引擎",
+      "symbiontId": "sym_sensor_3",
+      "requires": [
+        6,
+        15
+      ],
+      "effect": "先手+20，灼烧不衰减",
+      "description": "火引擎共生体+火系+速系"
+    }
+  ]
+}

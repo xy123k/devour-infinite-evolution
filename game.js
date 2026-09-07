@@ -431,6 +431,54 @@ const game = {
         17: "影系", 18: "水系", 20: "热感系", 21: "感知系", 22: "声系",
         23: "灵能系", 24: "进化系", 25: "神系", 26: "终极系", 27: "巨兽系", 28: "群体系"
     },
+    // Boss核心ID到名称的映射表
+    bossCoreNames: {
+        "primordial_soup_boss_01": "原始巨核·普罗托斯",
+        "primordial_soup_boss_02": "原始巨核·普罗托斯（第二形态）",
+        "primordial_soup_boss_03": "原始巨核·普罗托斯（最终形态）",
+        "tidal_flat_boss_01": "滩涂之主·泥噬巨蠕",
+        "tidal_flat_boss_02": "滩涂之主·泥噬巨蠕（第二形态）",
+        "tidal_flat_boss_03": "滩涂之主·泥噬巨蠕（最终形态）",
+        "coral_rubble_boss_01": "珊瑚巨灵·礁噬口",
+        "coral_rubble_boss_02": "珊瑚巨灵·礁噬口（第二形态）",
+        "coral_rubble_boss_03": "珊瑚巨灵·礁噬口（最终形态）",
+        "temperate_forest_floor_boss_01": "腐殖之王·菌丝巨怪",
+        "temperate_forest_floor_boss_02": "腐殖之王·菌丝巨怪（第二形态）",
+        "temperate_forest_floor_boss_03": "腐殖之王·菌丝巨怪（最终形态）",
+        "rainforest_floor_boss_01": "丛林幽魂·影豹",
+        "rainforest_floor_boss_02": "丛林幽魂·影豹（第二形态）",
+        "rainforest_floor_boss_03": "丛林幽魂·影豹（最终形态）",
+        "east_african_savanna_boss_01": "草原霸主·金鬃狮",
+        "east_african_savanna_boss_02": "草原霸主·金鬃狮（第二形态）",
+        "east_african_savanna_boss_03": "草原霸主·金鬃狮（最终形态）",
+        "intertidal_rocks_boss_01": "远古蝎鲎",
+        "intertidal_rocks_boss_02": "远古蝎鲎（第二形态）",
+        "intertidal_rocks_boss_03": "远古蝎鲎（最终形态）",
+        "fern_swamp_boss_01": "远古巨蝎",
+        "fern_swamp_boss_02": "远古巨蝎（第二形态）",
+        "fern_swamp_boss_03": "远古巨蝎（最终形态）"
+    },
+    // 获取Boss核心名称
+    getBossCoreName(bossId) {
+        if (this.bossCoreNames[bossId]) return this.bossCoreNames[bossId];
+        const allEnemies = this.data.enemies ? (this.data.enemies.enemies || this.data.enemies) : [];
+        const bossData = allEnemies.find(e => e.id === bossId);
+        if (bossData) return bossData.name;
+        // 如果找不到，尝试从ID中提取名称
+        const baseId = bossId.replace(/_boss_\d+$/, '');
+        const baseNames = {
+            'primordial_soup': '原始汤',
+            'tidal_flat': '潮间带',
+            'coral_rubble': '珊瑚碎石',
+            'temperate_forest_floor': '温带森林地表',
+            'rainforest_floor': '雨林地表',
+            'east_african_savanna': '东非草原',
+            'intertidal_rocks': '潮间带岩石',
+            'fern_swamp': '蕨类沼泽'
+        };
+        if (baseNames[baseId]) return baseNames[baseId] + 'Boss';
+        return bossId;
+    },
     // 天赋筛选状态
     talentFilter: { quality: 0, tag: 0, showOnlyUnlockable: false },
     talentSearchKeyword: '',
@@ -1440,7 +1488,8 @@ const game = {
                 fetch('./narratives.json?t=' + ts).then(r => r.json()),
                 fetch('./shop.json?t=' + ts).then(r => r.json()),
                 fetch('./talents_skills.json?t=' + ts).then(r => r.json()),
-                fetch('./symbionts.json?t=' + ts).then(r => r.json())
+                fetch('./symbionts.json?t=' + ts).then(r => r.json()),
+                fetch('./talent_sets.json?t=' + ts).then(r => r.json())
             ]);
             this.data.enemies = res[0];
             this.data.maps = res[1];
@@ -1448,6 +1497,7 @@ const game = {
             this.data.shop = res[3];
             this.data.talents = res[4];
             this.data.symbionts = res[5];
+            this.data.talentSets = res[6];
             console.log("所有JSON加载完成");
             this.initDailyTasks();
             this.initLeaderboard();
@@ -1594,6 +1644,8 @@ const game = {
             stealth: false,
             stealthTurns: 0
         };
+        // 轮回开始：自动装备已解锁天赋（优先级：预构筑→上一局→已解锁按品质兜底）
+        const autoEquipInfo = this.autoEquipTalentsOnRunStart();
         this.currentFloor = 1;
         this.currentMapIndex = 0;
         this.currentLayer = 1;
@@ -1620,10 +1672,69 @@ const game = {
         this.showScreen('mainScreen');
         this.refreshMainUI();
         this.showRandomStory();
+        // 自动装备提示
+        if (autoEquipInfo.equipped.length > 0) {
+            let autoEquipMsg = '已自动装备 ' + autoEquipInfo.equipped.length + ' 个天赋';
+            if (autoEquipInfo.fromPreset) autoEquipMsg += '（预构筑）';
+            else if (autoEquipInfo.fromLast) autoEquipMsg += '（继承上局装备）';
+            else autoEquipMsg += '（已解锁按品质）';
+            this.appendBattleLog(autoEquipMsg);
+        }
         // 新手引导检查
         if (!this.permanent.tutorialCompleted) {
             setTimeout(() => this.startTutorial(), 500);
         }
+    },
+
+    // ============================================================
+    //  轮回开始自动装备天赋（优先级：预构筑→上一局→已解锁按品质）
+    // ============================================================
+    autoEquipTalentsOnRunStart() {
+        const unlocked = this.permanent.unlockedTalents || [];
+        const maxSlots = this.getPassiveSlots();
+        const used = [];
+        let fromPreset = false, fromLast = false;
+
+        // 优先级①：预构筑（permanent.presetTalents = [{name, talents, isDefault}]，默认套优先，无默认取第一套）
+        const presetList = this.permanent.presetTalents;
+        if (Array.isArray(presetList) && presetList.length > 0) {
+            let presetUsedCount = 0;
+            const presetEntry = presetList.find(p => p && p.isDefault) || presetList[0];
+            const presetIds = (presetEntry && Array.isArray(presetEntry.talents)) ? presetEntry.talents : [];
+            for (let i = 0; i < presetIds.length && used.length < maxSlots; i++) {
+                const id = presetIds[i];
+                if (unlocked.includes(id) && !used.includes(id)) {
+                    used.push(id);
+                    presetUsedCount++;
+                }
+            }
+            if (presetUsedCount > 0) fromPreset = true;
+        }
+
+        // 优先级②：上一局装备
+        const lastEquipped = this.permanent.lastEquippedTalents || [];
+        let lastUsedCount = 0;
+        lastEquipped.forEach(id => {
+            if (unlocked.includes(id) && !used.includes(id) && used.length < maxSlots) {
+                used.push(id);
+                lastUsedCount++;
+            }
+        });
+        if (lastUsedCount > 0) fromLast = true;
+
+        // 优先级③：其他已解锁天赋按品质从高到低兜底
+        if (used.length < maxSlots) {
+            const others = unlocked.filter(id => !used.includes(id));
+            others.sort((a, b) => {
+                const ta = this.data.talents.talents.find(x => x.id === a);
+                const tb = this.data.talents.talents.find(x => x.id === b);
+                return (tb ? tb.quality : 0) - (ta ? ta.quality : 0);
+            });
+            for (let i = 0; i < others.length && used.length < maxSlots; i++) used.push(others[i]);
+        }
+
+        this.player.equippedTalents = used;
+        return {equipped: used, fromPreset: fromPreset, fromLast: fromLast};
     },
 
     // 显示轮回成长总览
@@ -3155,159 +3266,367 @@ const game = {
         return bonus;
     },
 
-    // 打开共生体面板
+    // 打开共生体面板（一页两栏布局，可替换折叠展开）
     openSymbiontPanel() {
         const equipped = this.permanent.equippedSymbionts;
         const bag = this.permanent.symbionts;
         let html = '<h3>基因共生体</h3>';
-        html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">装备共生体获得属性加成和特殊效果，6个部位各装备1个</p>';
+        html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">每一行对应一个部位，左侧当前装备，右侧可替换</p>';
         
-        // 已装备部位
-        html += '<div style="margin-bottom:15px">';
-        html += '<div style="color:var(--accent-warning);margin-bottom:8px">已装备</div>';
+        // 按部位分组显示（一页两栏布局）
+        let slotIndex = 0;
         for (const slot in this.symbiontSlotNames) {
+            const slotName = this.symbiontSlotNames[slot];
             const symId = equipped[slot];
             const tpl = symId ? this.getSymbiontTemplate(symId) : null;
+            const slotId = 'symbiont_slot_' + slotIndex;
+            slotIndex++;
+            
+            // 部位标题
+            html += '<div style="margin-bottom:12px;padding:8px;background:var(--bg-card);border-radius:8px;border-left:3px solid var(--accent-primary)">';
+            html += '<div style="color:var(--accent-primary);font-weight:bold;font-size:14px;margin-bottom:8px">' + slotName + '</div>';
+            
+            // 两栏布局：左侧当前装备，右侧可替换
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+            
+            // 左侧：当前装备
+            html += '<div>';
+            html += '<div style="color:var(--text-muted);font-size:11px;margin-bottom:4px">当前装备</div>';
             if (tpl) {
                 const color = this.symbiontQualityColors[tpl.quality] || 'var(--text-primary)';
-                html += '<div class="talent-card" style="margin-bottom:6px">';
-                html += '<div><div class="talent-name" style="color:' + color + '">' + tpl.name + ' <span style="font-size:11px;color:var(--text-muted)">[' + this.symbiontSlotNames[slot] + ']</span></div>';
-                // 显示具体数值
-                let statsText = '';
-                if (tpl.stats) {
-                    const statNames = {maxHp:'生命', defense:'防御', attack:'攻击', speed:'先手值', crit:'暴击率', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', talentPower:'天赋强度', firstStrike:'先手值', hp:'生命', hpRegen:'生命恢复', dotDamage:'Dot伤害', cooldownReduction:'冷却缩减', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾', thorns:'荆棘'};
-                    for (const key in tpl.stats) {
-                        if (tpl.stats[key]) {
-                            statsText += (statNames[key] || key) + '+' + tpl.stats[key] + ' ';
-                        }
-                    }
-                }
-                if (tpl.special) {
-                    const specialNames = {
-                        hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤', 
-                        lifeSteal:'吸血', critDamage:'暴伤', dodge:'闪避', dodgeBonus:'闪避加成',
-                        firstStrike:'先手', hit:'命中', energyRegen:'能量回复',
-                        maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击',
-                        speed:'速度', agility:'敏捷', strength:'力量', perception:'感知',
-                        evolution:'进化', maxEnergy:'能量', dotDamage:'Dot伤害',
-                        cooldownReduction:'冷却缩减', talentPower:'天赋强度',
-                        dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率',
-                        energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成',
-                        allStatPct:'全属性加成', extraAttackChance:'额外攻击概率',
-                        reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透',
-                        critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘',
-                        hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能',
-                        talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
-                        goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成',
-                        talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性',
-                        physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性',
-                        poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性',
-                        holyResist:'神圣抗性', arcaneResist:'奥术抗性',
-                        physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透',
-                        poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透',
-                        holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透',
-                        bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧',
-                        freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹',
-                        slowOnHit:'攻击附带减速', healMod:'治疗效果', damageMod:'伤害加成',
-                        damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成',
-                        perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比',
-                        vitality:'体质', first_strike:'先手值', talent_power:'天赋强度',
-                        energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血',
-                        reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透',
-                        dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'
-                    };
-                    statsText += (specialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
-                }
-                html += '<div class="talent-desc">' + tpl.desc + '</div>';
-                if (statsText) html += '<div style="color:var(--accent-primary);font-size:12px;margin-top:2px">' + statsText.trim() + '</div></div>';
-                html += '<button onclick="game.unequipSymbiontAndRefresh(\'' + slot + '\')" style="font-size:12px;background:var(--accent-danger)">卸下</button>';
+                html += '<div style="background:var(--bg-secondary);padding:8px;border-radius:6px">';
+                html += '<div style="color:' + color + ';font-weight:bold;font-size:13px">' + tpl.name + '</div>';
+                html += '<div style="color:var(--text-muted);font-size:11px;margin:2px 0">' + tpl.desc + '</div>';
+                // 显示数值
+                let statsText = this.getSymbiontStatsText(tpl);
+                if (statsText) html += '<div style="color:var(--accent-primary);font-size:11px;margin-top:2px">' + statsText + '</div>';
+                html += '</div>';
+                html += '<button onclick="game.unequipSymbiontAndRefresh(\'' + slot + '\')" style="width:100%;margin-top:4px;font-size:11px;padding:4px;background:var(--accent-danger);border:none;border-radius:4px;color:white;cursor:pointer">卸下</button>';
+            } else {
+                html += '<div style="background:var(--bg-secondary);padding:8px;border-radius:6px;opacity:0.5;text-align:center">';
+                html += '<div style="color:var(--text-muted);font-size:12px">未装备</div>';
+                html += '</div>';
+            }
+            html += '</div>';
+            
+            // 右侧：可替换的共生体（背包中该部位的，折叠展开）
+            html += '<div>';
+            html += '<div style="color:var(--text-muted);font-size:11px;margin-bottom:4px">可替换</div>';
+            const slotBagItems = bag.filter(id => {
+                const t = this.getSymbiontTemplate(id);
+                return t && t.slot === slot && id !== symId;
+            });
+            if (slotBagItems.length === 0) {
+                html += '<div style="background:var(--bg-secondary);padding:8px;border-radius:6px;opacity:0.5;text-align:center">';
+                html += '<div style="color:var(--text-muted);font-size:12px">无可用共生体</div>';
                 html += '</div>';
             } else {
-                html += '<div class="talent-card" style="margin-bottom:6px;opacity:0.5">';
-                html += '<div><div class="talent-name" style="color:var(--text-muted)">' + this.symbiontSlotNames[slot] + '（空）</div>';
-                html += '<div class="talent-desc">未装备共生体</div></div></div>';
+                // 折叠/展开按钮
+                html += '<button onclick="game.toggleSymbiontSlot(\'' + slotId + '\')" style="width:100%;padding:6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:4px;color:var(--text-secondary);cursor:pointer;margin-bottom:4px">';
+                html += '可替换共生体（' + slotBagItems.length + '个） <span id="' + slotId + '_arrow">▼</span>';
+                html += '</button>';
+                // 折叠内容（默认隐藏）
+                html += '<div id="' + slotId + '" style="display:none;max-height:200px;overflow-y:auto">';
+                slotBagItems.forEach(id => {
+                    const t = this.getSymbiontTemplate(id);
+                    if (!t) return;
+                    const c = this.symbiontQualityColors[t.quality] || 'var(--text-primary)';
+                    html += '<div style="background:var(--bg-secondary);padding:6px;border-radius:4px;margin-bottom:4px">';
+                    html += '<div style="color:' + c + ';font-weight:bold;font-size:12px">' + t.name + '</div>';
+                    let st = this.getSymbiontStatsText(t);
+                    if (st) html += '<div style="color:var(--accent-primary);font-size:10px">' + st + '</div>';
+                    html += '<button onclick="game.equipSymbiontAndRefresh(\'' + id + '\')" style="width:100%;margin-top:2px;font-size:10px;padding:3px;background:var(--accent-primary);border:none;border-radius:3px;color:white;cursor:pointer">装备</button>';
+                    html += '</div>';
+                });
+                html += '</div>';
             }
+            html += '</div>';
+            
+            html += '</div>'; // 结束两栏布局
+            html += '</div>'; // 结束部位卡片
         }
-        html += '</div>';
         
-        // 背包
-        html += '<div style="margin-bottom:15px">';
-        html += '<div style="color:var(--accent-success);margin-bottom:8px">背包（' + bag.length + '个）</div>';
-        if (bag.length === 0) {
-            html += '<p style="color:var(--text-muted);text-align:center;padding:10px">背包为空，击败敌人有几率获得共生体</p>';
-        } else {
-            html += '<div class="scroll-area" style="padding-bottom:50px">';
-            bag.forEach(symId => {
-                const tpl = this.getSymbiontTemplate(symId);
-                if (!tpl) return;
-                const color = this.symbiontQualityColors[tpl.quality] || 'var(--text-primary)';
-                const isEquipped = Object.values(equipped).includes(symId);
-                html += '<div class="talent-card" style="margin-bottom:6px">';
-                html += '<div><div class="talent-name" style="color:' + color + '">' + tpl.name + ' <span style="font-size:11px;color:var(--text-muted)">[' + this.symbiontQualityNames[tpl.quality] + '·' + this.symbiontSlotNames[tpl.slot] + ']</span></div>';
-                html += '<div class="talent-desc">' + tpl.desc + '</div>';
-                let bagStatsText = '';
-                if (tpl.stats) {
-                    const bagStatNames = {
-                        maxHp:'生命', hp:'生命', attack:'攻击', defense:'防御', crit:'暴击', 
-                        speed:'先手', firstStrike:'先手', agility:'敏捷', strength:'力量', 
-                        vitality:'体质', perception:'感知', evolution:'进化', hit:'命中',
-                        dodge:'闪避', critDamage:'暴伤', energy:'能量', maxEnergy:'能量上限'
-                    };
-                    for (const key in tpl.stats) {
-                        if (tpl.stats[key]) bagStatsText += (bagStatNames[key] || key) + '+' + tpl.stats[key] + ' ';
+        this.showPopup(html);
+    },
+
+    // ============================================================
+    //  天赋图鉴：展示全部天赋效果/升级效果/进化路线/套装组合联动
+    // ============================================================
+    openTalentCodex() {
+        const all = this.data.talents.talents || [];
+        const sets = (this.data.talentSets && this.data.talentSets.sets) || [];
+        const crosses = (this.data.talentSets && this.data.talentSets.crossSets) || [];
+        const combos = (this.data.talentSets && this.data.talentSets.combos) || [];
+        const qNames = this.qualityNames || {1:'普通',2:'稀有',3:'史诗',4:'传说',5:'神话'};
+        const qColors = this.qualityColors || {};
+        const tagNames = this.tagNames || {};
+        const unlocked = this.permanent.unlockedTalents || [];
+
+        if (!this.codexFilter) this.codexFilter = { quality: 'all', tag: 'all', search: '' };
+        const f = this.codexFilter;
+
+        // 预构建映射：套装按体系、组合/联动按体系标签
+        const setByTag = {};
+        sets.forEach(s => { if (s.tag != null) setByTag[s.tag] = s; });
+        const crossByTag = {};
+        crosses.forEach(c => (c.requires || []).forEach(t => { (crossByTag[t] = crossByTag[t] || []).push(c); }));
+        const comboByTag = {};
+        combos.forEach(c => (c.requires || []).forEach(t => { (comboByTag[t] = comboByTag[t] || []).push(c); }));
+        const advanceNames = {};
+        all.forEach(t => { advanceNames[t.id] = t.name; });
+
+        // 按体系分组
+        const byTag = {};
+        all.forEach(t => {
+            const tag = (t.tags && t.tags.length > 0) ? parseInt(t.tags[0]) : 0;
+            (byTag[tag] = byTag[tag] || []).push(t);
+        });
+
+        let html = '<h3>📖 天赋图鉴</h3>';
+        html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">共' + all.length + '种天赋。点击天赋可展开全部升级效果；展示进化路线与套装/组合/联动效果</p>';
+
+        // 筛选栏
+        html += '<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:8px">';
+        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">';
+        html += '<span style="font-size:12px;color:var(--text-muted)">品质：</span>';
+        const qOpts = [['all','全部'],['1','普通'],['2','稀有'],['3','史诗'],['4','传说'],['5','神话']];
+        qOpts.forEach(o => {
+            const active = String(f.quality) === o[0];
+            html += '<button onclick="game.codexFilter.quality=\'' + o[0] + '\';game.openTalentCodex()" style="font-size:11px;padding:3px 8px;border-radius:4px;border:none;cursor:pointer;background:' + (active ? 'var(--accent-primary)' : 'var(--bg-secondary)') + ';color:' + (active ? 'white' : 'var(--text-secondary)') + '">' + o[1] + '</button>';
+        });
+        html += '</div>';
+        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">';
+        html += '<span style="font-size:12px;color:var(--text-muted)">体系：</span>';
+        html += '<button onclick="game.codexFilter.tag=\'all\';game.openTalentCodex()" style="font-size:11px;padding:3px 8px;border-radius:4px;border:none;cursor:pointer;background:' + (f.tag === 'all' ? 'var(--accent-primary)' : 'var(--bg-secondary)') + ';color:' + (f.tag === 'all' ? 'white' : 'var(--text-secondary)') + '">全部</button>';
+        Object.keys(byTag).sort((a,b) => a - b).forEach(tag => {
+            const active = String(f.tag) === String(tag);
+            html += '<button onclick="game.codexFilter.tag=\'' + tag + '\';game.openTalentCodex()" style="font-size:11px;padding:3px 8px;border-radius:4px;border:none;cursor:pointer;background:' + (active ? 'var(--accent-primary)' : 'var(--bg-secondary)') + ';color:' + (active ? 'white' : 'var(--text-secondary)') + '">' + (tagNames[tag] || ('体系' + tag)) + '</button>';
+        });
+        html += '</div>';
+        html += '<input id="codexSearch" value="' + (f.search || '').replace(/"/g, '&quot;') + '" oninput="game.codexFilter.search=this.value" placeholder="搜索天赋名称/效果…" style="width:100%;padding:6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:4px;color:var(--text-primary)">';
+        html += '<div style="margin-top:6px"><button onclick="game.openTalentCodex()" style="font-size:11px;padding:4px 12px;background:var(--accent-primary);color:white;border:none;border-radius:4px;cursor:pointer">应用筛选</button></div>';
+        html += '</div>';
+
+        // 过滤
+        let filtered = [];
+        Object.keys(byTag).sort((a,b) => a - b).forEach(tag => {
+            let list = byTag[tag];
+            if (f.tag !== 'all' && String(tag) !== String(f.tag)) return;
+            list = list.filter(t => {
+                if (f.quality !== 'all' && t.quality !== parseInt(f.quality)) return false;
+                if (f.search && f.search.trim()) {
+                    const kw = f.search.trim().toLowerCase();
+                    const lv1 = (t.effects && t.effects[0]) ? (t.effects[0].passive || '') : '';
+                    if (!t.name.toLowerCase().includes(kw) && !lv1.toLowerCase().includes(kw)) return false;
+                }
+                return true;
+            });
+            if (list.length > 0) filtered.push({ tag, list });
+        });
+
+        // 渲染分组
+        filtered.forEach(group => {
+            const tag = group.tag;
+            const list = group.list;
+            const set = setByTag[tag];
+            const tagName = tagNames[tag] || ('体系' + tag);
+            const ownedCount = list.filter(t => unlocked.includes(t.id)).length;
+            html += '<div style="margin-bottom:14px;padding:10px;background:var(--bg-card);border-radius:8px;border-left:3px solid var(--accent-primary)">';
+            html += '<div style="color:var(--accent-primary);font-weight:bold;font-size:14px;margin-bottom:4px">' + tagName + ' <span style="font-size:11px;color:var(--text-muted);font-weight:normal">(' + ownedCount + '/' + list.length + ' 已解锁)</span></div>';
+            if (set) {
+                html += '<div style="font-size:11px;color:var(--accent-warning);margin-bottom:6px;background:var(--bg-secondary);padding:5px 8px;border-radius:4px">';
+                html += '🧩 套装【' + set.name + '】：' + (set.description || '');
+                (set.thresholds || []).forEach(th => {
+                    html += ' <span style="color:var(--text-secondary)">|</span> ' + th.count + '件：' + th.effect;
+                });
+                html += '</div>';
+            }
+            list.sort((a,b) => a.quality - b.quality);
+            list.forEach(t => {
+                const c = qColors[t.quality] || 'var(--text-primary)';
+                const qn = qNames[t.quality] || ('品质' + t.quality);
+                const lv1 = (t.effects && t.effects[0]) ? (t.effects[0].passive || '') : '';
+                const isOwned = unlocked.includes(t.id);
+                // 该天赋参与的跨体系组合与联动
+                const crossesOf = crossByTag[tag] || [];
+                const combosOf = comboByTag[tag] || [];
+                html += '<div style="background:var(--bg-secondary);padding:7px 8px;border-radius:6px;margin-bottom:6px;cursor:pointer" onclick="game.toggleTalentCodexDetail(\'' + t.id + '\')">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+                html += '<span style="color:' + c + ';font-weight:bold;font-size:13px">' + t.name + ' <span style="font-size:10px;color:var(--text-muted);font-weight:normal">[' + qn + ']</span></span>';
+                html += '<span style="font-size:11px;color:' + (isOwned ? 'var(--accent-success)' : 'var(--text-faint)') + '">' + (isOwned ? '✓ 已解锁' : '未解锁') + '</span>';
+                html += '</div>';
+                html += '<div style="color:var(--text-primary);font-size:12px;margin-top:2px">Lv.1：' + lv1 + '</div>';
+                if (t.advanceTo && advanceNames[t.advanceTo]) {
+                    html += '<div style="color:var(--accent-warning);font-size:11px;margin-top:2px">⬇ 进化：' + advanceNames[t.advanceTo] + '</div>';
+                }
+                // 展开详情：全部等级 + 组合/联动
+                html += '<div id="codexDetail_' + t.id + '" style="display:none;margin-top:5px;padding-top:5px;border-top:1px dashed var(--text-faint)">';
+                if (t.maxLevel === 1) {
+                    html += '<div style="font-size:11px;color:var(--accent-warning)">★ 终极天赋，解锁即为满级，不可升级</div>';
+                } else if (t.maxLevel === -1) {
+                    html += '<div style="font-size:11px;color:var(--accent-warning)">★ 无限成长天赋：每击杀敌人永久成长，无等级上限</div>';
+                } else {
+                    let shownLv = 0;
+                    (t.effects || []).forEach(e => {
+                        if (e.level <= 1) return;
+                        shownLv++;
+                        html += '<div style="font-size:11px;color:var(--text-secondary)">Lv.' + e.level + '：' + (e.passive || '') + '</div>';
+                    });
+                    const lv1 = (t.effects && t.effects[0]) ? t.effects[0].passive : '';
+                    const allSame = (t.effects || []).every(e => e.passive === lv1);
+                    if (shownLv === 0 || allSame) {
+                        html += '<div style="font-size:11px;color:var(--text-muted)">该天赋为机制型效果，升级不改变效果描述</div>';
                     }
                 }
-                if (tpl.special) {
-                    const bagSpecialNames = {
-                        hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤', 
-                        lifeSteal:'吸血', critDamage:'暴伤', dodge:'闪避', dodgeBonus:'闪避加成',
-                        firstStrike:'先手', hit:'命中', energyRegen:'能量回复',
-                        maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击',
-                        speed:'速度', agility:'敏捷', strength:'力量', perception:'感知',
-                        evolution:'进化', maxEnergy:'能量', dotDamage:'Dot伤害',
-                        cooldownReduction:'冷却缩减', talentPower:'天赋强度',
-                        dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率',
-                        energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成',
-                        allStatPct:'全属性加成', extraAttackChance:'额外攻击概率',
-                        reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透',
-                        critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘',
-                        hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能',
-                        talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
-                        goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成',
-                        talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性',
-                        physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性',
-                        poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性',
-                        holyResist:'神圣抗性', arcaneResist:'奥术抗性',
-                        physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透',
-                        poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透',
-                        holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透',
-                        bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧',
-                        freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹',
-                        slowOnHit:'攻击附带减速', healMod:'治疗效果', damageMod:'伤害加成',
-                        damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成',
-                        perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比',
-                        vitality:'体质', first_strike:'先手值', talent_power:'天赋强度',
-                        energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血',
-                        reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透',
-                        dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'
-                    };
-                    bagStatsText += (bagSpecialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
+                if (crossesOf.length > 0) {
+                    html += '<div style="font-size:11px;color:var(--accent-info);margin-top:3px">';
+                    html += '🔀 组合：';
+                    crossesOf.forEach(c => {
+                        const otherNames = (c.requires || []).filter(x => x != tag).map(x => tagNames[x] || ('体系' + x));
+                        html += '【' + c.name + '】（+' + otherNames.join('、') + '）：' + c.effect + '；';
+                    });
+                    html += '</div>';
                 }
-                if (bagStatsText) html += '<div style="color:var(--accent-primary);font-size:12px;margin-top:2px">' + bagStatsText.trim() + '</div>';
+                if (combosOf.length > 0) {
+                    html += '<div style="font-size:11px;color:var(--accent-warning);margin-top:3px">';
+                    html += '🔗 联动：';
+                    combosOf.forEach(c => {
+                        html += '【' + c.name + '】' + (c.description ? c.description + '：' : '：') + c.effect + '；';
+                    });
+                    html += '</div>';
+                }
                 html += '</div>';
-                if (!isEquipped) {
-                    html += '<button onclick="game.equipSymbiontAndRefresh(\'' + symId + '\')" style="font-size:12px">装备</button>';
-                } else {
-                    html += '<span style="font-size:11px;color:var(--accent-success)">已装备</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        });
+
+        if (filtered.length === 0) {
+            html += '<div style="text-align:center;color:var(--text-muted);padding:30px 0">没有符合条件的天赋</div>';
+        }
+        this.showPopup(html);
+    },
+
+    toggleTalentCodexDetail(id) {
+        const el = document.getElementById('codexDetail_' + id);
+        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    },
+
+    // 共生体联动详情 tooltip（图鉴内点击联动条目）
+    showComboTooltip(event, comboId) {
+        const combos = (this.data.talentSets && this.data.talentSets.combos) || [];
+        const combo = combos.find(c => c.id === comboId);
+        if (!combo || !event) return;
+        const sym = this.data.symbionts.symbionts.find(s => s.id === combo.symbiontId);
+        const tagNames = this.tagNames || {};
+        const tags = (combo.requires || []).map(t => tagNames[t] || ('体系' + t));
+        // 当前激活状态判断：装备对应共生体 + 拥有对应体系已解锁天赋
+        const equipped = this.permanent.equippedSymbionts || {};
+        const slots = Object.values(equipped);
+        const symEquipped = slots.indexOf(combo.symbiontId) >= 0;
+        let hasTalent = false;
+        if (this.permanent.unlockedTalents) {
+            const all = this.data.talents.talents || [];
+            hasTalent = (combo.requires || []).some(tag => this.permanent.unlockedTalents.some(tid => {
+                const tt = all.find(x => x.id === tid);
+                return tt && tt.tags && tt.tags.indexOf(parseInt(tag)) >= 0;
+            }));
+        }
+        const active = symEquipped && hasTalent;
+        let html = '<div class="tooltip-title">🔗 联动【' + combo.name + '】</div>';
+        html += '<div class="tooltip-section"><span class="tooltip-label">效果</span><span class="tooltip-value">' + combo.effect + '</span></div>';
+        html += '<div class="tooltip-section"><span class="tooltip-label">触发</span><span class="tooltip-value">装备' + (sym ? sym.name : combo.symbiontId) + ' + ' + (tags.join('、') || '对应体系') + '天赋</span></div>';
+        if (combo.description) html += '<div class="tooltip-section"><span class="tooltip-label">说明</span><span class="tooltip-value">' + combo.description + '</span></div>';
+        html += '<div class="tooltip-section"><span class="tooltip-label">共生体</span><span class="tooltip-value">' + (sym ? sym.name + '（' + (this.symbiontSlotNames[sym.slot] || sym.slot) + '）' : combo.symbiontId) + '</span></div>';
+        html += '<div style="margin-top:6px;font-size:12px;color:' + (active ? 'var(--accent-success)' : 'var(--text-faint)') + '">' + (active ? '✓ 当前已激活（效果已生效）' : '○ 当前未激活（满足触发条件后生效）') + '</div>';
+        if (!this.tooltipData) this.tooltipData = {};
+        this.tooltipData['combo_' + comboId] = { title: '🔗 联动【' + combo.name + '】', desc: html };
+        this.showTooltip('combo_' + comboId, event);
+    },
+
+    // ============================================================
+    //  共生体图鉴：展示全部共生体属性效果与联动套装效果
+    // ============================================================
+    openSymbiontCodex() {
+        const all = this.data.symbionts.symbionts || [];
+        const owned = this.permanent.symbionts || [];
+        const equipped = this.permanent.equippedSymbionts || {};
+        const combos = (this.data.talentSets && this.data.talentSets.combos) || [];
+        const slotNames = this.symbiontSlotNames || {};
+        const qColors = this.symbiontQualityColors || {};
+        const qNames = this.symbiontQualityNames || {};
+
+        let html = '<h3>📖 共生体图鉴</h3>';
+        html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">共' + all.length + '种共生体。展示属性效果与【联动套装效果】（需装备该共生体 + 拥有对应体系天赋触发）</p>';
+
+        // 按部位分组
+        const bySlot = {};
+        all.forEach(s => { (bySlot[s.slot] = bySlot[s.slot] || []).push(s); });
+
+        for (const slot in slotNames) {
+            const list = bySlot[slot] || [];
+            if (list.length === 0) continue;
+            const slotName = slotNames[slot];
+            const ownedCount = list.filter(s => owned.includes(s.id) || equipped[slot] === s.id).length;
+            html += '<div style="margin-bottom:14px;padding:10px;background:var(--bg-card);border-radius:8px;border-left:3px solid var(--accent-info)">';
+            html += '<div style="color:var(--accent-info);font-weight:bold;font-size:14px;margin-bottom:8px">' + slotName + ' <span style="font-size:11px;color:var(--text-muted);font-weight:normal">(' + ownedCount + '/' + list.length + ' 已获得)</span></div>';
+
+            list.forEach(s => {
+                const isOwned = owned.includes(s.id) || equipped[slot] === s.id;
+                const color = qColors[s.quality] || 'var(--text-primary)';
+                const qName = qNames[s.quality] || ('品质' + s.quality);
+                const statsText = this.getSymbiontStatsText(s);
+                const combo = combos.find(c => c.symbiontId === s.id);
+                html += '<div style="background:var(--bg-secondary);padding:8px;border-radius:6px;margin-bottom:6px;opacity:' + (isOwned ? 1 : 0.55) + '">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+                html += '<span style="color:' + color + ';font-weight:bold;font-size:13px">' + s.name + ' <span style="font-size:10px;color:var(--text-muted);font-weight:normal">[' + qName + ']</span></span>';
+                html += '<span style="font-size:11px;color:' + (isOwned ? 'var(--accent-success)' : 'var(--text-faint)') + '">' + (isOwned ? '✓ 已获得' : '未获得') + '</span>';
+                html += '</div>';
+                if (statsText) html += '<div style="color:var(--accent-primary);font-size:11px;margin:2px 0">' + statsText + '</div>';
+                html += '<div style="color:var(--text-muted);font-size:11px">' + (s.desc || '') + '</div>';
+                if (combo) {
+                    const tagNames = (combo.requires || []).map(t => this.tagNames[t] || ('体系' + t));
+                    html += '<div onclick="game.showComboTooltip(event,\'' + combo.id + '\')" style="margin-top:5px;font-size:11px;color:var(--accent-warning);border-top:1px dashed var(--text-faint);padding-top:5px;cursor:pointer" title="点击查看联动详情">';
+                    html += '🔗 联动【' + combo.name + '】：' + combo.effect + ' <span style="font-size:9px;color:var(--text-faint)">(点击详情)</span>';
+                    html += '<div style="font-size:10px;color:var(--text-muted)">触发：装备' + s.name + ' + ' + (tagNames.join('、') || '对应体系') + '天赋</div>';
+                    html += '</div>';
                 }
                 html += '</div>';
             });
             html += '</div>';
         }
-        html += '</div>';
-        
-        html += '<button onclick="game.closePop()" style="margin-top:10px">关闭</button>';
         this.showPopup(html);
+    },
+    
+    // 切换共生体部位折叠/展开
+    toggleSymbiontSlot(slotId) {
+        const el = document.getElementById(slotId);
+        const arrow = document.getElementById(slotId + '_arrow');
+        if (el) {
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                if (arrow) arrow.textContent = '▲';
+            } else {
+                el.style.display = 'none';
+                if (arrow) arrow.textContent = '▼';
+            }
+        }
+    },
+    
+    // 获取共生体数值文本（辅助函数）
+    getSymbiontStatsText(tpl) {
+        let statsText = '';
+        const statNames = {maxHp:'生命', defense:'防御', attack:'攻击', speed:'先手', crit:'暴击', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', hit:'命中', dodge:'闪避', critDamage:'暴伤', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', talentPower:'天赋强度', firstStrike:'先手', hp:'生命', hpRegen:'生命恢复', dotDamage:'Dot伤害', cooldownReduction:'冷却缩减', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾', thorns:'荆棘'};
+        if (tpl.stats) {
+            for (const key in tpl.stats) {
+                if (tpl.stats[key]) statsText += (statNames[key] || key) + '+' + tpl.stats[key] + ' ';
+            }
+        }
+        if (tpl.special) {
+            const specialNames = {hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤', lifeSteal:'吸血', critDamage:'暴伤', dodge:'闪避', dodgeBonus:'闪避加成', firstStrike:'先手', hit:'命中', energyRegen:'能量回复', maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击', speed:'速度', agility:'敏捷', strength:'力量', perception:'感知', evolution:'进化', maxEnergy:'能量', dotDamage:'Dot伤害', cooldownReduction:'冷却缩减', talentPower:'天赋强度', dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率', energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成', allStatPct:'全属性加成', extraAttackChance:'额外攻击概率', reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透', critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘', hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能', talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片', goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成', talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性', healMod:'治疗效果', damageMod:'伤害加成', damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成', perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比', vitality:'体质', first_strike:'先手值', talent_power:'天赋强度', energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血', reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透', dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'};
+            statsText += (specialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
+        }
+        return statsText.trim();
     },
 
     equipSymbiontAndRefresh(symId) {
@@ -3336,6 +3655,164 @@ const game = {
             self.refreshMainUI();
         }, 20);
     },
+    // ============================================================
+    //  兑换码系统（测试版）
+    // ============================================================
+    REDEEM_SECRET: "DEVOUR_SECRET_2026",
+
+    // 生成兑换码（管理员用）
+    generateRedeemCode(reward, expireDays = 365) {
+        const data = {
+            reward: reward,
+            expire: Date.now() + expireDays * 24 * 60 * 60 * 1000,
+            secret: this.REDEEM_SECRET
+        };
+        const jsonStr = JSON.stringify(data);
+        // Base64编码，去掉等号（保持大小写，Base64区分大小写）
+        const code = btoa(jsonStr).replace(/=/g, '');
+        return code;
+    },
+
+    // 验证并兑换码
+    redeemCode(code) {
+        if (!code || !code.trim()) {
+            return { success: false, msg: '请输入兑换码' };
+        }
+        code = code.trim();
+        
+        // 检查是否已使用
+        if (!this.permanent.usedRedeemCodes) this.permanent.usedRedeemCodes = [];
+        if (this.permanent.usedRedeemCodes.includes(code)) {
+            return { success: false, msg: '该兑换码已使用' };
+        }
+        
+        try {
+            // Base64解码（补上等号）
+            // 注意：Base64区分大小写，玩家输入时可能大小写混用，这里不转换大小写
+            let paddedCode = code;
+            while (paddedCode.length % 4 !== 0) paddedCode += '=';
+            const jsonStr = atob(paddedCode);
+            const data = JSON.parse(jsonStr);
+            
+            // 验证密钥
+            if (data.secret !== this.REDEEM_SECRET) {
+                return { success: false, msg: '兑换码无效' };
+            }
+            
+            // 检查是否过期
+            if (data.expire && Date.now() > data.expire) {
+                return { success: false, msg: '兑换码已过期' };
+            }
+            
+            // 发放奖励
+            const reward = data.reward;
+            let rewardDesc = '';
+            
+            if (reward.type === 'gold') {
+                this.player.gold += reward.count;
+                rewardDesc = reward.count + '金币';
+            } else if (reward.type === 'talentPoints') {
+                this.permanent.talentPoints = (this.permanent.talentPoints || 0) + reward.count;
+                rewardDesc = reward.count + '天赋点';
+            } else if (reward.type === 'essence') {
+                this.permanent.essence = (this.permanent.essence || 0) + reward.count;
+                rewardDesc = reward.count + '进化精粹';
+            } else if (reward.type === 'universal') {
+                if (!this.permanent.universalFragments) this.permanent.universalFragments = {};
+                this.permanent.universalFragments[reward.quality] = (this.permanent.universalFragments[reward.quality] || 0) + reward.count;
+                const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
+                rewardDesc = reward.count + '个' + qualityNames[reward.quality] + '万能碎片';
+            } else if (reward.type === 'fragments') {
+                if (!this.permanent.tagFragments) this.permanent.tagFragments = {};
+                if (!this.permanent.tagFragments[reward.tag]) this.permanent.tagFragments[reward.tag] = {};
+                this.permanent.tagFragments[reward.tag][reward.quality] = (this.permanent.tagFragments[reward.tag][reward.quality] || 0) + reward.count;
+                const tagNames = {1:'物理系',2:'血系',3:'毒系',4:'雷系',5:'缚系',6:'火系',7:'冰系',8:'体魄系',9:'甲壳系',10:'再生系',11:'拟态系',12:'反伤系',13:'骨骼系',14:'翼系',15:'速系',17:'影系',18:'水系',20:'热感系',21:'感知系',22:'声系',23:'灵能系',24:'进化系',25:'神系',26:'终极系',27:'巨兽系',28:'群体系'};
+                const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
+                rewardDesc = reward.count + '个' + (tagNames[reward.tag] || ('体系'+reward.tag)) + qualityNames[reward.quality] + '碎片';
+            } else if (reward.type === 'symbiont') {
+                if (!this.permanent.symbionts) this.permanent.symbionts = [];
+                this.permanent.symbionts.push(reward.symbiontId);
+                const tpl = this.getSymbiontTemplate(reward.symbiontId);
+                rewardDesc = '共生体：' + (tpl ? tpl.name : reward.symbiontId);
+            } else if (reward.type === 'bossCore') {
+                if (!this.permanent.bossCores) this.permanent.bossCores = {};
+                this.permanent.bossCores[reward.bossCoreId] = (this.permanent.bossCores[reward.bossCoreId] || 0) + reward.count;
+                // 获取Boss名称
+                const bossName = this.getBossCoreName(reward.bossCoreId);
+                rewardDesc = reward.count + '个Boss核心：' + bossName;
+            } else if (reward.type === 'consumable') {
+                // 消耗品（道具）
+                if (!this.player.items) this.player.items = [];
+                for (let i = 0; i < reward.count; i++) {
+                    this.player.items.push(reward.consumableId);
+                }
+                // 获取消耗品名称
+                const consumables = this.data.shop ? (this.data.shop.consumables || []) : [];
+                const consumableData = consumables.find(c => c.id === reward.consumableId);
+                const consumableName = consumableData ? consumableData.name : reward.consumableId;
+                rewardDesc = reward.count + '个消耗品：' + consumableName;
+            } else if (reward.type === 'exp') {
+                // 经验
+                this.player.exp += reward.count;
+                rewardDesc = reward.count + '经验';
+                // 检查是否升级
+                while (this.player.exp >= this.player.expToNext) this.levelUp();
+            } else if (reward.type === 'statPoints') {
+                // 属性点
+                if (reward.statPointType === 'permanent') {
+                    // 局外自由属性点
+                    this.permanent.freePoints = (this.permanent.freePoints || 0) + reward.count;
+                    rewardDesc = reward.count + '局外自由属性点';
+                } else {
+                    // 局内可分配属性点
+                    this.player.statPoints = (this.player.statPoints || 0) + reward.count;
+                    rewardDesc = reward.count + '局内可分配属性点';
+                }
+            } else {
+                return { success: false, msg: '未知奖励类型' };
+            }
+            
+            // 标记为已使用
+            this.permanent.usedRedeemCodes.push(code);
+            this.savePermanent();
+            this.refreshMainUI();
+            
+            return { success: true, msg: '兑换成功！获得：' + rewardDesc, reward: rewardDesc };
+        } catch (e) {
+            return { success: false, msg: '兑换码格式错误' };
+        }
+    },
+
+    // 打开兑换码面板
+    openRedeemPanel() {
+        let html = '<h3>兑换码</h3>';
+        html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:15px">输入兑换码领取奖励</p>';
+        html += '<div style="margin-bottom:15px">';
+        html += '<input type="text" id="redeemCodeInput" placeholder="请输入兑换码" style="width:100%;padding:12px;font-size:14px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-secondary);border-radius:8px;box-sizing:border-box">';
+        html += '</div>';
+        html += '<div style="display:flex;gap:10px">';
+        html += '<button onclick="game.submitRedeemCode()" style="flex:1;padding:12px;font-size:14px;background:var(--accent-primary)">兑换</button>';
+        html += '<button onclick="game.closePop()" style="flex:1;padding:12px;font-size:14px;background:var(--text-faint)">取消</button>';
+        html += '</div>';
+        html += '<div id="redeemResult" style="margin-top:15px;text-align:center"></div>';
+        this.showPopup(html);
+    },
+
+    // 提交兑换码
+    submitRedeemCode() {
+        const input = document.getElementById('redeemCodeInput');
+        const code = input ? input.value : '';
+        const result = this.redeemCode(code);
+        const resultDiv = document.getElementById('redeemResult');
+        if (resultDiv) {
+            if (result.success) {
+                resultDiv.innerHTML = '<div style="color:var(--accent-success);font-size:14px;padding:10px;background:rgba(46,213,115,0.1);border-radius:6px">' + result.msg + '</div>';
+            } else {
+                resultDiv.innerHTML = '<div style="color:var(--accent-danger);font-size:14px;padding:10px;background:rgba(255,71,87,0.1);border-radius:6px">' + result.msg + '</div>';
+            }
+        }
+    },
+
     // 加载设置
     loadSettings() {
         try {
@@ -5697,6 +6174,8 @@ ${transition.buff.desc}`);
     //  死亡结算
     // ============================================================
     deathSettlement() {
+        // 记录本局装备的天赋，供下一轮回自动装备（死亡/自杀统一走这里）
+        this.permanent.lastEquippedTalents = (this.player.equippedTalents || []).slice();
         // 成就统计：死亡
         if (!this.permanent.achievementStats) this.initAchievementStats();
         this.permanent.achievementStats.deaths++;
@@ -6079,9 +6558,11 @@ ${transition.buff.desc}`);
     renderTalentUnlockList() {        const all = this.data.talents.talents;        if (!all) return;        const listEl = document.getElementById('talentUnlockList');        if (!listEl) return;        const unlocked = this.permanent.unlockedTalents;        const equipped = this.player.equippedTalents;        const passiveSlots = this.getPassiveSlots();        let html = '';        html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:6px">            <span style="color:var(--accent-warning)">天赋点：${this.permanent.talentPoints || 0}</span>            <span style="margin-left:20px;color:var(--accent-success)">被动槽：${equipped.length}/${passiveSlots}</span>            <span style="margin-left:20px;color:var(--accent-info)">主动槽：${this.getActiveSlots()}</span>        </div>`;        const sorted = [...all].sort((a,b)=>a.quality-b.quality);        sorted.forEach(t => {            const isUnlocked = unlocked.includes(t.id);            const isEquipped = equipped.includes(t.id);            const lv = this.getTalentLevel(t.id);            const maxLv = t.maxLevel || 5;            const cost = t.unlockCost || {fragQuality: t.quality, fragCount: 10};            const canAfford = (this.permanent.universalFragments[cost.fragQuality] || 0) >= cost.fragCount;            let effectText = '';            if (isUnlocked) {                const eff = this.getTalentEffect(t.id);                effectText = eff ? eff.passive : '';            } else if (t.effects && t.effects.length > 0) {                effectText = t.effects[0].passive || '';            }            let upgradeBtn = '';            if (isUnlocked && lv < maxLv) {                const levelCosts = t.levelCost || [2,3,5,8,12];                const pointCost = levelCosts[lv-1] || 2;                const fragCost = pointCost;                const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && (this.permanent.universalFragments[t.quality] || 0) >= fragCost;                const nextEff = this.getTalentNextEffect(t.id);                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px" title="${nextEff ? nextEff.passive : ''}">升级Lv.${lv+1}(${pointCost}点+${fragCost}碎片)</button>`;            } else if (isUnlocked && lv >= maxLv) {                upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';            }            let actionBtn = '';
             if (!isUnlocked) {
                 const talentTag = (t.tags && t.tags.length > 0) ? t.tags[0] : 1;
-                const tagFragCount = this.getTagFragmentCount(talentTag, cost.fragQuality);
+                // 只获取专属碎片数量（不包含万能碎片）
+                const exclusiveFragCount = this.permanent.tagFragments && this.permanent.tagFragments[talentTag] ? (this.permanent.tagFragments[talentTag][cost.fragQuality] || 0) : 0;
+                const universalFragCount = this.permanent.universalFragments ? (this.permanent.universalFragments[cost.fragQuality] || 0) : 0;
                 const tagName = this.tagNames[talentTag] || ('标签'+talentTag);
-                actionBtn = `<button onclick="game.unlockTalentAndRefresh('${t.id}')" ${canAfford?'':'disabled'} style="font-size:12px">解锁(${cost.fragCount}【${tagName}】${this.qualityNames[cost.fragQuality]}碎片，拥有${tagFragCount})</button>`;
+                actionBtn = `<button onclick="game.unlockTalentAndRefresh('${t.id}')" ${canAfford?'':'disabled'} style="font-size:12px">解锁(${cost.fragCount}【${tagName}】${this.qualityNames[cost.fragQuality]}碎片，专${exclusiveFragCount}+万${universalFragCount})</button>`;
             } else {
                 let evolveBtn = '';
                 if (t.advanceTo) {
@@ -6893,6 +7374,135 @@ ${transition.buff.desc}`);
         this.currentTooltipKey = null;
     },
     
+    // 显示品质碎片详情tooltip（游戏内弹窗，点击显示/关闭）
+    showQualityFragmentTooltip(event, quality) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        // 如果当前已经显示了同一个品质的tooltip，则关闭
+        if (this._currentQualityTooltip === quality) {
+            this.hideTooltip();
+            this._currentQualityTooltip = null;
+            return;
+        }
+        this._currentQualityTooltip = quality;
+        
+        const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
+        const qName = qualityNames[quality] || ('品质'+quality);
+        const universal = this.permanent.universalFragments[quality] || 0;
+        
+        // 先统计有专属碎片的体系，决定弹窗宽度和列数（碎片少时弹窗紧凑不臃肿）
+        const tagIds = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,20,21,22,23,24,25,26,27,28];
+        const countItems = [];
+        tagIds.forEach(tagId => {
+            const c = this.permanent.tagFragments && this.permanent.tagFragments[tagId] ? (this.permanent.tagFragments[tagId][quality] || 0) : 0;
+            if (c > 0) countItems.push({tagId: tagId, count: c});
+        });
+        const itemCount = countItems.length;
+        let boxWidth = 300, cols = 1;
+        if (itemCount > 12) { boxWidth = 620; cols = 3; }
+        else if (itemCount > 6) { boxWidth = 470; cols = 2; }
+        else if (itemCount > 3) { boxWidth = 350; cols = 2; }
+        
+        let html = '<div style="width:' + boxWidth + 'px;max-width:95vw">';
+        // 标题栏（带关闭按钮）
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--text-faint)">';
+        html += '<div style="font-weight:bold;color:var(--accent-warning);font-size:16px">' + qName + '碎片详情</div>';
+        html += '<span onclick="game.hideTooltip();game._currentQualityTooltip=null;" style="cursor:pointer;color:var(--text-muted);font-size:18px;padding:0 6px;line-height:1" title="关闭">✕</span>';
+        html += '</div>';
+        // 万能碎片
+        html += '<div style="margin-bottom:10px;padding:8px;background:var(--bg-secondary);border-radius:6px;display:flex;justify-content:space-between;align-items:center">';
+        html += '<span style="color:var(--text-secondary);font-size:13px">万能碎片（可用于任意体系）</span>';
+        html += '<span style="color:var(--accent-info);font-weight:bold;font-size:15px">' + universal + '个</span>';
+        html += '</div>';
+        // 各体系专属碎片
+        html += '<div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">各体系专属碎片：</div>';
+        
+        // 按条目数动态列数渲染（无滚轮限制）
+        html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:4px;font-size:12px">';
+        countItems.forEach(item => {
+            const tagName = this.tagNames[item.tagId] || ('体系'+item.tagId);
+            html += '<div style="display:flex;justify-content:space-between;padding:4px 6px;background:var(--bg-card);border-radius:4px;border:1px solid var(--border-secondary)">';
+            html += '<span style="color:var(--text-secondary)">' + tagName + '</span>';
+            html += '<span style="color:var(--accent-success);font-weight:bold">' + item.count + '个</span>';
+            html += '</div>';
+        });
+        html += '</div>';
+        
+        if (itemCount === 0) {
+            html += '<div style="text-align:center;color:var(--text-faint);padding:16px;font-size:13px">暂无任何体系的' + qName + '专属碎片</div>';
+        }
+        
+        html += '<div style="margin-top:10px;font-size:11px;color:var(--text-faint);border-top:1px solid var(--text-faint);padding-top:8px">';
+        html += '提示：专属碎片只能用于对应体系，万能碎片可用于任意体系；点击空白处或关闭按钮关闭';
+        html += '</div>';
+        html += '</div>';
+        
+        // 显示在游戏内tooltip中
+        const tooltipBox = document.getElementById('tooltipBox');
+        if (tooltipBox) {
+            tooltipBox.innerHTML = html;
+            tooltipBox.classList.add('show');
+            // 临时修改max-width，让品质碎片详情tooltip可以更宽
+            tooltipBox.style.maxWidth = '650px';
+            // 定位（居中显示，避免超出屏幕）
+            const tooltipRect = tooltipBox.getBoundingClientRect();
+            let left = (window.innerWidth - tooltipRect.width) / 2;
+            let top = (window.innerHeight - tooltipRect.height) / 2;
+            if (left < 10) left = 10;
+            if (top < 10) top = 10;
+            tooltipBox.style.top = top + 'px';
+            tooltipBox.style.left = left + 'px';
+            
+            // 添加点击空白处关闭tooltip的功能
+            const closeOnOutsideClick = (e) => {
+                if (!tooltipBox.contains(e.target)) {
+                    this.hideTooltip();
+                    this._currentQualityTooltip = null;
+                    document.removeEventListener('click', closeOnOutsideClick);
+                }
+            };
+            // 延迟添加，避免当前点击立即触发关闭
+            setTimeout(() => {
+                document.addEventListener('click', closeOnOutsideClick);
+            }, 100);
+        }
+    },
+
+    // 获取品质碎片详情tooltip文本（悬浮在品质标签上显示）
+    getQualityFragmentTooltip(quality) {
+        const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
+        const qName = qualityNames[quality] || ('品质'+quality);
+        const universal = this.permanent.universalFragments[quality] || 0;
+        
+        let text = qName + '碎片详情：\n';
+        text += '万能碎片：' + universal + '个\n';
+        text += '--- 各体系专属碎片 ---\n';
+        
+        // 遍历所有体系，显示该品质的专属碎片数量
+        const tagIds = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,20,21,22,23,24,25,26,27,28];
+        let hasAny = false;
+        tagIds.forEach(tagId => {
+            // 只统计专属碎片，万能碎片单独显示
+            const count = this.permanent.tagFragments && this.permanent.tagFragments[tagId] ? (this.permanent.tagFragments[tagId][quality] || 0) : 0;
+            if (count > 0) {
+                const tagName = this.tagNames[tagId] || ('体系'+tagId);
+                text += tagName + '：' + count + '个\n';
+                hasAny = true;
+            }
+        });
+        
+        if (!hasAny) {
+            text += '（暂无任何体系的' + qName + '专属碎片）\n';
+        }
+        
+        text += '---\n';
+        text += '提示：专属碎片只能用于对应体系，万能碎片可用于任意体系';
+        
+        return text;
+    },
+
     // 显示天赋Tooltip
     showTalentTooltip(talentId, event) {
         const talent = this.data.talents.talents.find(t => t.id === talentId);
@@ -6918,11 +7528,12 @@ ${transition.buff.desc}`);
         // 解锁条件
         const cost = talent.unlockCost || {fragQuality: talent.quality, fragCount: 10};
         const talentTag = (talent.tags && talent.tags.length > 0) ? talent.tags[0] : 1;
-        const tagFragCount = this.getTagFragmentCount(talentTag, cost.fragQuality);
+        // 只获取专属碎片数量（不包含万能碎片）
+        const exclusiveFragCount = this.permanent.tagFragments && this.permanent.tagFragments[talentTag] ? (this.permanent.tagFragments[talentTag][cost.fragQuality] || 0) : 0;
         const tagName = this.tagNames[talentTag] || ('标签'+talentTag);
         const universalFragCount = this.permanent.universalFragments[cost.fragQuality] || 0;
         let unlockText = `${cost.fragCount}个【${tagName}】${qualityNames[cost.fragQuality]}碎片`;
-        unlockText += `<br><span style="font-size:11px;color:var(--text-muted)">专属：${tagFragCount} + 万能：${universalFragCount} = ${tagFragCount + universalFragCount}</span>`;
+        unlockText += `<br><span style="font-size:11px;color:var(--text-muted)">专属：${exclusiveFragCount}，万能：${universalFragCount}</span>`;
         if (cost.bossCore) {
             unlockText += ` + 1个对应Boss核心`;
         }
@@ -7339,27 +7950,26 @@ ${transition.buff.desc}`);
         html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
         for (let q=1; q<=5; q++) {
             let exclusiveQ = 0;
-            let universalQ = this.permanent.universalFragments ? (this.permanent.universalFragments[q] || 0) : 0;
-            let tagDetails = [];
             if (this.permanent.tagFragments) {
                 for (let tag in this.permanent.tagFragments) {
-                    const count = this.permanent.tagFragments[tag][q] || 0;
-                    if (count > 0) {
-                        exclusiveQ += count;
-                        tagDetails.push((this.tagNames[tag] || ('标签'+tag)) + ':' + count);
-                    }
+                    exclusiveQ += (this.permanent.tagFragments[tag][q] || 0);
                 }
             }
-            let totalQ = exclusiveQ + universalQ;
-            const detailTip = this.qualityNames[q] + '碎片详情：\n专属碎片（' + exclusiveQ + '个）：\n' + (tagDetails.length > 0 ? tagDetails.join('\n') : '无') + '\n万能碎片：' + universalQ + '个';
-            html += '<span onmouseover="game.showTooltip(event,\'' + detailTip.replace(/\n/g, '\\n') + '\')" onmouseout="game.hideTooltip()" style="font-size:12px;color:' + this.qualityColors[q] + ';cursor:help">' + this.qualityNames[q] + '：' + totalQ + '<span style="font-size:10px;opacity:0.7">（专' + exclusiveQ + '+万' + universalQ + '）</span></span>';
+            html += '<span onclick="game.showQualityFragmentTooltip(event, ' + q + ')" style="font-size:12px;color:' + this.qualityColors[q] + ';cursor:pointer;text-decoration:underline dotted">' + this.qualityNames[q] + '：' + exclusiveQ + '</span>';
         }
         html += '</div>';
-        html += '<div style="margin-top:6px;font-size:10px;color:var(--text-faint)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/><path d=\"M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z\"/></svg> 鼠标悬浮在品质上查看各体系专属碎片数量；专属碎片只能用于对应体系，万能碎片可用于任意体系</div>';
+        // 万能碎片单独显示
+        html += '<div style="margin-top:6px;font-size:11px;color:var(--accent-info)">万能碎片：';
+        for (let q=1; q<=5; q++) {
+            let universalQ = this.permanent.universalFragments ? (this.permanent.universalFragments[q] || 0) : 0;
+            html += '<span style="margin-right:8px;color:' + this.qualityColors[q] + '">' + this.qualityNames[q] + '：' + universalQ + '</span>';
+        }
+        html += '</div>';
+        html += '<div style="margin-top:6px;font-size:10px;color:var(--text-faint)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/><path d=\"M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z\"/></svg> 点击品质查看各体系专属碎片数量；专属碎片只能用于对应体系，万能碎片可用于任意体系</div>';
         html += '</div>';
         
-        html += '<div style="margin-bottom:12px;padding:10px;background:rgba(0,30,25,0.5);border-radius:8px;border:1px solid rgba(0,229,176,0.15)">';
-        html += '<div style="margin-bottom:8px"><span style="color:var(--text-muted);font-size:12px;margin-right:8px">品质：</span>';
+        html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,30,25,0.5);border-radius:8px;border:1px solid rgba(0,229,176,0.15)">';
+        html += '<div style="margin-bottom:4px;display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding-bottom:2px"><span style="color:var(--text-muted);font-size:11px;margin-right:6px;flex-shrink:0">品质：</span>';
         const qFilters = [{v:'all',n:'全部'},{v:'1',n:'普通'},{v:'2',n:'稀有'},{v:'3',n:'史诗'},{v:'4',n:'传说'},{v:'5',n:'神话'}];
         qFilters.forEach(qf => {
             const active = filter.quality === qf.v;
@@ -7372,12 +7982,12 @@ ${transition.buff.desc}`);
             }
             qTotal = qExclusive + qUniversal;
             const fragTip = qf.v === 'all' ? '全部品质' : `${this.qualityNames[parseInt(qf.v)]}碎片：${qTotal}个（专属${qExclusive}+万能${qUniversal}）`;
-            html += `<button onclick="game.setInRunTalentFilter('quality','${qf.v}')" onmouseover="game.showTooltip(event,'${fragTip}')" onmouseout="game.hideTooltip()" style="font-size:11px;padding:4px 10px;margin-right:4px;margin-bottom:4px;border-radius:4px;cursor:help;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${qf.n}${qf.v!=='all'?` <span style="font-size:9px;opacity:0.8">(${qTotal})</span>`:''}</button>`;
+            html += `<button onclick="game.setInRunTalentFilter('quality','${qf.v}')" onmouseover="game.showTooltip(event,'${fragTip}')" onmouseout="game.hideTooltip()" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;cursor:help;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${qf.n}${qf.v!=='all'?` <span style="font-size:8px;opacity:0.8">(${qTotal})</span>`:''}</button>`;
         });
         html += '</div>';
         
-        html += '<div style="margin-bottom:8px"><span style="color:var(--text-muted);font-size:12px;margin-right:8px">体系：</span>';
-        html += `<button onclick="game.setInRunTalentFilter('tag','all')" style="font-size:11px;padding:4px 10px;margin-right:4px;margin-bottom:4px;border-radius:4px;${filter.tag==='all'?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">全部</button>`;
+        html += '<div style="display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding-bottom:2px"><span style="color:var(--text-muted);font-size:11px;margin-right:6px;flex-shrink:0">体系：</span>';
+        html += `<button onclick="game.setInRunTalentFilter('tag','all')" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;${filter.tag==='all'?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">全部</button>`;
         // 体系标签默认显示一行，可折叠展开
         const inrunAllTags = [];
         for (let tagId in this.tagNames) {
@@ -7390,10 +8000,10 @@ ${transition.buff.desc}`);
         const visibleInrunTags = showAllInrunTags ? inrunAllTags : inrunAllTags.slice(0, 6);
         visibleInrunTags.forEach(item => {
             const active = filter.tag === item.tagId;
-            html += `<button onclick="game.setInRunTalentFilter('tag','${item.tagId}')" style="font-size:11px;padding:4px 10px;margin-right:4px;margin-bottom:4px;border-radius:4px;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${this.tagNames[item.tagId]}(${item.count})</button>`;
+            html += `<button onclick="game.setInRunTalentFilter('tag','${item.tagId}')" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${this.tagNames[item.tagId]}(${item.count})</button>`;
         });
         if (inrunAllTags.length > 6) {
-            html += `<button onclick="game.toggleInrunTalentTagExpand()" style="font-size:11px;padding:4px 10px;margin-right:4px;margin-bottom:4px;border-radius:4px;background:var(--text-faint);color:var(--text-muted)">${showAllInrunTags?'收起 ▲':'展开 ▼ (' + (inrunAllTags.length - 6) + ')'}</button>`;
+            html += `<button onclick="game.toggleInrunTalentTagExpand()" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;background:var(--text-faint);color:var(--text-muted)">${showAllInrunTags?'收起 ▲':'展开 ▼ (' + (inrunAllTags.length - 6) + ')'}</button>`;
         }
         html += '</div>';
         
@@ -7425,6 +8035,40 @@ ${transition.buff.desc}`);
                 t.tags.forEach(tagId => {
                     const tn = this.tagNames[tagId] || ('标签'+tagId);
                     tagHtml += `<span style="display:inline-block;font-size:10px;padding:1px 5px;margin-right:3px;background:rgba(13,71,161,0.5);color:var(--accent-info);border-radius:3px">${tn}</span>`;
+                });
+            }
+            
+            // 套装进度显示（装备标签页）
+            let inRunSetProgressHtml = '';
+            if (this.inRunTalentPanelTab === 'equip' && t.tags && t.tags.length > 0) {
+                const setProgress = this.getTalentSetProgress();
+                t.tags.forEach(tagId => {
+                    const setInfo = setProgress.sets.find(s => s.tag === tagId);
+                    if (setInfo && setInfo.count > 0) {
+                        const nextThreshold = setInfo.allThresholds.find(th => th.count > setInfo.count);
+                        const progressText = nextThreshold 
+                            ? setInfo.count + '/' + nextThreshold.count + '件 (还差' + (nextThreshold.count - setInfo.count) + '件触发: ' + nextThreshold.effect + ')'
+                            : setInfo.count + '件 (已满级)';
+                        const isActive = setInfo.activeThresholds.length > 0;
+                        inRunSetProgressHtml += '<div style="font-size:10px;margin-top:3px;color:' + (isActive ? 'var(--accent-success)' : 'var(--text-muted)') + ';cursor:pointer;text-decoration:underline dotted" onclick="game.showTalentSetTooltip(\'set\', \'' + setInfo.id + '\', event)">套装: ' + setInfo.name + ' ' + progressText + '</div>';
+                    }
+                });
+                // 跨体系组合与共生体联动（涉及当前天赋所属体系时显示）
+                const myTagSet = {};
+                t.tags.forEach(tagId => { myTagSet[tagId] = true; });
+                setProgress.crossSets.forEach(cross => {
+                    if (!cross.requires.some(r => myTagSet[r])) return;
+                    const relatedEquipped = cross.requires.some(r => (setProgress.tagCounts[r] || 0) > 0);
+                    if (!relatedEquipped) return;
+                    const crossColor = cross.active ? 'var(--accent-success)' : 'var(--text-muted)';
+                    inRunSetProgressHtml += '<div style="font-size:10px;margin-top:3px;color:' + crossColor + ';cursor:pointer;text-decoration:underline dotted" onclick="game.showTalentSetTooltip(\'cross\', \'' + cross.id + '\', event)">组合: ' + cross.name + ' ' + (cross.active ? '✓已激活' : '(未激活)') + '</div>';
+                });
+                setProgress.combos.forEach(combo => {
+                    if (!combo.requires.some(r => myTagSet[r])) return;
+                    const relatedEquipped = combo.requires.some(r => (setProgress.tagCounts[r] || 0) > 0) || combo.symEquipped;
+                    if (!relatedEquipped) return;
+                    const comboColor = combo.active ? 'var(--accent-success)' : 'var(--text-muted)';
+                    inRunSetProgressHtml += '<div style="font-size:10px;margin-top:3px;color:' + comboColor + ';cursor:pointer;text-decoration:underline dotted" onclick="game.showTalentSetTooltip(\'combo\', \'' + combo.id + '\', event)">联动: ' + combo.name + ' ' + (combo.active ? '✓已激活' : '(未激活)') + '</div>';
                 });
             }
             
@@ -7466,6 +8110,7 @@ ${transition.buff.desc}`);
                     </div>
                     <div style="margin:4px 0">${tagHtml}</div>
                     <div class="talent-desc" style="font-size:11px">${t.effectText}</div>
+                    ${inRunSetProgressHtml}
                 </div>
                 <div style="margin-top:8px">${actionBtn}</div>
             </div>`;
@@ -7567,6 +8212,44 @@ ${transition.buff.desc}`);
         this.openInRunTalentPanel();
     },
 
+    // 天赋列表滚动守护：被吸顶筛选栏遮挡的天赋卡片隐藏操作按钮（升级/进化/装备/卸下）
+    bindTalentCardScrollGuard() {
+        if (this._talentScrollGuardBound) return;
+        this._talentScrollGuardBound = true;
+        let ticking = false;
+        const guard = function() {
+            ticking = false;
+            const stickyEl = document.querySelector('.talent-filter-sticky');
+            if (!stickyEl) return;
+            const stickyBottom = stickyEl.getBoundingClientRect().bottom;
+            const containers = [document.getElementById('talentScreenContent'), document.getElementById('popBox')];
+            containers.forEach(function(content) {
+                if (!content) return;
+                const cards = content.querySelectorAll('.talent-card');
+                for (let i = 0; i < cards.length; i++) {
+                    const r = cards[i].getBoundingClientRect();
+                    const covered = r.top < stickyBottom;
+                    const actions = cards[i].querySelectorAll('.talent-card-actions');
+                    for (let j = 0; j < actions.length; j++) {
+                        actions[j].style.visibility = covered ? 'hidden' : 'visible';
+                    }
+                }
+            });
+        };
+        const rafGuard = function() {
+            if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(guard);
+            }
+        };
+        window.addEventListener('scroll', rafGuard, {passive: true});
+        ['talentScreenContent', 'popBox'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('scroll', rafGuard, {passive: true});
+        });
+        requestAnimationFrame(guard);
+    },
+
     openTalentPanel() {
         this.closePop();
         // 确保talentPanelTab有默认值
@@ -7582,13 +8265,11 @@ ${transition.buff.desc}`);
         html += '<button onclick="' + (this.merchantMode ? 'game.leaveMerchant()' : 'game.goBack()') + '" style="padding:8px 16px;font-size:13px;background:var(--accent-success);color:white;border-radius:6px">← 返回</button>';
         html += '</div>';
         
-        // 筛选栏固定顶部（sticky）
-        html += '<div style="position:sticky;top:0;z-index:10;background:var(--bg-primary);padding:8px 0;border-bottom:1px solid var(--border-secondary);margin-bottom:10px">';
-        
         // 标签切换：解锁界面 / 装备界面
         html += '<div style="display:flex;gap:8px;margin-bottom:10px">';
         html += `<button onclick="game.setTalentPanelTab('unlock')" style="flex:1;padding:10px;font-size:14px;font-weight:bold;border-radius:8px;border:none;cursor:pointer;${this.talentPanelTab==='unlock'?'background:var(--accent-primary);color:var(--text-primary)':'background:var(--bg-card);color:var(--text-muted)'}"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 9.9-1\"/></svg> 天赋解锁</button>`;
         html += `<button onclick="game.setTalentPanelTab('equip')" style="flex:1;padding:10px;font-size:14px;font-weight:bold;border-radius:8px;border:none;cursor:pointer;${this.talentPanelTab==='equip'?'background:var(--accent-primary);color:var(--text-primary)':'background:var(--bg-card);color:var(--text-muted)'}"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 装备管理</button>`;
+        html += `<button onclick="game.setTalentPanelTab('preset')" style="flex:1;padding:10px;font-size:14px;font-weight:bold;border-radius:8px;border:none;cursor:pointer;${this.talentPanelTab==='preset'?'background:var(--accent-primary);color:var(--text-primary)':'background:var(--bg-card);color:var(--text-muted)'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> 预构筑</button>`;
         html += '</div>';
         // 资源显示
         html += `<div style="margin-bottom:10px;padding:10px;background:var(--bg-card);border-radius:8px;font-size:13px">`;
@@ -7683,40 +8364,57 @@ ${transition.buff.desc}`);
             html += `</div>`;
         }
         html += `</div>`;
-        // 碎片显示：universal碎片
+        // 碎片显示：当前碎片（专属+万能）
         html += `<div style="margin-bottom:8px;font-size:12px">`;
-        html += `<span style="color:var(--accent-warning);font-weight:bold"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z\"/></svg> 万能碎片：</span>`;
+        html += `<span style="color:var(--accent-warning);font-weight:bold"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z\"/></svg> 当前碎片</span>`;
+        html += `<span style="color:var(--text-faint);font-size:11px;margin-left:8px">（点击品质查看体系详情）</span>`;
+        html += `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:12px">`;
+        for (let q=1; q<=5; q++) {
+            // 计算该品质的所有体系专属碎片总数
+            let exclusiveTotal = 0;
+            for (let tagId in this.permanent.tagFragments) {
+                if (this.permanent.tagFragments[tagId] && this.permanent.tagFragments[tagId][q]) {
+                    exclusiveTotal += this.permanent.tagFragments[tagId][q];
+                }
+            }
+            html += `<span style="display:inline-block;color:${this.qualityColors[q]};cursor:pointer;text-decoration:underline dotted" onclick="game.showQualityFragmentTooltip(event, ${q})">${this.qualityNames[q]}：${exclusiveTotal}</span>`;
+        }
+        html += `</div>`;
+        // 万能碎片单独显示
+        html += `<div style="margin-top:6px;font-size:11px;color:var(--accent-info)">万能碎片：`;
         for (let q=1; q<=5; q++) {
             const uf = this.permanent.universalFragments ? (this.permanent.universalFragments[q] || 0) : 0;
-            html += `<span style="display:inline-block;margin-right:10px;color:${this.qualityColors[q]}">${this.qualityNames[q]}：${uf}</span>`;
+            html += `<span style="margin-right:10px;color:${this.qualityColors[q]}">${this.qualityNames[q]}：${uf}</span>`;
         }
+        html += `</div>`;
+        html += `<div style="margin-top:4px;font-size:10px;color:var(--text-faint)">鼠标悬浮在品质上查看各体系专属碎片数量；专属碎片只能用于对应体系，万能碎片可用于任意体系</div>`;
         html += `</div>`;
         html += `<p style="font-size:11px;color:var(--text-muted);margin-bottom:8px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/><path d=\"M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z\"/></svg> 击败敌人掉落对应体系专属碎片，万能碎片可替代任意体系碎片</p>`;
         html += `<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">有进化路线的天赋可消耗自身+高阶碎片进化为指定高阶天赋；已投入天赋点全额返还</p>`;
         html += `<div style="margin-bottom:10px;text-align:right"><button onclick="game.openFusionPanel()" style="font-size:13px;background:var(--accent-purple);color:white"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z\"/></svg> 天赋融合（双史诗Lv.5合成传说）</button></div>`;
 
         // 核心筛选栏固定顶部（sticky）：只包含标签切换、品质、体系、搜索
-        html += '<div style="position:sticky;top:0;z-index:10;background:var(--bg-primary);padding:8px 0;border-bottom:1px solid var(--border-secondary);margin-bottom:10px">';
+        html += '<div class="talent-filter-sticky" style="position:sticky;top:0;z-index:10;background:var(--bg-primary);padding:8px 0;border-bottom:1px solid var(--border-secondary);margin-bottom:10px">';
         
         // 筛选栏：品质 + 标签
         html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-secondary);border-radius:6px;font-size:12px">`;
-        html += `<div style="margin-bottom:6px"><span style="color:var(--text-secondary);margin-right:8px">品质：</span>`;
-        html += `<button onclick="game.setTalentFilter(0, game.talentFilter.tag)" style="margin:2px;padding:3px 8px;font-size:11px;${this.talentFilter.quality===0?'background:var(--accent-warning);color:var(--bg-card)':''}">全部</button>`;
+        html += `<div style="margin-bottom:4px;display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding-bottom:2px"><span style="color:var(--text-secondary);margin-right:6px;flex-shrink:0">品质：</span>`;
+        html += `<button onclick="game.setTalentFilter(0, game.talentFilter.tag)" style="margin:1px 2px;padding:2px 7px;font-size:10px;flex-shrink:0;${this.talentFilter.quality===0?'background:var(--accent-warning);color:var(--bg-card)':''}">全部</button>`;
         for (let q=1; q<=5; q++) {
-            html += `<button onclick="game.setTalentFilter(${q}, game.talentFilter.tag)" style="margin:2px;padding:3px 8px;font-size:11px;color:${this.qualityColors[q]};${this.talentFilter.quality===q?'background:'+this.qualityColors[q]+';color:var(--bg-card)':''}">${this.qualityNames[q]}</button>`;
+            html += `<button onclick="game.setTalentFilter(${q}, game.talentFilter.tag)" style="margin:1px 2px;padding:2px 7px;font-size:10px;flex-shrink:0;color:${this.qualityColors[q]};${this.talentFilter.quality===q?'background:'+this.qualityColors[q]+';color:var(--bg-card)':''}">${this.qualityNames[q]}</button>`;
         }
         html += `</div>`;
-        html += `<div><span style="color:var(--text-secondary);margin-right:8px">体系：</span>`;
-        html += `<button onclick="game.setTalentFilter(game.talentFilter.quality, 0)" style="margin:2px;padding:3px 8px;font-size:11px;${this.talentFilter.tag===0?'background:var(--accent-warning);color:var(--bg-card)':''}">全部</button>`;
+        html += `<div style="display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding-bottom:2px"><span style="color:var(--text-secondary);margin-right:6px;flex-shrink:0">体系：</span>`;
+        html += `<button onclick="game.setTalentFilter(game.talentFilter.quality, 0)" style="margin:1px 2px;padding:2px 7px;font-size:10px;flex-shrink:0;${this.talentFilter.tag===0?'background:var(--accent-warning);color:var(--bg-card)':''}">全部</button>`;
         // 体系标签默认显示一行，可折叠展开
         const allTags = Object.keys(this.tagNames).map(t => parseInt(t));
         const showAllTags = this.showAllTalentTags || false;
         const visibleTags = showAllTags ? allTags : allTags.slice(0, 8);
         visibleTags.forEach(tid => {
-            html += `<button onclick="game.setTalentFilter(game.talentFilter.quality, ${tid})" style="margin:2px;padding:3px 8px;font-size:11px;${this.talentFilter.tag===tid?'background:var(--accent-info);color:var(--bg-card)':''}">${this.tagNames[tid]}</button>`;
+            html += `<button onclick="game.setTalentFilter(game.talentFilter.quality, ${tid})" style="margin:1px 2px;padding:2px 7px;font-size:10px;flex-shrink:0;${this.talentFilter.tag===tid?'background:var(--accent-info);color:var(--bg-card)':''}">${this.tagNames[tid]}</button>`;
         });
         if (allTags.length > 8) {
-            html += `<button onclick="game.toggleTalentTagExpand()" style="margin:2px;padding:3px 8px;font-size:11px;background:var(--text-faint);color:var(--text-secondary)">${showAllTags?'收起 ▲':'展开 ▼ (' + (allTags.length - 8) + ')'}</button>`;
+            html += `<button onclick="game.toggleTalentTagExpand()" style="margin:1px 2px;padding:2px 7px;font-size:10px;flex-shrink:0;background:var(--text-faint);color:var(--text-secondary)">${showAllTags?'收起 ▲':'展开 ▼ (' + (allTags.length - 8) + ')'}</button>`;
         }
         html += `</div></div>`;
 
@@ -7742,6 +8440,20 @@ ${transition.buff.desc}`);
         html += `</div>`;
         html += '</div>'; // 结束sticky核心筛选栏容器
 
+        // 预构筑标签：公共头部之上已渲染，此处渲染预构筑界面（列表页或编辑器）
+        if (this.talentPanelTab === 'preset') {
+            html += (this.presetEditing !== null && this.presetEditing !== undefined) ? this.renderPresetEditor() : this.renderPresetList();
+            html += `<div style="height:120px"></div>`;
+            html += `</div>`;
+            // 渲染到独立页面
+            const contentDiv = document.getElementById('talentScreenContent');
+            if (contentDiv) {
+                contentDiv.innerHTML = html;
+                setTimeout(() => this.bindItemTooltips(contentDiv), 50);
+            }
+            this.showScreen('talentScreen');
+            return;
+        }
         html += `<div class="talent-list-area">`;
         // 应用筛选
         let filtered = all.filter(t => {
@@ -7799,6 +8511,40 @@ ${transition.buff.desc}`);
                     tagHtml += `<span style="display:inline-block;font-size:10px;padding:1px 5px;margin-right:3px;background:var(--accent-info);color:var(--accent-info);border-radius:3px">${tagName}</span>`;
                 });
             }
+            
+            // 套装进度显示（装备标签页）
+            let setProgressHtml = '';
+            if (this.talentPanelTab === 'equip' && t.tags && t.tags.length > 0) {
+                const setProgress = this.getTalentSetProgress();
+                t.tags.forEach(tagId => {
+                    const setInfo = setProgress.sets.find(s => s.tag === tagId);
+                    if (setInfo && setInfo.count > 0) {
+                        const nextThreshold = setInfo.allThresholds.find(th => th.count > setInfo.count);
+                        const progressText = nextThreshold 
+                            ? `${setInfo.count}/${nextThreshold.count}件 (还差${nextThreshold.count - setInfo.count}件触发: ${nextThreshold.effect})`
+                            : `${setInfo.count}件 (已满级)`;
+                        const isActive = setInfo.activeThresholds.length > 0;
+                        setProgressHtml += `<div style="font-size:10px;margin-top:3px;color:${isActive ? 'var(--accent-success)' : 'var(--text-muted)'};cursor:pointer;text-decoration:underline dotted" onclick="game.showTalentSetTooltip('set', '${setInfo.id}', event)">套装: ${setInfo.name} ${progressText}</div>`;
+                    }
+                });
+                // 跨体系组合与共生体联动（涉及当前天赋所属体系时显示）
+                const myTagSet = {};
+                t.tags.forEach(tagId => { myTagSet[tagId] = true; });
+                setProgress.crossSets.forEach(cross => {
+                    if (!cross.requires.some(r => myTagSet[r])) return;
+                    const relatedEquipped = cross.requires.some(r => (setProgress.tagCounts[r] || 0) > 0);
+                    if (!relatedEquipped) return;
+                    const crossColor = cross.active ? 'var(--accent-success)' : 'var(--text-muted)';
+                    setProgressHtml += `<div style="font-size:10px;margin-top:3px;color:${crossColor};cursor:pointer;text-decoration:underline dotted" onclick="game.showTalentSetTooltip('cross', '${cross.id}', event)">组合: ${cross.name} ${cross.active ? '✓已激活' : '(未激活)'}</div>`;
+                });
+                setProgress.combos.forEach(combo => {
+                    if (!combo.requires.some(r => myTagSet[r])) return;
+                    const relatedEquipped = combo.requires.some(r => (setProgress.tagCounts[r] || 0) > 0) || combo.symEquipped;
+                    if (!relatedEquipped) return;
+                    const comboColor = combo.active ? 'var(--accent-success)' : 'var(--text-muted)';
+                    setProgressHtml += `<div style="font-size:10px;margin-top:3px;color:${comboColor};cursor:pointer;text-decoration:underline dotted" onclick="game.showTalentSetTooltip('combo', '${combo.id}', event)">联动: ${combo.name} ${combo.active ? '✓已激活' : '(未激活)'}</div>`;
+                });
+            }
 
             // 升级按钮
             let upgradeBtn = '';
@@ -7817,8 +8563,13 @@ ${transition.buff.desc}`);
             if (!isUnlocked) {
                 const talentTag2 = (t.tags && t.tags.length > 0) ? t.tags[0] : 1;
                 const tagFragCount = this.getTagFragmentCount(talentTag2, cost.fragQuality);
+                const exclusiveFragCount2 = this.permanent.tagFragments && this.permanent.tagFragments[talentTag2] ? (this.permanent.tagFragments[talentTag2][cost.fragQuality] || 0) : 0;
+                const universalFragCount2 = this.permanent.universalFragments ? (this.permanent.universalFragments[cost.fragQuality] || 0) : 0;
+                const fragInfoText = exclusiveFragCount2 > 0 && universalFragCount2 > 0
+                    ? `专属${exclusiveFragCount2}+万能${universalFragCount2}`
+                    : exclusiveFragCount2 > 0 ? `专属${exclusiveFragCount2}` : `万能${universalFragCount2}`;
                 const tagName = this.tagNames[talentTag2] || ('标签'+talentTag2);
-                actionBtn = `<button onclick="game.unlockTalentAndRefresh('${t.id}')" ${canAfford?'':'disabled'} style="font-size:12px">解锁(${cost.fragCount}【${tagName}】${this.qualityNames[cost.fragQuality]}碎片，拥有${tagFragCount})</button>`;
+                actionBtn = `<button onclick="game.unlockTalentAndRefresh('${t.id}')" ${canAfford?'':'disabled'} style="font-size:12px">解锁(${cost.fragCount}【${tagName}】${this.qualityNames[cost.fragQuality]}碎片，拥有${fragInfoText})</button>`;
             } else {
                 // 进化按钮
                 let evolveBtn = '';
@@ -7846,9 +8597,10 @@ ${transition.buff.desc}`);
                         ${isEquipped ? '<span style="font-size:11px;color:var(--accent-success)">[已装备]</span>' : ''}
                     </div>
                     <div class="talent-desc">${effectText}</div>
-                    ${upgradeBtn}
+                    ${setProgressHtml}
+                    <div class="talent-card-actions">${upgradeBtn}</div>
                 </div>
-                <div>${actionBtn}</div>
+                <div class="talent-card-actions">${actionBtn}</div>
             </div>`;
         });
         html += `<div style="height:120px"></div>`;
@@ -7861,6 +8613,213 @@ ${transition.buff.desc}`);
             setTimeout(() => this.bindItemTooltips(contentDiv), 50);
         }
         this.showScreen('talentScreen');
+        // 滚动遮挡守护：被吸顶筛选栏挡住的天赋卡片隐藏操作按钮
+        setTimeout(() => this.bindTalentCardScrollGuard(), 100);
+    },
+
+    // ============================================================
+    //  预构筑功能
+    // ============================================================
+    // 进入预构筑编辑器（index=-1 新建，否则编辑第 index 套）
+    startPresetEdit(index) {
+        this.presetEditing = index;
+        this.presetDraftName = '';
+        this.presetDraftTalents = [];
+        this.presetDraftSearch = '';
+        if (index >= 0) {
+            const list = this.permanent.presetTalents || [];
+            const p = list[index];
+            if (p) {
+                this.presetDraftName = p.name || '';
+                this.presetDraftTalents = (p.talents || []).filter(id => this.isTalentUnlocked(id));
+            }
+        }
+        this.openTalentPanel();
+    },
+
+    // 取消编辑
+    cancelPresetEdit() {
+        this.presetEditing = null;
+        this.openTalentPanel();
+    },
+
+    // 添加/移除预构筑天赋
+    togglePresetTalent(id) {
+        const idx = this.presetDraftTalents.indexOf(id);
+        if (idx >= 0) {
+            this.presetDraftTalents.splice(idx, 1);
+        } else {
+            if (this.presetDraftTalents.length >= this.getPassiveSlots()) {
+                this.showGameAlert('提示', '预构筑最多选择 ' + this.getPassiveSlots() + ' 个天赋（当前被动槽上限）');
+                return;
+            }
+            this.presetDraftTalents.push(id);
+        }
+        this.openTalentPanel();
+    },
+
+    // 保存预构筑
+    savePreset() {
+        const name = (this.presetDraftName || '').trim();
+        if (!name) { this.showGameAlert('提示', '请先输入构筑名称'); return; }
+        if (this.presetDraftTalents.length === 0) { this.showGameAlert('提示', '请至少选择1个天赋'); return; }
+        const list = this.permanent.presetTalents || [];
+        if (this.presetEditing >= 0 && this.presetEditing < list.length) {
+            list[this.presetEditing].name = name;
+            list[this.presetEditing].talents = this.presetDraftTalents.slice();
+        } else {
+            list.push({name: name, talents: this.presetDraftTalents.slice(), isDefault: list.length === 0});
+        }
+        this.permanent.presetTalents = list;
+        this.savePermanent();
+        this.presetEditing = null;
+        this.openTalentPanel();
+    },
+
+    // 删除预构筑
+    deletePreset(index) {
+        const list = this.permanent.presetTalents || [];
+        if (index < 0 || index >= list.length) return;
+        if (!window.confirm('确定删除预构筑【' + (list[index].name || '未命名') + '】吗？')) return;
+        list.splice(index, 1);
+        this.permanent.presetTalents = list;
+        this.savePermanent();
+        this.openTalentPanel();
+    },
+
+    // 设为默认
+    setDefaultPreset(index) {
+        const list = this.permanent.presetTalents || [];
+        list.forEach((p, i) => { if (p) p.isDefault = (i === index); });
+        this.permanent.presetTalents = list;
+        this.savePermanent();
+        this.openTalentPanel();
+    },
+
+    // 预构筑列表页 HTML
+    renderPresetList() {
+        const list = this.permanent.presetTalents || [];
+        const all = this.data.talents.talents;
+        let html = '';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+        html += '<span style="font-size:14px;font-weight:bold;color:var(--accent-warning)">预构筑</span>';
+        html += '<button onclick="game.startPresetEdit(-1)" style="padding:8px 14px;font-size:13px;background:var(--accent-success);color:white;border:none;border-radius:6px;cursor:pointer">＋ 新建预构筑</button>';
+        html += '</div>';
+        html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;padding:8px;background:var(--bg-secondary);border-radius:6px">轮回开始时将自动装备【默认】预构筑的天赋（未标记默认则用第一套）。预构筑数量不限，可自由命名。</div>';
+        if (list.length === 0) {
+            html += '<div style="text-align:center;color:var(--text-faint);padding:30px 10px;font-size:13px">还没有预构筑<br>点击右上角「新建预构筑」开始规划你的开局天赋</div>';
+        } else {
+            list.forEach((p, i) => {
+                if (!p) return;
+                const names = (p.talents || []).map(id => {
+                    const t = all.find(x => x.id === id);
+                    return t ? t.name : id;
+                });
+                html += '<div style="padding:10px;background:var(--bg-card);border:1px solid ' + (p.isDefault ? 'var(--accent-warning)' : 'var(--border-secondary)') + ';border-radius:8px;margin-bottom:8px">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+                html += '<span style="font-weight:bold;font-size:14px;color:' + (p.isDefault ? 'var(--accent-warning)' : 'var(--text-primary)') + '">' + (p.isDefault ? '★ ' : '') + (p.name || '未命名') + ' <span style="font-size:11px;color:var(--text-muted)">(' + (p.talents || []).length + '个天赋)</span></span>';
+                html += '<span>';
+                if (!p.isDefault) html += '<button onclick="game.setDefaultPreset(' + i + ')" style="padding:4px 8px;font-size:11px;margin-right:4px;cursor:pointer">设为默认</button>';
+                else html += '<span style="font-size:11px;color:var(--accent-warning)">默认</span>';
+                html += '<button onclick="game.startPresetEdit(' + i + ')" style="padding:4px 8px;font-size:11px;margin-right:4px;cursor:pointer">编辑</button>';
+                html += '<button onclick="game.deletePreset(' + i + ')" style="padding:4px 8px;font-size:11px;background:var(--accent-danger);color:white;border:none;border-radius:4px;cursor:pointer">删除</button>';
+                html += '</span></div>';
+                if (names.length > 0) {
+                    html += '<div style="display:flex;flex-wrap:wrap;gap:4px">' + names.map(n => '<span style="font-size:10px;padding:2px 6px;background:var(--bg-secondary);border-radius:3px;color:var(--text-secondary)">' + n + '</span>').join('') + '</div>';
+                }
+                html += '</div>';
+            });
+        }
+        return html;
+    },
+
+    // 预构筑编辑器 HTML
+    renderPresetEditor() {
+        const all = this.data.talents.talents;
+        const unlocked = this.permanent.unlockedTalents || [];
+        const passiveSlots = this.getPassiveSlots();
+        const draft = this.presetDraftTalents || [];
+        const isNew = this.presetEditing === -1 || this.presetEditing === null;
+        let html = '';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+        html += '<span style="font-size:14px;font-weight:bold;color:var(--accent-warning)">' + (isNew ? '新建预构筑' : '编辑预构筑') + '</span>';
+        html += '<button onclick="game.cancelPresetEdit()" style="padding:6px 12px;font-size:12px;background:var(--text-faint);color:var(--text-secondary);border:none;border-radius:6px;cursor:pointer">← 返回列表</button>';
+        html += '</div>';
+        // 命名输入
+        html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">';
+        html += '<input type="text" id="presetNameInput" placeholder="输入构筑名称（如：剧毒爆发流）" value="' + (this.presetDraftName || '') + '" style="flex:1;padding:8px;font-size:13px;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-secondary);border-radius:6px;outline:none" oninput="game.presetDraftName=this.value">';
+        html += '<button onclick="game.savePreset()" style="padding:8px 14px;font-size:13px;background:var(--accent-success);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold">保存</button>';
+        html += '</div>';
+        // 已选天赋 + 套装预览
+        html += '<div style="padding:10px;background:var(--bg-secondary);border-radius:8px;margin-bottom:10px;border-left:3px solid var(--accent-success)">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+        html += '<span style="font-size:13px;font-weight:bold;color:var(--accent-success)">已选天赋（' + draft.length + '/' + passiveSlots + '）</span>';
+        html += '</div>';
+        if (draft.length === 0) {
+            html += '<div style="font-size:12px;color:var(--text-faint);padding:8px">尚未选择天赋，点击下方天赋列表添加</div>';
+        } else {
+            html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+            draft.forEach(id => {
+                const t = all.find(x => x.id === id);
+                if (!t) return;
+                html += '<span style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg-primary);border:1px solid ' + this.qualityColors[t.quality] + ';border-radius:6px;font-size:12px;color:' + this.qualityColors[t.quality] + '">' + t.name + '<button onclick="game.togglePresetTalent(\'' + t.id + '\')" style="padding:0 4px;font-size:11px;background:none;border:none;color:var(--accent-danger);cursor:pointer" title="移除">✕</button></span>';
+            });
+            html += '</div>';
+        }
+        // 套装效果预览（实时计算当前选择）
+        if (draft.length > 0) {
+            const setProgress = this.getTalentSetProgress(draft);
+            html += '<div style="margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">';
+            html += '<div style="font-size:12px;font-weight:bold;color:var(--accent-info);margin-bottom:6px">套装效果预览：</div>';
+            const previewItems = [];
+            setProgress.sets.forEach(s => {
+                if (s.count > 0) {
+                    const nextThreshold = s.allThresholds.find(th => th.count > s.count);
+                    previewItems.push({text: '【' + s.name + '】' + s.count + '件' + (nextThreshold ? '（还差' + (nextThreshold.count - s.count) + '件激活: ' + nextThreshold.effect + '）' : '（已满级）'), active: s.activeThresholds.length > 0, type: 'set', id: s.id});
+                }
+            });
+            setProgress.crossSets.forEach(c => {
+                if (c.requires.some(r => (setProgress.tagCounts[r] || 0) > 0)) {
+                    previewItems.push({text: '【' + c.name + '】' + (c.active ? '✓ ' : '') + c.effect, active: c.active, type: 'cross', id: c.id});
+                }
+            });
+            setProgress.combos.forEach(c => {
+                if (c.requires.some(r => (setProgress.tagCounts[r] || 0) > 0) || c.symEquipped) {
+                    previewItems.push({text: '【' + c.name + '】' + (c.active ? '✓ ' : (c.symEquipped ? '（共生体已装备，缺天赋体系）' : '（缺共生体）')) + c.effect, active: c.active, type: 'combo', id: c.id});
+                }
+            });
+            if (previewItems.length === 0) {
+                html += '<div style="font-size:11px;color:var(--text-faint)">当前选择未触发任何套装/组合效果</div>';
+            } else {
+                previewItems.forEach(item => {
+                    html += '<div style="font-size:11px;color:' + (item.active ? 'var(--accent-success)' : 'var(--text-muted)') + ';padding:2px 0;cursor:pointer;text-decoration:underline dotted" onclick="game.showTalentSetTooltip(\'' + item.type + '\', \'' + item.id + '\', event)">' + item.text + '</div>';
+                });
+            }
+            html += '</div>';
+        }
+        html += '</div>';
+        // 搜索框
+        html += '<div style="margin-bottom:10px;padding:8px;background:var(--bg-secondary);border-radius:6px">';
+        html += '<div style="display:flex;align-items:center;gap:8px;background:var(--bg-primary);border:1px solid var(--text-faint);border-radius:6px;padding:0 12px">';
+        html += '<span style="color:var(--text-muted);flex-shrink:0">' + this.getIcon('search', 16) + '</span>';
+        html += '<input type="text" placeholder="搜索已解锁天赋..." value="' + (this.presetDraftSearch || '') + '" style="flex:1;padding:8px 0;font-size:13px;background:transparent;color:var(--text-primary);border:none;outline:none;box-sizing:border-box" oninput="game.presetDraftSearch=this.value;game.openTalentPanel()">';
+        html += '</div>';
+        html += '</div>';
+        // 天赋列表（已解锁，按品质从高到低，点击添加/移除）
+        const keyword = (this.presetDraftSearch || '').trim().toLowerCase();
+        const talentList = all.filter(t => unlocked.includes(t.id));
+        talentList.sort((a, b) => b.quality - a.quality);
+        html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">已解锁 ' + talentList.length + ' 个天赋，点击添加/移除</div>';
+        talentList.forEach(t => {
+            if (keyword && !t.name.toLowerCase().includes(keyword)) return;
+            const inDraft = draft.includes(t.id);
+            const full = draft.length >= passiveSlots && !inDraft;
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:' + (inDraft ? 'var(--bg-card)' : 'var(--bg-primary)') + ';border:1px solid ' + (inDraft ? this.qualityColors[t.quality] : 'var(--border-secondary)') + ';border-radius:6px;margin-bottom:4px;cursor:' + (full ? 'not-allowed' : 'pointer') + '" onclick="' + (full ? '' : 'game.togglePresetTalent(\'' + t.id + '\')') + '">';
+            html += '<span style="font-size:12px;color:' + this.qualityColors[t.quality] + '">' + t.name + '<span style="color:var(--text-muted);font-size:10px"> [' + this.qualityNames[t.quality] + ']</span></span>';
+            html += '<span style="font-size:11px;color:' + (inDraft ? 'var(--accent-success)' : 'var(--text-faint)') + '">' + (inDraft ? '✓ 已选' : '点击添加') + '</span>';
+            html += '</div>';
+        });
+        return html;
     },
 
     // 设置天赋筛选
@@ -8334,10 +9293,285 @@ ${transition.buff.desc}`);
             bonus.lowHpInvincibleChance = Math.min(1, bonus.lowHpInvincibleChance * (1 + allTalentPct));
         }
         
+        // ========== 天赋套装效果 ==========
+        this.applyTalentSetBonuses(bonus);
+        
         return bonus;
     },
 
+    // 应用天赋套装效果
+    applyTalentSetBonuses(bonus) {
+        // 加载套装配置
+        const setsData = this.data.talentSets || {};
+        const sets = setsData.sets || [];
+        const crossSets = setsData.crossSets || [];
+        const combos = setsData.combos || [];
+        
+        if (sets.length === 0 && crossSets.length === 0 && combos.length === 0) return;
+        
+        // 统计已装备天赋中每个体系的数量
+        const tagCounts = {};
+        const all = this.data.talents.talents;
+        this.player.equippedTalents.forEach(tid => {
+            const t = all.find(x => x.id === tid);
+            if (t && t.tags && Array.isArray(t.tags)) {
+                t.tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            }
+        });
+        
+        // 应用同体系套装效果
+        sets.forEach(set => {
+            const count = tagCounts[set.tag] || 0;
+            set.thresholds.forEach(threshold => {
+                if (count >= threshold.count) {
+                    this.parsePassiveEffect(threshold.effect, bonus);
+                }
+            });
+        });
+        
+        // 应用跨体系组合效果
+        crossSets.forEach(cross => {
+            const allMet = cross.requires.every(tag => (tagCounts[tag] || 0) >= 1);
+            if (allMet) {
+                this.parsePassiveEffect(cross.effect, bonus);
+            }
+        });
+        
+        // 应用共生体×天赋联动效果
+        if (combos.length > 0) {
+            const equippedSymbionts = this.permanent.equippedSymbionts || {};
+            const equippedSymIds = Object.values(equippedSymbionts);
+            combos.forEach(combo => {
+                if (equippedSymIds.includes(combo.symbiontId)) {
+                    const allMet = combo.requires.every(tag => (tagCounts[tag] || 0) >= 1);
+                    if (allMet) {
+                        this.parsePassiveEffect(combo.effect, bonus);
+                    }
+                }
+            });
+        }
+    },
+    
+    // 获取天赋套装进度（用于UI显示）
+    getTalentSetProgress(talentIds) {
+        const setsData = this.data.talentSets || {};
+        const sets = setsData.sets || [];
+        const crossSets = setsData.crossSets || [];
+        const combos = setsData.combos || [];
+        
+        // 统计天赋列表中每个体系的数量（默认使用当前已装备，可传入自定义列表用于预构筑预览）
+        const tagCounts = {};
+        const all = this.data.talents.talents;
+        const equippedIds = talentIds || this.player.equippedTalents || [];
+        equippedIds.forEach(tid => {
+            const t = all.find(x => x.id === tid);
+            if (t && t.tags && Array.isArray(t.tags)) {
+                t.tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            }
+        });
+        
+        const result = {
+            sets: [],
+            crossSets: [],
+            combos: [],
+            tagCounts: tagCounts
+        };
+        
+        // 同体系套装进度
+        sets.forEach(set => {
+            const count = tagCounts[set.tag] || 0;
+            const activeThresholds = set.thresholds.filter(t => count >= t.count);
+            result.sets.push({
+                id: set.id,
+                name: set.name,
+                tag: set.tag,
+                count: count,
+                activeThresholds: activeThresholds,
+                allThresholds: set.thresholds
+            });
+        });
+        
+        // 跨体系组合进度
+        crossSets.forEach(cross => {
+            const allMet = cross.requires.every(tag => (tagCounts[tag] || 0) >= 1);
+            result.crossSets.push({
+                id: cross.id,
+                name: cross.name,
+                requires: cross.requires,
+                active: allMet,
+                effect: cross.effect
+            });
+        });
+        
+        // 共生体×天赋联动进度
+        if (combos.length > 0) {
+            const equippedSymbionts = this.permanent.equippedSymbionts || {};
+            const equippedSymIds = Object.values(equippedSymbionts);
+            combos.forEach(combo => {
+                const symEquipped = equippedSymIds.includes(combo.symbiontId);
+                const allMet = combo.requires.every(tag => (tagCounts[tag] || 0) >= 1);
+                result.combos.push({
+                    id: combo.id,
+                    name: combo.name,
+                    symbiontId: combo.symbiontId,
+                    requires: combo.requires,
+                    symEquipped: symEquipped,
+                    active: symEquipped && allMet,
+                    effect: combo.effect
+                });
+            });
+        }
+        
+        return result;
+    },
+
     // 解析被动效果文本（支持五维+衍生属性）
+    // 显示天赋套装Tooltip（type: set=同体系套装, cross=跨体系组合, combo=共生体联动）
+    showTalentSetTooltip(type, id, event) {
+        if (event) { event.stopPropagation(); event.preventDefault(); }
+        const setsData = this.data.talentSets || {};
+        const sets = setsData.sets || [];
+        const crossSets = setsData.crossSets || [];
+        const combos = setsData.combos || [];
+        const all = this.data.talents.talents;
+        const equippedIds = this.player.equippedTalents || [];
+        const tagNames = this.tagNames || {};
+
+        // 统计每个体系的装备数量
+        const tagCounts = {};
+        equippedIds.forEach(tid => {
+            const t = all.find(x => x.id === tid);
+            if (t && t.tags && Array.isArray(t.tags)) {
+                t.tags.forEach(tag => { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
+            }
+        });
+
+        let html = '';
+
+        if (type === 'set') {
+            const set = sets.find(s => s.id === id);
+            if (!set) return;
+            const count = tagCounts[set.tag] || 0;
+            const setTalents = all.filter(t => t.tags && Array.isArray(t.tags) && t.tags.includes(set.tag));
+            const equippedSetTalents = setTalents.filter(t => equippedIds.includes(t.id));
+            const maxCount = Math.max.apply(null, set.thresholds.map(th => th.count));
+
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+            html += '<div class="tooltip-title" style="color:var(--accent-warning);margin:0">' + set.name + '</div>';
+            html += '<span onclick="game.hideTooltip()" style="cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;line-height:1" title="关闭">✕</span>';
+            html += '</div>';
+            html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">当前进度：' + count + '/' + maxCount + '件' + (count >= maxCount ? '（已满级）' : '') + '</div>';
+
+            set.thresholds.forEach(th => {
+                const active = count >= th.count;
+                const color = active ? 'var(--accent-success)' : 'var(--text-muted)';
+                const status = active ? '✓ 已激活' : '还差' + (th.count - count) + '件';
+                html += '<div style="font-size:12px;color:' + color + ';margin-bottom:4px;padding:5px 8px;background:var(--bg-secondary);border-radius:4px;' + (active ? 'border:1px solid rgba(0,229,176,0.3)' : '') + '">' + th.count + '件效果：' + th.effect + ' <span style="font-size:10px">（' + status + '）</span></div>';
+            });
+
+            html += '<div style="font-size:12px;color:var(--text-muted);margin:10px 0 4px">该套装包含的天赋（' + equippedSetTalents.length + '/' + setTalents.length + ' 已装备）：</div>';
+            html += '<div style="max-height:180px;overflow-y:auto;padding-right:4px">';
+            setTalents.forEach(t => {
+                const isEquipped = equippedIds.includes(t.id);
+                const color = isEquipped ? 'var(--accent-success)' : 'var(--text-secondary)';
+                html += '<div style="font-size:11px;color:' + color + ';padding:2px 0">' + (isEquipped ? '✓ ' : '· ') + t.name + (isEquipped ? '（已装备）' : '') + '</div>';
+            });
+            html += '</div>';
+
+            const nextThreshold = set.thresholds.find(th => th.count > count);
+            html += '<div style="font-size:11px;color:var(--accent-info);margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">' + (nextThreshold ? '提示：还差' + (nextThreshold.count - count) + '件，装备该体系的任意天赋即可激活' + nextThreshold.count + '件效果' : '已达成全部套装效果！') + '</div>';
+        } else if (type === 'cross') {
+            const cross = crossSets.find(c => c.id === id);
+            if (!cross) return;
+            const allMet = cross.requires.every(r => (tagCounts[r] || 0) >= 1);
+
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+            html += '<div class="tooltip-title" style="color:var(--accent-purple);margin:0">' + cross.name + '</div>';
+            html += '<span onclick="game.hideTooltip()" style="cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;line-height:1" title="关闭">✕</span>';
+            html += '</div>';
+            html += '<div style="font-size:12px;color:' + (allMet ? 'var(--accent-success)' : 'var(--accent-warning)') + ';margin-bottom:8px">' + (allMet ? '✓ 已激活' : '未激活（跨体系组合）') + '</div>';
+            html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">效果：' + cross.effect + '</div>';
+
+            cross.requires.forEach(r => {
+                const tagName = tagNames[r] || ('体系' + r);
+                const count = tagCounts[r] || 0;
+                const reqTalents = all.filter(t => t.tags && Array.isArray(t.tags) && t.tags.includes(r));
+                const met = count >= 1;
+                html += '<div style="font-size:12px;color:' + (met ? 'var(--accent-success)' : 'var(--text-muted)') + ';margin:6px 0 2px">' + tagName + '：' + count + '个' + (met ? ' ✓' : '（还缺）') + '</div>';
+                html += '<div style="max-height:100px;overflow-y:auto;padding-right:4px">';
+                reqTalents.forEach(t => {
+                    const isEquipped = equippedIds.includes(t.id);
+                    const color = isEquipped ? 'var(--accent-success)' : 'var(--text-secondary)';
+                    html += '<div style="font-size:11px;color:' + color + ';padding:1px 0">' + (isEquipped ? '✓ ' : '· ') + t.name + (isEquipped ? '（已装备）' : '') + '</div>';
+                });
+                html += '</div>';
+            });
+
+            const missing = cross.requires.filter(r => !tagCounts[r]);
+            html += '<div style="font-size:11px;color:var(--accent-info);margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">' + (missing.length > 0 ? '提示：还需装备' + missing.map(r => (tagNames[r] || ('体系' + r)) + '天赋').join('、') : '已满足全部条件！') + '</div>';
+        } else if (type === 'combo') {
+            const combo = combos.find(c => c.id === id);
+            if (!combo) return;
+            const symData = this.data.symbionts;
+            const symList = symData ? (symData.symbionts || symData) : [];
+            const sym = symList.find(s => s.id === combo.symbiontId);
+            const symEquipped = Object.values(this.permanent.equippedSymbionts || {}).includes(combo.symbiontId);
+            const allMet = combo.requires.every(r => (tagCounts[r] || 0) >= 1);
+            const active = symEquipped && allMet;
+
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+            html += '<div class="tooltip-title" style="color:var(--accent-orange);margin:0">' + combo.name + '</div>';
+            html += '<span onclick="game.hideTooltip()" style="cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;line-height:1" title="关闭">✕</span>';
+            html += '</div>';
+            html += '<div style="font-size:12px;color:' + (active ? 'var(--accent-success)' : 'var(--accent-warning)') + ';margin-bottom:8px">' + (active ? '✓ 已激活' : '未激活（共生体×天赋联动）') + '</div>';
+            html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">效果：' + combo.effect + '</div>';
+            const symNameText = sym ? sym.name : (combo.symbiontId + '（数据缺失）');
+            html += '<div style="font-size:12px;color:' + (symEquipped ? 'var(--accent-success)' : 'var(--text-muted)') + ';margin-bottom:6px">共生体：' + symNameText + (symEquipped ? '（已装备）✓' : '（未装备）') + '</div>';
+
+            combo.requires.forEach(r => {
+                const tagName = tagNames[r] || ('体系' + r);
+                const count = tagCounts[r] || 0;
+                const reqTalents = all.filter(t => t.tags && Array.isArray(t.tags) && t.tags.includes(r));
+                const met = count >= 1;
+                html += '<div style="font-size:12px;color:' + (met ? 'var(--accent-success)' : 'var(--text-muted)') + ';margin:6px 0 2px">' + tagName + '：' + count + '个' + (met ? ' ✓' : '（还缺）') + '</div>';
+                html += '<div style="max-height:100px;overflow-y:auto;padding-right:4px">';
+                reqTalents.forEach(t => {
+                    const isEquipped = equippedIds.includes(t.id);
+                    const color = isEquipped ? 'var(--accent-success)' : 'var(--text-secondary)';
+                    html += '<div style="font-size:11px;color:' + color + ';padding:1px 0">' + (isEquipped ? '✓ ' : '· ') + t.name + (isEquipped ? '（已装备）' : '') + '</div>';
+                });
+                html += '</div>';
+            });
+
+            const missingTags = combo.requires.filter(r => !tagCounts[r]);
+            const hintParts = [];
+            if (!symEquipped) hintParts.push('装备共生体「' + symNameText + '」');
+            if (missingTags.length > 0) hintParts.push('还需装备' + missingTags.map(r => (tagNames[r] || ('体系' + r)) + '系天赋').join('、'));
+            html += '<div style="font-size:11px;color:var(--accent-info);margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">' + (hintParts.length > 0 ? '提示：' + hintParts.join('，') : '已满足全部条件！') + '</div>';
+        }
+
+        const tooltipBox = document.getElementById('tooltipBox');
+        if (tooltipBox) {
+            tooltipBox.innerHTML = html;
+            tooltipBox.classList.add('show');
+            const rect = event ? event.target.getBoundingClientRect() : {top: 100, left: 100, height: 0};
+            const tooltipRect = tooltipBox.getBoundingClientRect();
+            let top = rect.top + rect.height + 8;
+            let left = rect.left;
+            if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
+            if (top + tooltipRect.height > window.innerHeight - 10) top = rect.top - tooltipRect.height - 8;
+            if (left < 10) left = 10;
+            if (top < 10) top = 10;
+            tooltipBox.style.top = top + 'px';
+            tooltipBox.style.left = left + 'px';
+        }
+    },
+
+
     parsePassiveEffect(text, bonus) {        if (!text) return;        let m = text.match(/攻击(?:力)?\s*\+\s*(\d+)/);        if (m) bonus.attack += parseInt(m[1]);        m = text.match(/(?:最大)?生命(?:值)?\s*\+\s*(\d+)/);        if (m) bonus.maxHp += parseInt(m[1]);        m = text.match(/防御(?:力)?\s*\+\s*(\d+)/);        if (m) bonus.defense += parseInt(m[1]);        m = text.match(/暴击(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.crit += parseInt(m[1]);        m = text.match(/暴击伤害\s*\+\s*(\d+)/);        if (m) bonus.critDamage += parseInt(m[1]);        m = text.match(/命中(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.hit += parseInt(m[1]);        m = text.match(/(?:先手值|先手|速度)\s*\+\s*(\d+)/);        if (m) bonus.speed += parseInt(m[1]);        m = text.match(/能量(?:上限)?\s*\+\s*(\d+)/);        if (m) bonus.maxEnergy += parseInt(m[1]);        m = text.match(/每回合回复\s*(\d+)\s*点?生命/);        if (m) bonus.hpRegen += parseInt(m[1]);        m = text.match(/吸取(?:造成)?伤害的\s*(\d+)%\s*为?生命/);        if (m) bonus.lifeStealPct += parseInt(m[1]);        if ((/中毒|毒素|猛毒/.test(text)) && (/攻击(?:时)?|附加|普攻/.test(text))) {            bonus.dotOnHit.push({type: 'poison', stacks: 2});        }        if ((/灼烧|火焰伤害/.test(text)) && (/攻击(?:时)?|附加/.test(text))) {            bonus.dotOnHit.push({type: 'burn', stacks: 1});        }        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*减速/);        if (m) bonus.controlOnHit.push({type: 'slow', chance: parseInt(m[1]), duration: 2});        if (/附加减速/.test(text)) {            bonus.controlOnHit.push({type: 'slow', chance: 100, duration: 2});        }        m = text.match(/受到攻击(?:时)?\s*(\d+)%\s*概率反弹\s*(\d+)%\s*伤害/);        if (m) bonus.reflectPct += parseInt(m[2]) * (parseInt(m[1]) / 100);        m = text.match(/近战攻击反弹\s*(\d+)\s*点伤害/);        if (m) bonus.reflectFlat += parseInt(m[1]);        m = text.match(/击杀(?:敌人|单位)(?:时)?回复\s*(\d+)%\s*最大生命/);        if (m) bonus.healOnKillPct += parseInt(m[1]);        m = text.match(/所有属性\s*\+\s*(\d+)%/);        if (m) bonus.allStatPct += parseInt(m[1]);
         // 五维基础属性
         m = text.match(/力量\s*\+\s*(\d+)/); if (m) bonus.strength = (bonus.strength||0) + parseInt(m[1]);
@@ -9036,7 +10270,7 @@ ${transition.buff.desc}`);
                 const count = bossCores[bossId];
                 if (count <= 0) continue;
                 const bossData = allEnemies.find(e => e.id === bossId);
-                const bossName = bossData ? bossData.name : bossId;
+                const bossName = this.getBossCoreName(bossId);
                 const bossDesc = bossData ? (bossData.description || '') : '';
                 html += '<div style="background:var(--bg-card);padding:8px;border-radius:6px;border-left:3px solid var(--accent-danger)" title="' + bossDesc + '">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center">';
@@ -9170,6 +10404,67 @@ ${transition.buff.desc}`);
                 break;
         }
         contentDiv.innerHTML = html;
+    },
+
+    // 渲染天赋套装信息（用于角色状态页）
+    renderTalentSetInfo() {
+        const progress = this.getTalentSetProgress();
+        let html = '';
+        
+        // 已激活的同体系套装
+        const activeSets = progress.sets.filter(s => s.activeThresholds.length > 0);
+        if (activeSets.length > 0) {
+            html += '<div style="margin-bottom:10px">';
+            html += '<div style="font-size:13px;font-weight:bold;color:var(--accent-success);margin-bottom:6px">已激活天赋套装</div>';
+            activeSets.forEach(set => {
+                html += '<div style="padding:8px;background:var(--bg-card);border-radius:6px;margin-bottom:4px;border-left:3px solid var(--accent-success)">';
+                html += '<div style="font-size:12px;font-weight:bold;color:var(--text-primary)">' + set.name + ' (' + set.count + '件)</div>';
+                set.activeThresholds.forEach(th => {
+                    html += '<div style="font-size:11px;color:var(--accent-success);margin-top:2px">✓ ' + th.count + '件: ' + th.effect + '</div>';
+                });
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        
+        // 已激活的跨体系组合
+        const activeCross = progress.crossSets.filter(c => c.active);
+        if (activeCross.length > 0) {
+            html += '<div style="margin-bottom:10px">';
+            html += '<div style="font-size:13px;font-weight:bold;color:var(--accent-purple);margin-bottom:6px">跨体系组合</div>';
+            activeCross.forEach(cross => {
+                const reqNames = cross.requires.map(tag => this.tagNames[tag] || ('体系'+tag)).join(' + ');
+                html += '<div style="padding:8px;background:var(--bg-card);border-radius:6px;margin-bottom:4px;border-left:3px solid var(--accent-purple)">';
+                html += '<div style="font-size:12px;font-weight:bold;color:var(--text-primary)">' + cross.name + ' (' + reqNames + ')</div>';
+                html += '<div style="font-size:11px;color:var(--accent-purple);margin-top:2px">✓ ' + cross.effect + '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        
+        // 已激活的共生体×天赋联动
+        const activeCombos = progress.combos.filter(c => c.active);
+        if (activeCombos.length > 0) {
+            html += '<div style="margin-bottom:10px">';
+            html += '<div style="font-size:13px;font-weight:bold;color:var(--accent-warning);margin-bottom:6px">共生体×天赋联动</div>';
+            activeCombos.forEach(combo => {
+                const reqNames = combo.requires.map(tag => this.tagNames[tag] || ('体系'+tag)).join(' + ');
+                html += '<div style="padding:8px;background:var(--bg-card);border-radius:6px;margin-bottom:4px;border-left:3px solid var(--accent-warning)">';
+                html += '<div style="font-size:12px;font-weight:bold;color:var(--text-primary)">' + combo.name + ' (共生体+' + reqNames + ')</div>';
+                html += '<div style="font-size:11px;color:var(--accent-warning);margin-top:2px">✓ ' + combo.effect + '</div>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        
+        // 如果没有激活的套装，显示提示
+        if (activeSets.length === 0 && activeCross.length === 0 && activeCombos.length === 0) {
+            html += '<div style="padding:10px;background:var(--bg-card);border-radius:6px;text-align:center;color:var(--text-muted);font-size:12px">';
+            html += '暂无激活的天赋套装<br>装备同体系天赋可触发套装效果';
+            html += '</div>';
+        }
+        
+        return html;
     },
 
     // 渲染人物状态-状态标签页
@@ -9335,6 +10630,12 @@ ${transition.buff.desc}`);
         html += combatStatDisplay('speed', '先手值', Math.floor(p.speed || 0), '', permSpeed);
         html += '</div></div>';
 
+        // 天赋套装效果显示
+        html += '<div class="box" style="margin-bottom:16px">';
+        html += '<h3 style="margin-bottom:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 天赋套装</h3>';
+        html += this.renderTalentSetInfo();
+        html += '</div>';
+        
         return html;
     },
 
@@ -9753,7 +11054,7 @@ ${transition.buff.desc}`);
             </div>
             ${specialHtml}
             <div style="display:flex;gap:10px;margin-top:15px">
-                <button onclick="game.closePop()" style="flex:1;padding:10px;border-radius:6px;background:var(--text-faint);color:var(--text-secondary);font-size:13px">取消</button>
+                <button onclick="game.closePop();setTimeout(function(){game.openSymbiontPanel()},50)" style="flex:1;padding:10px;border-radius:6px;background:var(--text-faint);color:var(--text-secondary);font-size:13px">取消</button>
                 <button onclick="game.doEquipSymbiont('${newId}');game.closePop()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white;font-size:13px;font-weight:bold">确认替换</button>
             </div>
         </div>`;
@@ -10055,7 +11356,7 @@ ${transition.buff.desc}`);
                 const count = bossCores[bossId];
                 if (count <= 0) continue;
                 const bossData = allEnemies.find(e => e.id === bossId);
-                const bossName = bossData ? bossData.name : bossId;
+                const bossName = this.getBossCoreName(bossId);
                 const bossDesc = bossData ? (bossData.description || '') : '';
                 html += '<div style="background:var(--bg-card);padding:10px;border-radius:8px;border-left:3px solid var(--accent-danger)" title="' + bossDesc + '">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';

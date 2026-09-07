@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>兑换码生成工具 - 吞噬·无限进化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e14;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2ed573;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .card {
+            background: #1a1f2e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2a3142;
+        }
+        .card-title {
+            color: #2ed573;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a3142;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        select, input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f1419;
+            border: 1px solid #2a3142;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+        }
+        select:focus, input:focus {
+            border-color: #2ed573;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #2ed573;
+            color: #0a0e14;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: #26c066;
+        }
+        .btn-secondary {
+            background: #3a4152;
+            color: #e0e0e0;
+        }
+        .btn-secondary:hover {
+            background: #4a5162;
+        }
+        .result-box {
+            background: #0f1419;
+            border: 1px solid #2ed573;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .result-box.show {
+            display: block;
+        }
+        .result-label {
+            color: #2ed573;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .result-code {
+            background: #0a0e14;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #ffd700;
+            word-break: break-all;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .result-info {
+            color: #aaa;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+        .result-info span {
+            color: #2ed573;
+        }
+        .copy-btn {
+            padding: 8px 16px;
+            background: #3a4152;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background: #4a5162;
+        }
+        .copy-btn.copied {
+            background: #2ed573;
+            color: #0a0e14;
+        }
+        .hidden {
+            display: none;
+        }
+        .quality-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+        .quality-1 { background: #888; color: #fff; }
+        .quality-2 { background: #3498db; color: #fff; }
+        .quality-3 { background: #9b59b6; color: #fff; }
+        .quality-4 { background: #e67e22; color: #fff; }
+        .quality-5 { background: #e74c3c; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>兑换码生成工具</h1>
+        <p class="subtitle">吞噬·无限进化 - 管理员专用</p>
+
+        <div class="card">
+            <div class="card-title">奖励类型</div>
+            <div class="form-group">
+                <label>选择奖励类型</label>
+                <select id="rewardType" onchange="toggleRewardFields()">
+                    <option value="gold">金币</option>
+                    <option value="talentPoints">天赋点</option>
+                    <option value="essence">进化精粹</option>
+                    <option value="universal">万能碎片</option>
+                    <option value="fragments">专属碎片</option>
+                    <option value="symbiont">共生体</option>
+                    <option value="bossCore">Boss核心</option>
+                    <option value="consumable">消耗品（道具）</option>
+                    <option value="exp">经验</option>
+                    <option value="statPoints">属性点</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 金币 -->
+        <div class="card reward-field" id="field-gold">
+            <div class="card-title">金币奖励</div>
+            <div class="form-group">
+                <label>金币数量</label>
+                <input type="number" id="goldCount" value="1000" min="1">
+            </div>
+        </div>
+
+        <!-- 天赋点 -->
+        <div class="card reward-field hidden" id="field-talentPoints">
+            <div class="card-title">天赋点奖励</div>
+            <div class="form-group">
+                <label>天赋点数量</label>
+                <input type="number" id="talentCount" value="5" min="1">
+            </div>
+        </div>
+
+        <!-- 进化精粹 -->
+        <div class="card reward-field hidden" id="field-essence">
+            <div class="card-title">进化精粹奖励</div>
+            <div class="form-group">
+                <label>进化精粹数量</label>
+                <input type="number" id="essenceCount" value="100" min="1">
+            </div>
+        </div>
+
+        <!-- 万能碎片 -->
+        <div class="card reward-field hidden" id="field-universal">
+            <div class="card-title">万能碎片奖励</div>
+            <div class="row">
+                <div class="form-group">
+                    <label>品质</label>
+                    <select id="universalQuality">
+                        <option value="1">普通</option>
+                        <option value="2">稀有</option>
+                        <option value="3" selected>史诗</option>
+                        <option value="4">传说</option>
+                        <option value="5">神话</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>数量</label>
+                    <input type="number" id="universalCount" value="50" min="1">
+                </div>
+            </div>
+        </div>
+
+        <!-- 专属碎片 -->
+        <div class="card reward-field hidden" id="field-fragments">
+            <div class="card-title">专属碎片奖励</div>
+            <div class="row">
+                <div class="form-group">
+                    <label>体系</label>
+                    <select id="fragmentTag">
+                        <option value="1">物理系</option>
+                        <option value="2">血系</option>
+                        <option value="3">毒系</option>
+                        <option value="4">雷系</option>
+                        <option value="5">缚系</option>
+                        <option value="6">火系</option>
+                        <option value="7">冰系</option>
+                        <option value="8">体魄系</option>
+                        <option value="9">甲壳系</option>
+                        <option value="10">再生系</option>
+                        <option value="11">拟态系</option>
+                        <option value="12">反伤系</option>
+                        <option value="13">骨骼系</option>
+                        <option value="14">翼系</option>
+                        <option value="15">速系</option>
+                        <option value="17">影系</option>
+                        <option value="18">水系</option>
+                        <option value="20">热感系</option>
+                        <option value="21">感知系</option>
+                        <option value="22">声系</option>
+                        <option value="23">灵能系</option>
+                        <option value="24">进化系</option>
+                        <option value="25">神系</option>
+                        <option value="26">终极系</option>
+                        <option value="27">巨兽系</option>
+                        <option value="28">群体系</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>品质</label>
+                    <select id="fragmentQuality">
+                        <option value="1">普通</option>
+                        <option value="2">稀有</option>
+                        <option value="3" selected>史诗</option>
+                        <option value="4">传说</option>
+                        <option value="5">神话</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>数量</label>
+                <input type="number" id="fragmentCount" value="50" min="1">
+            </div>
+        </div>
+
+        <!-- 共生体 -->
+        <div class="card reward-field hidden" id="field-symbiont">
+            <div class="card-title">共生体奖励</div>
+            <div class="form-group">
+                <label>选择共生体</label>
+                <select id="symbiontId">
+                <optgroup label="核心">
+                    <option value="sym_core_1">原始细胞核（普通）</option>
+                    <option value="sym_core_2">稳定核膜（稀有）</option>
+                    <option value="sym_core_3">硬化核膜（史诗）</option>
+                    <option value="sym_core_4">龙之心核（传说）</option>
+                    <option value="sym_core_5">混沌原核（神话）</option>
+                </optgroup>
+                <optgroup label="猎食器官">
+                    <option value="sym_pred_1">锐利口器（普通）</option>
+                    <option value="sym_pred_2">撕裂颚（稀有）</option>
+                    <option value="sym_pred_3">毒牙（史诗）</option>
+                    <option value="sym_pred_4">毁灭之爪（传说）</option>
+                    <option value="sym_pred_5">吞噬之口（神话）</option>
+                </optgroup>
+                <optgroup label="感知器官">
+                    <option value="sym_sensor_1">感光点（普通）</option>
+                    <option value="sym_sensor_2">复眼（稀有）</option>
+                    <option value="sym_sensor_3">热感应器官（史诗）</option>
+                    <option value="sym_sensor_4">天眼（传说）</option>
+                    <option value="sym_sensor_5">全知之眼（神话）</option>
+                </optgroup>
+                <optgroup label="运动器官">
+                    <option value="sym_move_1">纤毛（普通）</option>
+                    <option value="sym_move_2">伪足（稀有）</option>
+                    <option value="sym_move_3">节肢（史诗）</option>
+                    <option value="sym_move_4">翼膜（传说）</option>
+                    <option value="sym_move_5">时空之翼（神话）</option>
+                </optgroup>
+                <optgroup label="防御器官">
+                    <option value="sym_def_1">细胞膜（普通）</option>
+                    <option value="sym_def_2">角质层（稀有）</option>
+                    <option value="sym_def_3">外骨骼（史诗）</option>
+                    <option value="sym_def_4">龙鳞（传说）</option>
+                    <option value="sym_def_5">不灭之躯（神话）</option>
+                </optgroup>
+                </select>
+            </div>
+        </div>
+
+        <!-- Boss核心 -->
+        <div class="card reward-field hidden" id="field-bossCore">
+            <div class="card-title">Boss核心奖励</div>
+            <div class="form-group">
+                <label>选择Boss</label>
+                <select id="bossCoreId">
+                    <option value="primordial_soup_boss_01">原始巨核·普罗托斯</option>
+                    <option value="tidal_flat_boss_01">滩涂之主·泥噬巨蠕</option>
+                    <option value="coral_rubble_boss_01">珊瑚巨灵·礁噬口</option>
+                    <option value="temperate_forest_floor_boss_01">腐殖之王·菌丝巨怪</option>
+                    <option value="rainforest_floor_boss_01">丛林幽魂·影豹</option>
+                    <option value="east_african_savanna_boss_01">草原霸主·金鬃狮</option>
+                    <option value="intertidal_rocks_boss_01">远古蝎鲎</option>
+                    <option value="fern_swamp_boss_01">远古巨蝎</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>数量</label>
+                <input type="number" id="bossCoreCount" value="1" min="1">
+            </div>
+        </div>
+
+        <!-- 消耗品 -->
+        <div class="card reward-field hidden" id="field-consumable">
+            <div class="card-title">消耗品奖励</div>
+            <div class="form-group">
+                <label>选择消耗品</label>
+                <select id="consumableId">
+                    <optgroup label="治疗类">
+                        <option value="con_health_small">再生孢子（回复25%生命）</option>
+                        <option value="con_health_large">愈合囊肿（回复60%生命）</option>
+                        <option value="con_health_full">生命本源（完全恢复）</option>
+                    </optgroup>
+                    <optgroup label="能量类">
+                        <option value="con_energy_small">能量腺体（回复40%能量）</option>
+                        <option value="con_energy_large">源能核心（回复80%能量）</option>
+                    </optgroup>
+                    <optgroup label="增益类">
+                        <option value="con_attack_boost">狂暴腺体（攻击+20%）</option>
+                        <option value="con_defense_boost">铁壁甲壳（防御+25%）</option>
+                        <option value="con_speed_boost">疾风肌腱（速度+15%）</option>
+                        <option value="con_all_boost">全能基因（全属性+10%）</option>
+                    </optgroup>
+                    <optgroup label="资源类">
+                        <option value="pack_fragments_1">基因碎片包（10个普通碎片）</option>
+                        <option value="pack_fragments_2">稀有基因包（5个稀有碎片）</option>
+                    </optgroup>
+                    <optgroup label="特殊类">
+                        <option value="con_exp_boost">进化催化剂（经验+50%）</option>
+                        <option value="con_drop_boost">猎食本能（掉落+50%）</option>
+                        <option value="con_talent_point">天赋精华（3天赋点）</option>
+                        <option value="con_revive">不死孢子（死亡复活）</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>数量</label>
+                <input type="number" id="consumableCount" value="1" min="1">
+            </div>
+        </div>
+
+        <!-- 经验 -->
+        <div class="card reward-field hidden" id="field-exp">
+            <div class="card-title">经验奖励</div>
+            <div class="form-group">
+                <label>经验数量</label>
+                <input type="number" id="expCount" value="100" min="1">
+            </div>
+        </div>
+
+        <!-- 属性点 -->
+        <div class="card reward-field hidden" id="field-statPoints">
+            <div class="card-title">属性点奖励</div>
+            <div class="form-group">
+                <label>属性点类型</label>
+                <select id="statPointType">
+                    <option value="run">局内可分配属性点</option>
+                    <option value="permanent">局外自由属性点</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>数量</label>
+                <input type="number" id="statPointCount" value="5" min="1">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">过期设置</div>
+            <div class="form-group">
+                <label>有效期（天）</label>
+                <input type="number" id="expireDays" value="365" min="1">
+            </div>
+        </div>
+
+        <button class="btn" onclick="generateCode()">生成兑换码</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-label">生成的兑换码：</div>
+            <div class="result-code" id="resultCode"></div>
+            <div class="result-info" id="resultInfo"></div>
+            <button class="copy-btn" id="copyBtn" onclick="copyCode()">复制兑换码</button>
+        </div>
+    </div>
+
+    <script>
+        // 密钥（必须与游戏中的一致）
+        const REDEEM_SECRET = "DEVOUR_SECRET_2026";
+
+        // 切换奖励类型字段显示
+        function toggleRewardFields() {
+            const type = document.getElementById('rewardType').value;
+            document.querySelectorAll('.reward-field').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.getElementById('field-' + type).classList.remove('hidden');
+        }
+
+        // 生成兑换码
+        function generateCode() {
+            const type = document.getElementById('rewardType').value;
+            const expireDays = parseInt(document.getElementById('expireDays').value) || 365;
+            
+            let reward = {};
+            let rewardDesc = '';
+
+            switch(type) {
+                case 'gold':
+                    const goldCount = parseInt(document.getElementById('goldCount').value) || 1000;
+                    reward = { type: 'gold', count: goldCount };
+                    rewardDesc = goldCount + ' 金币';
+                    break;
+                case 'talentPoints':
+                    const talentCount = parseInt(document.getElementById('talentCount').value) || 5;
+                    reward = { type: 'talentPoints', count: talentCount };
+                    rewardDesc = talentCount + ' 天赋点';
+                    break;
+                case 'essence':
+                    const essenceCount = parseInt(document.getElementById('essenceCount').value) || 100;
+                    reward = { type: 'essence', count: essenceCount };
+                    rewardDesc = essenceCount + ' 进化精粹';
+                    break;
+                case 'universal':
+                    const universalQuality = parseInt(document.getElementById('universalQuality').value);
+                    const universalCount = parseInt(document.getElementById('universalCount').value) || 50;
+                    reward = { type: 'universal', quality: universalQuality, count: universalCount };
+                    const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
+                    rewardDesc = universalCount + ' 个' + qualityNames[universalQuality] + '万能碎片';
+                    break;
+                case 'fragments':
+                    const fragmentTag = parseInt(document.getElementById('fragmentTag').value);
+                    const fragmentQuality = parseInt(document.getElementById('fragmentQuality').value);
+                    const fragmentCount = parseInt(document.getElementById('fragmentCount').value) || 50;
+                    reward = { type: 'fragments', tag: fragmentTag, quality: fragmentQuality, count: fragmentCount };
+                    const tagNames = {1:'物理',2:'血系',3:'毒系',4:'雷系',5:'缚系',6:'火系',7:'冰系',8:'体魄'};
+                    const qNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
+                    rewardDesc = fragmentCount + ' 个' + tagNames[fragmentTag] + qNames[fragmentQuality] + '碎片';
+                    break;
+                case 'symbiont':
+                    const symbiontId = document.getElementById('symbiontId').value;
+                    const symbiontSelect = document.getElementById('symbiontId');
+                    const symbiontName = symbiontSelect.options[symbiontSelect.selectedIndex].text;
+                    reward = { type: 'symbiont', symbiontId: symbiontId };
+                    rewardDesc = '共生体：' + symbiontName;
+                    break;
+                case 'bossCore':
+                    const bossCoreId = document.getElementById('bossCoreId').value;
+                    const bossCoreSelect = document.getElementById('bossCoreId');
+                    const bossCoreName = bossCoreSelect.options[bossCoreSelect.selectedIndex].text;
+                    const bossCoreCount = parseInt(document.getElementById('bossCoreCount').value) || 1;
+                    reward = { type: 'bossCore', bossCoreId: bossCoreId, count: bossCoreCount };
+                    rewardDesc = bossCoreCount + ' 个Boss核心：' + bossCoreName;
+                    break;
+                case 'consumable':
+                    const consumableId = document.getElementById('consumableId').value;
+                    const consumableSelect = document.getElementById('consumableId');
+                    const consumableName = consumableSelect.options[consumableSelect.selectedIndex].text;
+                    const consumableCount = parseInt(document.getElementById('consumableCount').value) || 1;
+                    reward = { type: 'consumable', consumableId: consumableId, count: consumableCount };
+                    rewardDesc = consumableCount + ' 个消耗品：' + consumableName;
+                    break;
+                case 'exp':
+                    const expCount = parseInt(document.getElementById('expCount').value) || 100;
+                    reward = { type: 'exp', count: expCount };
+                    rewardDesc = expCount + ' 经验';
+                    break;
+                case 'statPoints':
+                    const statPointType = document.getElementById('statPointType').value;
+                    const statPointCount = parseInt(document.getElementById('statPointCount').value) || 5;
+                    reward = { type: 'statPoints', statPointType: statPointType, count: statPointCount };
+                    const typeName = statPointType === 'run' ? '局内可分配属性点' : '局外自由属性点';
+                    rewardDesc = statPointCount + ' ' + typeName;
+                    break;
+            }
+
+            // 构建数据
+            const data = {
+                reward: reward,
+                expire: Date.now() + expireDays * 24 * 60 * 60 * 1000,
+                secret: REDEEM_SECRET
+            };
+
+            // Base64编码
+            const jsonStr = JSON.stringify(data);
+            const code = btoa(jsonStr).replace(/=/g, '');
+
+            // 显示结果
+            const expireDate = new Date(data.expire);
+            const expireStr = expireDate.getFullYear() + '-' + 
+                String(expireDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(expireDate.getDate()).padStart(2, '0');
+
+            document.getElementById('resultCode').textContent = code;
+            document.getElementById('resultInfo').innerHTML = 
+                '奖励内容：<span>' + rewardDesc + '</span><br>' +
+                '有效期至：<span>' + expireStr + '</span>（' + expireDays + '天）<br>' +
+                '注意：兑换码区分大小写，每个兑换码只能使用一次';
+            document.getElementById('resultBox').classList.add('show');
+            document.getElementById('copyBtn').textContent = '复制兑换码';
+            document.getElementById('copyBtn').classList.remove('copied');
+        }
+
+        // 复制兑换码
+        function copyCode() {
+            const code = document.getElementById('resultCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '已复制！';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '复制兑换码';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '已复制！';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '复制兑换码';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
