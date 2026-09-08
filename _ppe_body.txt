@@ -1,0 +1,387 @@
+parsePassiveEffect(text, bonus) {        if (!text) return;
+        text = text.replace(/[，,]/g, ' ');
+        let atkChance = 100;
+        let mc = text.match(/攻击(?:时)?\s*(\d+)%\s*概率/);
+        if (mc) atkChance = parseInt(mc[1]);
+        let atkDur = null;
+        let md = text.match(/[（(]\s*(\d+)\s*回合[)）]/);
+        if (md) atkDur = parseInt(md[1]);
+        let m = text.match(/攻击(?:力)?\s*\+\s*(\d+)/);        if (m) bonus.attack += parseInt(m[1]);        m = text.match(/(?:最大)?生命(?:值)?\s*\+\s*(\d+)/);        if (m) bonus.maxHp += parseInt(m[1]);        m = text.match(/防御(?:力)?\s*\+\s*(\d+)/);        if (m) bonus.defense += parseInt(m[1]);        m = text.match(/暴击(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.crit += parseInt(m[1]);        m = text.match(/暴击伤害\s*\+\s*(\d+)/);        if (m) bonus.critDamage += parseInt(m[1]);        m = text.match(/命中(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.hit += parseInt(m[1]);        m = text.match(/(?:先手值|先手|速度)\s*\+\s*(\d+)/);        if (m) bonus.speed += parseInt(m[1]);        m = text.match(/能量(?:上限)?\s*\+\s*(\d+)/);        if (m) bonus.maxEnergy += parseInt(m[1]);        m = text.match(/每回合回复\s*(\d+)\s*点?生命/);        if (m) bonus.hpRegen += parseInt(m[1]);        m = text.match(/吸取(?:造成)?伤害的\s*(\d+)%\s*为?生命/);        if (m) {
+            if (/攻击(?:时)?\s*\d+%\s*概率.*吸血/.test(text)) bonus.lifeStealChance = Math.min(bonus.lifeStealChance || 100, atkChance);
+            bonus.lifeStealPct += parseInt(m[1]);
+        }        if (!bonus.dotOnHit) bonus.dotOnHit = [];
+        if ((/中毒|毒素|猛毒|感染/.test(text)) && (/攻击(?:时)?|附加|附带|普攻|触击/.test(text))) {            let st2 = 2;
+            let ms2 = text.match(/(\d+)层(?:中毒|毒素)/);
+            if (ms2) st2 = parseInt(ms2[1]);
+            bonus.dotOnHit.push({type: 'poison', stacks: st2, chance: atkChance, duration: atkDur || 3});        }        if (!bonus.dotOnHit) bonus.dotOnHit = [];
+        if ((/灼烧|火焰伤害/.test(text)) && (/攻击(?:时)?|附加/.test(text))) {            let st3 = 1;
+            let ms3 = text.match(/(\d+)层(?:灼烧)/);
+            if (ms3) st3 = parseInt(ms3[1]);
+            bonus.dotOnHit.push({type: 'burn', stacks: st3, chance: atkChance, duration: atkDur || 3});        }        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*减速/);        if (m) bonus.controlOnHit.push({type: 'slow', chance: parseInt(m[1]), duration: 2});        if (/附加减速/.test(text)) {            bonus.controlOnHit.push({type: 'slow', chance: 100, duration: 2});        }        m = text.match(/受到攻击(?:时)?\s*(\d+)%\s*概率反弹\s*(\d+)%\s*伤害/);
+        if (m) {
+            bonus.reflectChance = Math.min(bonus.reflectChance || 100, parseInt(m[1]));
+            bonus.reflectPct += parseInt(m[2]);
+        }        m = text.match(/近战攻击反弹\s*(\d+)\s*点伤害/);        if (m) bonus.reflectFlat += parseInt(m[1]);        m = text.match(/击杀(?:敌人|单位)(?:后|时)?(?:回复|恢复)\s*(\d+)%\s*最大生命/);        if (m) bonus.healOnKillPct += parseInt(m[1]);        m = text.match(/所有属性\s*\+\s*(\d+)%/);        if (m) bonus.allStatPct += parseInt(m[1]) / 100;
+        // 五维基础属性
+        m = text.match(/力量\s*\+\s*(\d+)/); if (m) bonus.strength = (bonus.strength||0) + parseInt(m[1]);
+        m = text.match(/敏捷\s*\+\s*(\d+)/); if (m) bonus.agility = (bonus.agility||0) + parseInt(m[1]);
+        m = text.match(/体质\s*\+\s*(\d+)/); if (m) bonus.vitality = (bonus.vitality||0) + parseInt(m[1]);
+        m = text.match(/感知\s*\+\s*(\d+)/); if (m) bonus.perception = (bonus.perception||0) + parseInt(m[1]);
+        m = text.match(/进化\s*\+\s*(\d+)/); if (m) bonus.evolution = (bonus.evolution||0) + parseInt(m[1]);
+        // 闪避
+        m = text.match(/闪避(?:率)?\s*\+\s*(\d+)/); if (m) bonus.dodgeBonus = (bonus.dodgeBonus||0) + parseInt(m[1]);
+        // 增伤/减伤
+        m = text.match(/造成(?:的)?伤害\s*\+\s*(\d+)%/); if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
+        m = text.match(/受到(?:的)?伤害\s*-\s*(\d+)%/); if (m) bonus.damageReductionPct = (bonus.damageReductionPct||0) + parseInt(m[1])/100;
+        // 对低血量增伤（含阈值格式）
+        m = text.match(/对(?:生命值)?低于(\d+)%的目标伤害\s*\+\s*(\d+)%/); if (m) { bonus.lowHpDamagePct = (bonus.lowHpDamagePct||0) + parseInt(m[2])/100; bonus.lowHpThreshold = Math.min(bonus.lowHpThreshold || 100, parseInt(m[1])); }
+        m = text.match(/对低血量目标伤害\s*\+\s*(\d+)%/); if (m) { bonus.lowHpDamagePct = (bonus.lowHpDamagePct||0) + parseInt(m[1])/100; bonus.lowHpThreshold = Math.min(bonus.lowHpThreshold || 100, 50); }
+        // 生命低于X%时造成的伤害+Y%
+        m = text.match(/生命低于\s*(\d+)%\s*时(?:造成的)?伤害\s*\+\s*(\d+)%/); if (m) { bonus.lowHpDamagePct = (bonus.lowHpDamagePct||0) + parseInt(m[2])/100; bonus.lowHpThreshold = Math.min(bonus.lowHpThreshold || 100, parseInt(m[1])); }
+        // 生命低于X%时每回合回复Y%最大生命
+        m = text.match(/生命低于\s*(\d+)%\s*时每回合回复\s*(\d+)%\s*最大生命/); if (m) { bonus.hpRegenPct = (bonus.hpRegenPct||0) + parseInt(m[2])/100; bonus.lowHpRegenThreshold = Math.min(bonus.lowHpRegenThreshold || 100, parseInt(m[1])); }
+        // 先手攻击额外伤害
+        m = text.match(/先手攻击额外伤害\s*\+\s*(\d+)%/); if (m) bonus.firstStrikeDamagePct = (bonus.firstStrikeDamagePct||0) + parseInt(m[1])/100;
+        // 额外攻击概率
+        m = text.match(/(?:回合开始|每回合)\s*(\d+)%概率额外行动/); if (m) bonus.extraAttackChance = (bonus.extraAttackChance||0) + parseInt(m[1])/100;
+        // 冷却缩减
+        m = text.match(/技能冷却\s*-\s*(\d+)%/); if (m) bonus.cooldownReduction = (bonus.cooldownReduction||0) + parseInt(m[1])/100;
+        // ========== 新增效果解析 ==========
+        // Dot：流血
+        if (!bonus.bleedOnHit) bonus.bleedOnHit = [];
+        if ((/流血|撕裂伤/.test(text)) && (/攻击(?:时)?|附加|普攻/.test(text))) {
+            let st4 = 2;
+            let ms4 = text.match(/(\d+)层(?:流血)/);
+            if (ms4) st4 = parseInt(ms4[1]);
+            bonus.bleedOnHit.push({type: 'bleed', stacks: st4, chance: atkChance, duration: atkDur || 2});
+        }
+        // Dot：凋零
+        if ((/凋零|枯萎/.test(text)) && (/攻击(?:时)?|附加|普攻/.test(text))) {
+            bonus.witherOnHit.push({type: 'wither', stacks: 1});
+        }
+        // 控制：眩晕
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*眩晕/);
+        if (m) bonus.stunChance += parseInt(m[1]) / 100;
+        else if (/附加眩晕/.test(text)) bonus.stunChance += 0.3;
+        // 控制：麻痹
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*麻痹/);
+        if (m) bonus.paralyzeChance += parseInt(m[1]) / 100;
+        else if (/附加麻痹/.test(text)) bonus.paralyzeChance += 0.5;
+        // 控制：冻结
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*冻结/);
+        if (m) bonus.freezeChance += parseInt(m[1]) / 100;
+        else if (/附加冻结/.test(text)) bonus.freezeChance += 0.3;
+        // 控制：束缚
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*束缚/);
+        if (m) bonus.bindChance += parseInt(m[1]) / 100;
+        else if (/附加束缚/.test(text)) bonus.bindChance += 0.4;
+        // 控制：沉默
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*沉默/);
+        if (m) bonus.silenceChance += parseInt(m[1]) / 100;
+        else if (/附加沉默/.test(text)) bonus.silenceChance += 0.3;
+        // 战斗开始：隐身
+        let sm = text.match(/战斗开始(?:时)?\s*(\d+)%\s*概率进入隐身(?:状态)?(?:，?持续(\d+)回合)?/);
+        if (sm) { bonus.startStealthChance = parseInt(sm[1]) / 100; if (sm[2]) bonus.startStealthDuration = parseInt(sm[2]); }
+        else if (/战斗开始.*隐身|入场.*隐身|开局.*隐身/.test(text)) bonus.startStealth = true;
+        // 战斗开始：魅惑
+        if (/战斗开始.*魅惑|入场.*魅惑|开局.*魅惑/.test(text)) bonus.startCharm = true;
+        // 战斗开始：护盾
+        m = text.match(/战斗开始.*获得\s*(\d+)\s*点.*护盾|入场.*护盾\s*(\d+)/);
+        if (m) bonus.startShield += parseInt(m[1] || m[2] || 0);
+        if (/战斗开始.*护盾/.test(text) && !m) bonus.startShield += 20;
+        // 击杀：回能
+        m = text.match(/击杀(?:敌人|单位)(?:后|时)?回复\s*(\d+)\s*点.*能量/);
+        if (m) bonus.energyOnKill += parseInt(m[1]);
+        // 经验加成
+        m = text.match(/获得经验\s*\+\s*(\d+)%/);
+        if (m) bonus.expBonusPct += parseInt(m[1]) / 100;
+        // 掉落加成
+        m = text.match(/掉落(?:概率|数量)?\s*\+\s*(\d+)%/);
+        if (m) bonus.dropBonusPct += parseInt(m[1]) / 100;
+        
+        // ========== 新机制解析 ==========
+        // Dot穿透效果
+        m = text.match(/(?:毒素|毒)穿透\s*\+\s*(\d+)%/);
+        if (m) bonus.poisonPenetration = (bonus.poisonPenetration||0) + parseInt(m[1])/100;
+        m = text.match(/(?:火焰|火)穿透\s*\+\s*(\d+)%/);
+        if (m) bonus.burnPenetration = (bonus.burnPenetration||0) + parseInt(m[1])/100;
+        m = text.match(/(?:流血|血)穿透\s*\+\s*(\d+)%/);
+        if (m) bonus.bleedPenetration = (bonus.bleedPenetration||0) + parseInt(m[1])/100;
+        m = text.match(/(?:凋零|枯萎)穿透\s*\+\s*(\d+)%/);
+        if (m) bonus.witherPenetration = (bonus.witherPenetration||0) + parseInt(m[1])/100;
+        m = text.match(/(?:全Dot|所有Dot)穿透\s*\+\s*(\d+)%/);
+        if (m) bonus.allDotPenetration = (bonus.allDotPenetration||0) + parseInt(m[1])/100;
+        // 毒爆/爆燃保留层数
+        if (/毒爆(?:不再清除|保留)/.test(text) || /毒爆.*保留\d+%层数/.test(text)) {
+            m2 = text.match(/保留(\d+)%层数/);
+            bonus.dotExplosionRetainPct = m2 ? parseInt(m2[1])/100 : 0.5;
+        }
+        // 暴击追加攻击
+        m = text.match(/暴击(?:时)?(\d+)%概率追加(?:一次)?攻击/);
+        if (m) {
+            bonus.critExtraAttackChance = parseInt(m[1])/100;
+            m2 = text.match(/追加.*?(\d+)%伤害/);
+            if (m2) bonus.critExtraAttackMult = parseInt(m2[1])/100;
+        }
+        // 致命伤害保留1点（概率+次数）
+        m = text.match(/受到致命伤害(?:时)?\s*(\d+)%\s*概率保留1点生命(?:，?每局限(\d+)次)?/);
+        if (m) {
+            bonus.lethalSaveChance = parseInt(m[1]) / 100;
+            if (m[2]) bonus.lethalSaveMaxUses = parseInt(m[2]);
+        }
+        // 吸血转护盾
+        m = text.match(/吸血量超过最大生命时(\d+)?%?转化为护盾/);
+        if (m) {
+            bonus.lifeStealToShieldPct = m[1] ? parseInt(m[1])/100 : 0.5;
+        }
+        // 闪避反击
+        m = text.match(/闪避(?:时|后)(\d+)%概率反击/);
+        if (m) {
+            bonus.dodgeCounterChance = parseInt(m[1])/100;
+            m2 = text.match(/反击.*?(\d+)%伤害/);
+            if (m2) bonus.dodgeCounterMult = parseInt(m2[1])/100;
+        }
+        m = text.match(/闪避(?:时|后)回复\s*(\d+)%\s*最大生命/);
+        if (m) bonus.dodgeHealPct = (bonus.dodgeHealPct||0) + parseInt(m[1])/100;
+        // 额外行动
+        m = text.match(/(?:每回合|回合开始)(\d+)%概率获得额外行动/);
+        if (m) {
+            bonus.extraTurnChance = parseInt(m[1])/100;
+            m2 = text.match(/每局限(\d+)次/);
+            if (m2) bonus.extraTurnMaxUses = parseInt(m2[1]);
+        }
+        // 攻击时X%概率追加攻击（套装群体意识等）
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率追加(?:一次)?攻击/);
+        if (m) {
+            bonus.extraAttackChance = (bonus.extraAttackChance||0) + parseInt(m[1])/100;
+            m2 = text.match(/追加(?:攻击)?伤害\s*\+\s*(\d+)%/);
+            if (m2) bonus.extraAttackMult = (bonus.extraAttackMult||0) + parseInt(m2[1])/100;
+        }
+        // 击杀叠加攻击力
+        m = text.match(/击杀(?:敌人|单位)后攻击力\+(\d+)%.*可叠加/);
+        if (m) {
+            bonus.killStackAttack = parseInt(m[1])/100;
+            bonus.killAttackStackPermanent = true;
+        }
+        // 击杀叠加暴击率
+        m = text.match(/击杀(?:敌人|单位)后暴击率\+(\d+)%.*可叠加/);
+        if (m) {
+            bonus.killStackCrit = parseInt(m[1]);
+            bonus.killCritStackPermanent = true;
+        }
+        // 低血量无敌
+        m = text.match(/生命低于\d+%时无敌1回合.*每局限(\d+)次/);
+        if (m) {
+            bonus.lowHpInvincibleChance = 1.0;
+            bonus.lowHpInvincibleMaxUses = parseInt(m[1]);
+        }
+        // 所有天赋效果加成
+        m = text.match(/所有天赋效果\+(\d+)%/);
+        if (m) bonus.allTalentEffectPct = parseInt(m[1])/100;
+        // 所有Dot伤害加成
+        m = text.match(/所有Dot伤害\+(\d+)%/);
+        if (m) bonus.allDotDamagePct = parseInt(m[1])/100;
+        // 所有控制时间加成
+        m = text.match(/所有控制时间\+(\d+)%/);
+        if (m) bonus.allControlDurationPct = parseInt(m[1])/100;
+        // 无视防御（含"攻击无视X%防御"）
+        m = text.match(/无视目标(\d+)%防御/);
+        if (m) bonus.ignoreDefensePct = parseInt(m[1])/100;
+        m = text.match(/攻击无视\s*(\d+)%\s*防御/);
+        if (m) bonus.armorPenetration = (bonus.armorPenetration||0) + parseInt(m[1]);
+        // 灼烧伤害+X%
+        m = text.match(/灼烧伤害\s*\+\s*(\d+)%/);
+        if (m) bonus.burnDamagePct = (bonus.burnDamagePct||0) + parseInt(m[1])/100;
+        // 所有元素抗性+X%
+        m = text.match(/所有元素抗性\s*\+\s*(\d+)%/);
+        if (m) bonus.allResist = (bonus.allResist||0) + parseInt(m[1]);
+        // 吞噬额外获取X%碎片收益
+        m = text.match(/吞噬(?:敌人|单位)?额外获取\s*(\d+)%\s*碎片收益/);
+        if (m) bonus.fragmentBonusPct = (bonus.fragmentBonusPct||0) + parseInt(m[1])/100;
+        // 撕咬伤害+X%
+        m = text.match(/撕咬伤害\s*\+\s*(\d+)%/);
+        if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
+        // 先手攻击增伤X%
+        m = text.match(/先手攻击增伤\s*(\d+)%/);
+        if (m) bonus.firstStrikeDamagePct = (bonus.firstStrikeDamagePct||0) + parseInt(m[1])/100;
+        // 撕咬降低敌方X%防御
+        m = text.match(/撕咬降低敌方\s*(\d+)%\s*防御/);
+        if (m) { bonus.hitDefenseReductionChance = 1.0; bonus.hitDefenseReductionPct = parseInt(m[1]); if (!bonus.hitDefenseReductionDuration) bonus.hitDefenseReductionDuration = 3; }
+        // 被近战攻击时X%概率麻痹
+        m = text.match(/被近战攻击(?:时)?有?\s*(\d+)%\s*概率麻痹/);
+        if (m) bonus.meleeParalyzeChance = (bonus.meleeParalyzeChance||0) + parseInt(m[1])/100;
+        // 近身敌方每回合受到X点毒素伤害
+        m = text.match(/近身敌方每回合受到\s*(\d+)\s*点毒素伤害/);
+        if (m) bonus.enemyPerTurnPoison = (bonus.enemyPerTurnPoison||0) + parseInt(m[1]);
+        // 战斗开始时降低敌人攻击力（王者咆哮，必触发）
+        m = text.match(/战斗开始(?:时)?降低敌人攻击力(\d+)%/);
+        if (m) { bonus.startEnemyDebuff = true; bonus.startEnemyDebuffChance = 1.0; bonus.startEnemyDebuffPct = parseInt(m[1])/100; }
+        // 周围敌方单位攻击-X%（王者咆哮变体）
+        m = text.match(/周围敌方单位攻击\s*-\s*(\d+)%/);
+        if (m) { bonus.startEnemyDebuff = true; bonus.startEnemyDebuffChance = 1.0; bonus.startEnemyDebuffPct = (bonus.startEnemyDebuffPct||0) + parseInt(m[1])/100; }
+        // 束缚(无概率=100%，触击/菌丝)
+        m = text.match(/束缚(?:敌人|目标)?\s*(\d+)?\s*回合/);
+        if (m) { bonus.bindChance = Math.max(bonus.bindChance || 0, 100); if (m[1]) bonus.bindDuration = Math.max(bonus.bindDuration||0, parseInt(m[1])); }
+        // 对原始生物伤害+X%（原核核心，泛化为增伤）
+        m = text.match(/对原始生物伤害\s*\+\s*(\d+)%/);
+        if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
+        // 受到攻击时X%概率生成虚影规避伤害（幻影拟态）
+        m = text.match(/受到攻击(?:时)?有?\s*(\d+)%\s*概率生成虚影(?:规避伤害)?/);
+        if (m) bonus.phantomDodgeChance = (bonus.phantomDodgeChance||0) + parseInt(m[1])/100;
+        // 蛰伏状态受到伤害降低X%（蛰伏之躯，泛化为通用减伤）
+        m = text.match(/蛰伏状态受到伤害降低\s*(\d+)%/);
+        if (m) bonus.damageReductionPct = (bonus.damageReductionPct||0) + parseInt(m[1])/100;
+        // 攻击无法被闪避
+        if (/攻击无法被闪避/.test(text)) bonus.attackCannotDodge = true;
+        // 中毒无层数上限
+        if (/中毒层数无上限/.test(text)) bonus.poisonNoStackLimit = true;
+        // 每层中毒额外伤害
+        m = text.match(/每层中毒额外\+(\d+)%伤害/);
+        if (m) bonus.poisonPerStackDamagePct = parseInt(m[1])/100;
+        // 灼烧不衰减
+        if (/灼烧(?:层数)?每回合\+1|灼烧不衰减/.test(text)) bonus.burnNoDecay = true;
+        // 灼烧目标受到伤害增加
+        m = text.match(/灼烧目标受到的(?:所有)?伤害\+(\d+)%/);
+        if (m) bonus.burnTargetDamageTakenPct = parseInt(m[1])/100;
+        // 回复效果加成
+        m = text.match(/回复效果\+(\d+)%/);
+        if (m) bonus.healEffectPct = parseInt(m[1])/100;
+        // 吸血比例加成
+        m = text.match(/吸血比例\+(\d+)%/);
+        if (m) bonus.lifeStealBonusPct = parseInt(m[1])/100;
+        // 护盾效果加成
+        m = text.match(/护盾效果\+(\d+)%/);
+        if (m) bonus.shieldEffectPct = parseInt(m[1])/100;
+        // 反伤比例加成
+        m = text.match(/反伤比例\+(\d+)%/);
+        if (m) bonus.reflectBonusPct = parseInt(m[1])/100;
+        // 每回合回复最大生命百分比
+        m = text.match(/每回合回复(\d+)%最大生命/);
+        if (m) bonus.hpRegenPct = parseInt(m[1])/100;
+        // 减伤百分比
+        m = text.match(/减伤\+(\d+)%/);
+        if (m) bonus.damageReductionPct = parseInt(m[1])/100;
+        // 所有属性百分比加成（统一走 allStatPct 小数）
+        // 冷却缩减百分比
+        m = text.match(/技能冷却-(\d+)%/);
+        if (m) bonus.cooldownReductionPct = parseInt(m[1])/100;
+        // 每回合随机增益
+        m = text.match(/每回合开始随机获得(\d+)个增益/);
+        if (m) bonus.randomBuffPerTurn = parseInt(m[1]);
+        // 因果之链
+        if (/因果之链|受到伤害时记录/.test(text)) {
+            bonus.causalChain = true;
+            m = text.match(/附加记录的(\d+)%伤害/);
+            if (m) bonus.causalChainPct = parseInt(m[1]) / 100;
+            m = text.match(/最多记录(\d+)点/);
+            if (m) bonus.causalMaxRecord = parseInt(m[1]);
+        }
+        // 噬神者
+        if (/击杀Boss后.*获得.*技能|噬神者/.test(text)) {
+            bonus.bossSkillSteal = true;
+        }
+        // 奇美拉之魂：随机附加多种Dot
+        if (/奇美拉之魂|随机附加流血.*中毒.*灼烧/.test(text)) {
+            bonus.chimeraSoul = true;
+            m = text.match(/各(\d+)%概率/);
+            if (m) bonus.chimeraChance = parseInt(m[1]) / 100;
+        }
+        // 百兽龙威：战斗开始时降低敌人攻击力
+        if (/百兽龙威|战斗开始时.*降低敌人攻击力/.test(text)) {
+            bonus.startEnemyDebuff = true;
+            m = text.match(/(\d+)%概率降低敌人攻击力/);
+            if (m) bonus.startEnemyDebuffChance = parseInt(m[1]) / 100;
+            m = text.match(/降低敌人攻击力(\d+)%/);
+            if (m) bonus.startEnemyDebuffPct = parseInt(m[1]) / 100;
+        }
+        // 奇点：每回合随机触发神话天赋效果
+        if (/奇点|每回合开始随机触发一个.*神话天赋/.test(text)) {
+            bonus.randomMythicPerTurn = true;
+        }
+        // ========== 新增天赋效果解析 ==========
+        // 攻击时概率造成额外伤害（鹰眼、弱点洞察）
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*造成\s*(\d+)%\s*攻击?力?伤害/);
+        if (m) {
+            bonus.attackProcDamageChance = parseInt(m[1]) / 100;
+            bonus.attackProcDamageMult = parseInt(m[2]) / 100;
+        }
+        // 暴击抗性（硬化骨骼）
+        m = text.match(/暴击抗性\s*\+\s*(\d+)%/);
+        if (m) bonus.critResistance = parseInt(m[1]);
+        // 受到暴击伤害减伤（硬化骨骼）
+        m = text.match(/受到暴击伤害\s*-\s*(\d+)%/);
+        if (m) bonus.critDamageReduction = parseInt(m[1]) / 100;
+        // 命中时概率降低敌人防御（全视之眼）
+        m = text.match(/命中(?:时)?\s*(\d+)%\s*概率.*防御\s*-\s*(\d+)%/);
+        if (m) {
+            bonus.hitDefenseReductionChance = parseInt(m[1]) / 100;
+            bonus.hitDefenseReductionPct = parseInt(m[2]);
+            m2 = text.match(/防御-\d+%.*?(\d+)回合/);
+            if (m2) bonus.hitDefenseReductionDuration = parseInt(m2[1]);
+        }
+        // 攻击时概率无视闪避（红外锁定）
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*无视.*闪避/);
+        if (m) bonus.attackIgnoreDodgeChance = parseInt(m[1]) / 100;
+        // 受到攻击时概率获得护盾（灵能护盾）
+        m = text.match(/受到攻击(?:时)?\s*(\d+)%\s*概率.*护盾.*吸收\s*(\d+)%.*生命/);
+        if (m) {
+            bonus.shieldOnHitChance = parseInt(m[1]) / 100;
+            bonus.shieldOnHitPct = parseInt(m[2]) / 100;
+        }
+        // 能量满时下次攻击伤害倍率（灵能爆发）
+        m = text.match(/能量满(?:时)?.*下一次攻击造成\s*(\d+)%\s*伤害/);
+        if (m) bonus.energyFullDamageMult = parseInt(m[1]) / 100;
+        // 受到火焰伤害转化为生命（热能吸收）
+        m = text.match(/受到火焰伤害(?:时)?\s*(\d+)%\s*转化为.*生命/);
+        if (m) bonus.fireDamageLifeStealPct = parseInt(m[1]) / 100;
+        // 灼烧抗性（热能吸收）
+        m = text.match(/灼烧抗性\s*\+\s*(\d+)%/);
+        if (m) bonus.burnResistancePct = parseInt(m[1]) / 100;
+        // 受到近战攻击时概率反伤（骨刺反击）
+        m = text.match(/受到近战攻击(?:时)?\s*(\d+)%\s*概率反弹\s*(\d+)%\s*伤害/);
+        if (m) {
+            bonus.meleeReflectChance = parseInt(m[1]) / 100;
+            bonus.meleeReflectPct = parseInt(m[2]) / 100;
+        }
+        // 受到暴击伤害后恢复量翻倍（骨骼再生）
+        if (/受到暴击伤害后.*恢复量.*翻倍|暴击.*恢复.*翻倍/.test(text)) {
+            bonus.critHealDouble = true;
+        }
+    },    //  商店
+    // ============================================================
+    openShop(category) {
+        this.closePop();
+        this.updateBottomNav('shop');
+        const shop = this.data.shop;
+        if (!shop) return;
+        const consumables = shop.consumables || [];
+        const currencyNames = {fragments_1:'普通碎片', fragments_2:'稀有碎片', fragments_3:'史诗碎片', fragments_4:'传说碎片', fragments_5:'神话碎片', gold:'基因精华'};
+        const currencyColors = {fragments_1:'var(--quality-common)', fragments_2:'var(--accent-info)', fragments_3:'var(--accent-purple)', fragments_4:'var(--accent-warning)', fragments_5:'var(--accent-danger)', gold:'var(--accent-warning)'};
+        const categoryNames = {heal:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M7 20h10\"/><path d=\"M10 20c5.5-2.5.8-6.4 3-10\"/><path d=\"M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z\"/><path d=\"M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z\"/></svg> 生命恢复', energy:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 能量恢复', buff:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M18 3a3 3 0 0 0-3 3v1a3 3 0 0 1-3 3 3 3 0 0 1-3-3V6a3 3 0 0 0-6 0v9a6 6 0 0 0 6 6h2a6 6 0 0 0 6-6V8a3 3 0 0 1 3-3 3 3 0 0 0-3-3z\"/></svg> 属性强化', resource:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"/><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"/><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"/></svg> 资源包', special:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 特殊道具'};
+        const categories = ['heal', 'energy', 'buff', 'resource', 'special'];
+        const activeCat = category || 'all';
+
+        // 初始化本局购买记录
+        if (!this.shopPurchaseCount) this.shopPurchaseCount = {};
+
+        let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
+        html += '<h3 style="margin:0;color:var(--accent-warning)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 基因共生体商人</h3>';
+        html += '<button onclick="' + (this.merchantMode ? 'game.leaveMerchant()' : 'game.goBack()') + '" style="padding:8px 16px;font-size:13px;background:var(--accent-success);color:white;border-radius:6px">← 返回</button>';
+        html += '</div>';
+        if (this.merchantMode) {
+            html += '<p style="color:var(--accent-success);font-size:13px;margin-bottom:10px;line-height:1.6;font-weight:bold"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M2 12c0-4 4-6 10-6s10 2 10 6v2c0 4-4 6-10 6s-10-2-10-6z\"/><circle cx=\"8\" cy=\"12\" r=\"1.5\"/><circle cx=\"16\" cy=\"12\" r=\"1.5\"/><path d=\"M10 16c.5.5 1.5.5 2 0s1.5-.5 2 0\"/></svg> 流浪商人特惠！所有商品8折优惠！</p>';
+        } else {
+            html += '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:10px;line-height:1.6">"欢迎，进化者。我这里有各种基因改造品，能让你在进化之路上走得更远。"</p>';
+        }
+        
+        // 资源显示
+        html += '<div style="margin-bottom:12px;padding:10px;background:linear-gradient(135deg,var(--bg-card),var(--bg-secondary));border-radius:8px;font-size:12px;border:1px solid var(--text-faint)">';
+        html += `<span style="color:var(--accent-warning);font-weight:bold"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 基因精华：${this.player.gold}</span>`;
+        for (let q=1; q<=4; q++) {
+            html += `<span style="margin-left:10px;color:${currencyColors['fragments_'+q]}">${currencyNames['fragments_'+q]}：${this.permanent.universalFragments[q] || 0}</span>`;
+        }
+        html += '</div>';
+
+        // 分类标签
+        html += '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
+        html += `<button onclick="game.openShop('all')" style="padding:6px 12px;font-size:12px;border-radius:6px;${activeCat==='all'?'background:var(--accent-warning);color:var(--bg-card);fo

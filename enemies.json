@@ -1000,7 +1000,7 @@
       "type": "normal",
       "mapId": "temperate_forest_floor",
       "stats": {
-        "hp": 30,
+        "hp": 33,
         "atk": 4,
         "def": 4,
         "agi": 1,
@@ -1038,7 +1038,7 @@
       "type": "normal",
       "mapId": "temperate_forest_floor",
       "stats": {
-        "hp": 27,
+        "hp": 30,
         "atk": 8,
         "def": 2,
         "agi": 4,
@@ -1076,7 +1076,7 @@
       "type": "normal",
       "mapId": "temperate_forest_floor",
       "stats": {
-        "hp": 33,
+        "hp": 36,
         "atk": 3,
         "def": 5,
         "agi": 2,
@@ -1113,7 +1113,7 @@
       "type": "normal",
       "mapId": "temperate_forest_floor",
       "stats": {
-        "hp": 24,
+        "hp": 27,
         "atk": 5,
         "def": 1,
         "agi": 5,
@@ -2594,7 +2594,7 @@
       "type": "normal",
       "mapId": "giant_insect_forest",
       "stats": {
-        "hp": 40,
+        "hp": 34,
         "atk": 9,
         "def": 3,
         "agi": 8,
@@ -2631,7 +2631,7 @@
       "type": "normal",
       "mapId": "giant_insect_forest",
       "stats": {
-        "hp": 50,
+        "hp": 43,
         "atk": 10,
         "def": 4,
         "agi": 6,
@@ -2918,7 +2918,7 @@
       "type": "normal",
       "mapId": "giant_insect_forest",
       "stats": {
-        "hp": 45,
+        "hp": 39,
         "atk": 8,
         "def": 5,
         "agi": 6,
@@ -4198,7 +4198,7 @@
       "type": "normal",
       "mapId": "dragon_spine_mountains",
       "stats": {
-        "hp": 70,
+        "hp": 78,
         "atk": 18,
         "def": 10,
         "agi": 12,
@@ -4249,7 +4249,7 @@
       "type": "normal",
       "mapId": "dragon_spine_mountains",
       "stats": {
-        "hp": 50,
+        "hp": 58,
         "atk": 22,
         "def": 5,
         "agi": 20,
@@ -4300,7 +4300,7 @@
       "type": "normal",
       "mapId": "dragon_spine_mountains",
       "stats": {
-        "hp": 55,
+        "hp": 63,
         "atk": 20,
         "def": 6,
         "agi": 16,
@@ -4351,7 +4351,7 @@
       "type": "normal",
       "mapId": "dragon_spine_mountains",
       "stats": {
-        "hp": 90,
+        "hp": 98,
         "atk": 24,
         "def": 10,
         "agi": 8,
@@ -5440,7 +5440,7 @@
       "type": "normal",
       "mapId": "giant_insect_forest",
       "stats": {
-        "hp": 70,
+        "hp": 60,
         "atk": 22,
         "def": 10,
         "agi": 14,
@@ -5491,7 +5491,7 @@
       "type": "normal",
       "mapId": "giant_insect_forest",
       "stats": {
-        "hp": 55,
+        "hp": 47,
         "atk": 20,
         "def": 6,
         "agi": 22,
@@ -5542,7 +5542,7 @@
       "type": "normal",
       "mapId": "giant_insect_forest",
       "stats": {
-        "hp": 90,
+        "hp": 78,
         "atk": 18,
         "def": 15,
         "agi": 8,
@@ -5593,7 +5593,7 @@
       "type": "normal",
       "mapId": "giant_insect_forest",
       "stats": {
-        "hp": 50,
+        "hp": 43,
         "atk": 25,
         "def": 5,
         "agi": 20,
@@ -9581,7 +9581,7 @@
       "type": "normal",
       "mapId": "reincarnation_gate",
       "stats": {
-        "hp": 180,
+        "hp": 220,
         "atk": 50,
         "def": 15,
         "agi": 24,
@@ -9632,7 +9632,7 @@
       "type": "normal",
       "mapId": "reincarnation_gate",
       "stats": {
-        "hp": 240,
+        "hp": 280,
         "atk": 48,
         "def": 30,
         "agi": 12,
@@ -9683,7 +9683,7 @@
       "type": "normal",
       "mapId": "reincarnation_gate",
       "stats": {
-        "hp": 170,
+        "hp": 210,
         "atk": 65,
         "def": 14,
         "agi": 20,
@@ -9734,7 +9734,7 @@
       "type": "normal",
       "mapId": "reincarnation_gate",
       "stats": {
-        "hp": 220,
+        "hp": 260,
         "atk": 55,
         "def": 22,
         "agi": 18,

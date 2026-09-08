@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>吞噬·无限进化</title>
+    <title>吞噬无限进化</title>
     <style>
         /* ============================================================
            CSS变量 - 主题系统
@@ -866,7 +866,7 @@
             </div>
         </div>
         
-        <h2 style="margin-top:0">吞噬·无限进化</h2>
+        <h2 style="margin-top:0">吞噬无限进化</h2>
         <div class="floor-info" id="floorInfo">第 1 层</div>
 
         <div class="box">
@@ -910,11 +910,11 @@
             </div>
         </div>
 
-        <!-- 首领层休整区域 -->
+        <!-- Boss层休整区域 -->
         <div id="bossRestArea" style="display:none">
             <div class="box" style="border-color:var(--accent-danger)">
-                <h3 style="color:var(--accent-danger)"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> 首领层休整</h3>
-                <p style="color:var(--text-muted);font-size:14px">前方是强大的首领，选择你的备战方式：</p>
+                <h3 style="color:var(--accent-danger)"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> Boss层休整</h3>
+                <p style="color:var(--text-muted);font-size:14px">前方是强大的Boss，选择你的备战方式：</p>
                 <div id="bossRestOptions" style="margin-top:15px"></div>
             </div>
         </div>
@@ -1139,7 +1139,7 @@
                     <button id="btnSfx" onclick="game.toggleSfx()" style="padding:6px 16px;font-size:13px;min-width:60px">开启</button>
                 </div>
             </div>
-            <p style="color:var(--text-faint);font-size:11px;margin-top:8px">背景音乐功能即将上线</p>
+            <p style="color:var(--text-faint);font-size:11px;margin-top:8px">背景音乐功能开发中，敬请期待</p>
         </div>
         
         <!-- 显示设置 -->
@@ -1189,8 +1189,8 @@
                 <div><span style="color:var(--accent-primary)">游戏名称：</span>无限吞噬进化</div>
                 <div><span style="color:var(--accent-primary)">游戏类型：</span>单机文字冒险RPG</div>
                 <div><span style="color:var(--accent-primary)">核心玩法：</span>吞噬→获取基因→解锁天赋→无限变强→轮回再战</div>
-                <div><span style="color:var(--accent-primary)">版本号：</span>v0.4.0</div>
-                <div><span style="color:var(--accent-primary)">目标平台：</span>TapTap</div>
+                <div><span style="color:var(--accent-primary)">版本号：</span>v0.4.0（开发中）</div>
+                <div><span style="color:var(--accent-primary)">目标平台：</span>TapTap小游戏</div>
             </div>
         </div>
         
@@ -1263,7 +1263,7 @@
 <!-- 通用弹窗 -->
 <div class="box" id="popBox" style="display:none;"></div>
 
-<script src="game.js?v=20260908_auditfix2"></script>
+<script src="game.js?v=20260908_r3"></script>
 
 <!-- 设置面板 -->
 <div id="settingsPanel" class="popup-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
@@ -1293,7 +1293,7 @@
 <!-- 新手引导弹窗 -->
 <div id="tutorialOverlay">
     <div id="tutorialBox">
-        <div id="tutorialTitle">欢迎来到吞噬·无限进化</div>
+        <div id="tutorialTitle">欢迎来到吞噬无限进化</div>
         <div id="tutorialProgress"></div>
         <div id="tutorialContent"></div>
         <div id="tutorialButtons">

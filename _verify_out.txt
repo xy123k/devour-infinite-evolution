@@ -1,0 +1,4 @@
+函数内 parseInt(m[1]) 次数: 97
+函数内 parseInt(mc[1]) 次数: 1
+函数内 parseInt(md[1]) 次数: 1
+函数内精确 parseInt(m) 次数: 0

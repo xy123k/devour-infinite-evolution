@@ -401,8 +401,8 @@ const game = {
         bossCores: {},     // {bossId: count} Boss核心
         essence: 0,        // 进化精粹，用于局外强化和槽位解锁
         essenceUpgrades: {strength:0, agility:0, vitality:0, perception:0, evolution:0, hp:0},  // 进化精粹强化等级
-        passiveSlots: 4,   // 天赋槽数量
-        activeSlots: 3,    // 技能槽数量
+        passiveSlots: 4,   // 被动槽数量
+        activeSlots: 3,    // 主动槽数量
         symbionts: [],     // 共生体背包
         equippedSymbionts: {},  // 已装备共生体 {slot: symbiontId}
         // 永久五维加成
@@ -648,15 +648,6 @@ const game = {
                     }
                 }
                 if (!this.permanent.unlockedTalents) this.permanent.unlockedTalents = [];
-                // 过滤天赋等级残留：等级必须为 1~5 整数，其余剪回 1（防旧档异常残留）
-                if (this.permanent.talentLevels) {
-                    for (const _k in this.permanent.talentLevels) {
-                        const _lv = parseInt(this.permanent.talentLevels[_k]);
-                        if (!_lv || _lv < 1 || _lv > 5 || _lv !== this.permanent.talentLevels[_k]) {
-                            this.permanent.talentLevels[_k] = 1;
-                        }
-                    }
-                }
                 if (!this.permanent.bonusStats) this.permanent.bonusStats = {strength:0,agility:0,vitality:0,perception:0,evolution:0};
                 if (!this.permanent.symbionts) this.permanent.symbionts = [];
                 if (!this.permanent.equippedSymbionts) this.permanent.equippedSymbionts = {};
@@ -937,8 +928,8 @@ const game = {
         {id: 'fragments_200', name: '大收藏家', desc: '累计获得200个碎片', category: '收集', reward: {talentPoints: 8, fragments: {2: 15}}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z\"/><path d=\"M5 20h14\"/></svg>'},
         {id: 'maps_3', name: '探索者', desc: '探索3张不同的地图', category: '探索', reward: {talentPoints: 3}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6\"/><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"18\"/><line x1=\"16\" y1=\"6\" x2=\"16\" y2=\"22\"/></svg>'},
         {id: 'maps_all', name: '大探索家', desc: '探索所有可玩地图', category: '探索', reward: {talentPoints: 15, fragments: {4: 3}}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/><path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"/></svg>'},
-        {id: 'first_boss', name: '首领猎人', desc: '击杀第一个首领', category: '战斗', reward: {talentPoints: 5}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2c-3 0-5 2-5 5 0 2 1 3 2 4l-2 3 3 1 1 3 3-2 3 2 1-3 3-1-2-3c1-1 2-2 2-4 0-3-2-5-5-5z\"/><circle cx=\"9\" cy=\"8\" r=\"0.5\"/><circle cx=\"15\" cy=\"8\" r=\"0.5\"/></svg>'},
-        {id: 'boss_5', name: '首领终结者', desc: '累计击杀5个首领', category: '战斗', reward: {talentPoints: 12, fragments: {3: 8}}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"14.5 17.5 3 6 3 3 6 3 17.5 14.5\"/><line x1=\"13\" y1=\"19\" x2=\"19\" y2=\"13\"/><line x1=\"16\" y1=\"16\" x2=\"20\" y2=\"20\"/><line x1=\"19\" y1=\"21\" x2=\"21\" y2=\"19\"/></svg>'},
+        {id: 'first_boss', name: 'Boss猎人', desc: '击杀第一个Boss', category: '战斗', reward: {talentPoints: 5}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2c-3 0-5 2-5 5 0 2 1 3 2 4l-2 3 3 1 1 3 3-2 3 2 1-3 3-1-2-3c1-1 2-2 2-4 0-3-2-5-5-5z\"/><circle cx=\"9\" cy=\"8\" r=\"0.5\"/><circle cx=\"15\" cy=\"8\" r=\"0.5\"/></svg>'},
+        {id: 'boss_5', name: 'Boss终结者', desc: '累计击杀5个Boss', category: '战斗', reward: {talentPoints: 12, fragments: {3: 8}}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"14.5 17.5 3 6 3 3 6 3 17.5 14.5\"/><line x1=\"13\" y1=\"19\" x2=\"19\" y2=\"13\"/><line x1=\"16\" y1=\"16\" x2=\"20\" y2=\"20\"/><line x1=\"19\" y1=\"21\" x2=\"21\" y2=\"19\"/></svg>'},
         {id: 'battles_50', name: '战斗专家', desc: '完成50场战斗', category: '战斗', reward: {talentPoints: 5}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg>'},
         {id: 'battles_200', name: '战斗大师', desc: '完成200场战斗', category: '战斗', reward: {talentPoints: 12, fragments: {2: 20}}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/></svg>'},
         {id: 'level_10', name: '等级提升', desc: '达到10级', category: '成长', reward: {talentPoints: 5}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"23 6 13.5 15.5 8.5 10.5 1 18\"/><polyline points=\"17 6 23 6 23 12\"/></svg>'},
@@ -1044,7 +1035,7 @@ const game = {
         let html = '<h3>成就系统</h3>';
         html += `<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">已解锁 ${unlocked.length}/${this.achievements.length} 个成就</p>`;
         html += '<div style="margin-bottom:15px;padding:10px;background:var(--bg-card);border-radius:6px;font-size:12px;color:var(--text-secondary)">';
-        html += `战斗：${stats.battlesCompleted}场 | 击杀：${stats.enemiesKilled} | 首领：${stats.bossesKilled} | 死亡：${stats.deaths}<br>`;
+        html += `战斗：${stats.battlesCompleted}场 | 击杀：${stats.enemiesKilled} | Boss：${stats.bossesKilled} | 死亡：${stats.deaths}<br>`;
         html += `碎片：${stats.totalFragments} | 天赋：${stats.talentsUnlocked} | 进化：${stats.evolutionsCompleted} | 融合：${stats.fusionsCompleted}<br>`;
         html += `最高等级：${stats.maxLevel} | 地图：${stats.mapsExplored.length}/${this.getPlayableMaps().length} | 最高基因精华：${stats.maxGold}`;
         html += '</div>';
@@ -1252,7 +1243,7 @@ const game = {
         { tag: 2, name: '血系', threshold: 15, bonus: 'bleedResist', bonusValue: 10, desc: '永久流血抗+10%' },
         { tag: 7, name: '冰系', threshold: 15, bonus: 'iceResist', bonusValue: 10, desc: '永久冰抗+10%' },
         { tag: 4, name: '雷系', threshold: 15, bonus: 'thunderResist', bonusValue: 10, desc: '永久雷抗+10%' },
-        { tag: 'boss', name: '首领', threshold: 5, bonus: 'bossDamage', bonusValue: 5, desc: '永久首领伤害+5%' },
+        { tag: 'boss', name: 'Boss', threshold: 5, bonus: 'bossDamage', bonusValue: 5, desc: '永久Boss伤害+5%' },
         { tag: 'total', name: '总击杀', threshold: 100, bonus: 'allDamage', bonusValue: 3, desc: '永久全伤害+3%' }
     ],
 
@@ -1551,7 +1542,7 @@ const game = {
             this.initLeaderboard();
             this.startNewRun();
         } catch (e) {
-            this.showGameAlert("加载失败", "配置文件加载失败，请重新下载游戏或检查网络后重试");
+            this.showGameAlert("加载失败", "配置文件加载失败：" + e.message);
             console.error(e);
         }
     },
@@ -1827,7 +1818,7 @@ const game = {
         // 构建成长总览HTML
         let html = '<div style="text-align:center;margin-bottom:16px">';
         html += `<h2 style="color:var(--accent-primary);margin:0 0 8px 0;display:flex;align-items:center;justify-content:center;gap:8px"><span style="width:22px;height:22px;display:inline-flex"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:100%;height:100%\"><polyline points=\"23 4 23 10 17 10\"/><polyline points=\"1 20 1 14 7 14\"/><path d=\"M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15\"/></svg></span>第 ${(this.permanent.achievementStats.reincarnations || 0) + 1} 次轮回 · 启动</h2>
-        <div style="margin:6px 0 2px 0;padding:8px 10px;background:var(--bg-card);border:1px solid var(--text-faint);border-radius:6px;font-size:12px;color:var(--text-secondary);line-height:1.6">⚠ 轮回难度 ${(this.permanent.achievementStats.reincarnations || 0) + 1}级：本轮回敌人属性 ×${Math.pow(1.05, Math.min((this.permanent.achievementStats.reincarnations || 0), 15)).toFixed(2)}（上限 ×2.08）<br><span style="color:var(--text-muted)">若感觉吃力，可先积累永久成长（死亡结算/进化精粹）再推进轮回。</span></div>`;
+        <div style="margin:6px 0 2px 0;padding:8px 10px;background:var(--bg-card);border:1px solid var(--text-faint);border-radius:6px;font-size:12px;color:var(--text-secondary);line-height:1.6">⚠ 轮回难度 Lv.${(this.permanent.achievementStats.reincarnations || 0) + 1}：本轮回敌人属性 ×${Math.pow(1.05, Math.min((this.permanent.achievementStats.reincarnations || 0) + 1, 15)).toFixed(2)}（上限 ×2.08）<br><span style="color:var(--text-muted)">若感觉吃力，可先积累永久成长（死亡结算/进化精粹）再推进轮回。</span></div>`;
         // 根据轮回次数显示不同的开场文本
         const reincarnationCount = this.permanent.achievementStats ? (this.permanent.achievementStats.reincarnations || 0) : 0;
         let openingText = this.reincarnationOpenings[0].text;
@@ -1926,26 +1917,6 @@ const game = {
         p.maxHp = Math.floor((60 + _v * 8 + (talent.maxHp || 0) * evoMult + (sym.maxHp || 0)) * hpMult);
         p.attack = Math.floor(_s * 2 + (talent.attack || 0) * evoMult + (sym.attack || 0));
         p.defense = +(_v * 0.4 + (talent.defense || 0) * evoMult + (sym.defense || 0)).toFixed(1);
-        // 全属性百分比加成（天赋/共生体，统一小数口径）
-        const allStatBonus = (talent.allStatPct || 0) + (sym.allStatPct || 0);
-        if (allStatBonus > 0) {
-            const hpRatio = p.maxHp > 0 ? p.hp / p.maxHp : 1;
-            p.maxHp = Math.floor(p.maxHp * (1 + allStatBonus));
-            p.attack = Math.floor(p.attack * (1 + allStatBonus));
-            p.defense = +(p.defense * (1 + allStatBonus)).toFixed(1);
-            p.hp = Math.max(1, Math.floor(p.maxHp * hpRatio));
-        }
-        // 属性百分比加成（生命/攻击/防御，审计修复）
-        const pctHp = (talent.maxHpPct || 0) + (sym.maxHpPct || 0);
-        const pctAtk = (talent.attackPct || 0) + (sym.attackPct || 0);
-        const pctDef = (talent.defensePct || 0) + (sym.defensePct || 0);
-        if (pctHp > 0 || pctAtk > 0 || pctDef > 0) {
-            const hpRatio2 = p.maxHp > 0 ? p.hp / p.maxHp : 1;
-            if (pctHp > 0) p.maxHp = Math.floor(p.maxHp * (1 + pctHp));
-            if (pctAtk > 0) p.attack = Math.floor(p.attack * (1 + pctAtk));
-            if (pctDef > 0) p.defense = +(p.defense * (1 + pctDef)).toFixed(1);
-            p.hp = Math.max(1, Math.floor(p.maxHp * hpRatio2));
-        }
         p.crit = Math.floor(5 + _per * 0.8 + (talent.crit || 0) + (sym.crit || 0));
         p.critDamage = Math.floor(150 + Math.max(0, p.crit - 100) / 2 + (talent.critDamage || 0) + (sym.critDamagePct || 0));
         p.hit = Math.floor(85 + _per / 5 + (talent.hit || 0) + (sym.hit || 0));
@@ -2164,7 +2135,7 @@ const game = {
             <span style="color:var(--text-faint)">实际命中/闪避受双方敏捷影响</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-faint);margin-bottom:8px">
-            <span>${p.level}级 (${p.exp}/${p.expToNext})</span>
+            <span>Lv.${p.level} (${p.exp}/${p.expToNext})</span>
             <span>基因精华 ${p.gold}</span>
             <span>天赋 ${p.equippedTalents.length}/${this.getPassiveSlots()}</span>
         </div>
@@ -2251,7 +2222,7 @@ const game = {
         const envEff = this.getEnvironmentEffect();
         if (currentMap && envEff) {
             const isBossFloor = this.currentLayer >= (currentMap.totalLayers || 3);
-            const bossHint = isBossFloor ? "<br><br><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent-danger)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg> <span style=\"color:var(--accent-danger)\">前方是首领层，做好准备！</span>" : "";
+            const bossHint = isBossFloor ? "<br><br><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent-danger)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg> <span style=\"color:var(--accent-danger)\">前方是Boss层，做好准备！</span>" : "";
             document.getElementById('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${envEff.name}<br>${envEff.desc}${bossHint}`;
             return;
         }
@@ -2729,7 +2700,7 @@ const game = {
         
         // 显示无尽深层提示
         setTimeout(() => {
-            this.showGameAlert('<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽深层', '恭喜你通关了所有地图！\n\n现在进入无尽深层模式：\n• 无限层数，敌人越来越强\n• 每5层一个首领\n• 第100层遭遇终极首领\n• 这是轮回成长数值的终极考验！\n\n你能推到第几层？');
+            this.showGameAlert('<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽深层', '恭喜你通关了所有地图！\n\n现在进入无尽深层模式：\n• 无限层数，敌人越来越强\n• 每5层一个Boss\n• 第100层遭遇终极Boss\n• 这是轮回成长数值的终极考验！\n\n你能推到第几层？');
         }, 500);
         
         this.refreshUI();
@@ -2742,7 +2713,7 @@ const game = {
         const normals = allEnemies.filter(e => e.type === 'normal');
         const elites = allEnemies.filter(e => e.type === 'elite');
         
-        // 每5层一个首领
+        // 每5层一个Boss
         const isBossFloor = floor % 5 === 0;
         // 第100层是终极Boss
         const isFinalBoss = floor >= 100;
@@ -2770,7 +2741,7 @@ const game = {
         if (isFinalBoss) {
             enemy.name = `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z\"/><path d=\"M5 20h14\"/></svg> 终极Boss·${enemy.name}`;
         } else if (isBossFloor) {
-            enemy.name = `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽首领·${enemy.name}`;
+            enemy.name = `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽Boss·${enemy.name}`;
         } else {
             enemy.name = `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽深层·第${floor}层·${enemy.name}`;
         }
@@ -2859,7 +2830,7 @@ const game = {
             {type:'wither', name:'凋零', icon:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a8 8 0 0 0-8 8c0 2.5 1 4.5 2.5 6L8 20h8l1.5-4c1.5-1.5 2.5-3.5 2.5-6a8 8 0 0 0-8-8z\"/><circle cx=\"9\" cy=\"12\" r=\"1.5\"/><circle cx=\"15\" cy=\"12\" r=\"1.5\"/><path d=\"M10 17h4\"/></svg>'}
         ];
         let resistHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-primary)">';
-        resistHtml += '<span style="color:var(--text-muted);font-size:11px">持续伤害抗性：</span>';
+        resistHtml += '<span style="color:var(--text-muted);font-size:11px">Dot抗性：</span>';
         dotLabels.forEach(d => {
             const resist = this.getDotResistance(enemy, d.type);
             const resistPct = Math.floor(resist * 100);
@@ -3321,12 +3292,12 @@ const game = {
                     case 'firstStrike': bonus.firstStrikeDamagePct += tpl.specialValue || 0; break;
                     case 'dodgeBonus': bonus.dodgeBonus += tpl.specialValue || 0; break;
                     case 'critChance': bonus.critChanceBonus += tpl.specialValue || 0; break;
-                    case 'extraAttack': bonus.extraAttackChance += (tpl.specialValue || 0) / 100; break;
-                    case 'cooldownReduction': bonus.cooldownReductionPct += (tpl.specialValue || 0) / 100; break;
+                    case 'extraAttack': bonus.extraAttackChance += tpl.specialValue || 0; break;
+                    case 'cooldownReduction': bonus.cooldownReductionPct += tpl.specialValue || 0; break;
                     case 'energyOnHit': bonus.energyOnHit += tpl.specialValue || 0; break;
-                    case 'damagePct': bonus.damagePct += (tpl.specialValue || 0) / 100; break;
-                    case 'expBonus': bonus.expBonusPct += (tpl.specialValue || 0) / 100; break;
-                    case 'allStatPct': bonus.allStatPct += (tpl.specialValue || 0) / 100; break;
+                    case 'damagePct': bonus.damagePct += tpl.specialValue || 0; break;
+                    case 'expBonus': bonus.expBonusPct += tpl.specialValue || 0; break;
+                    case 'allStatPct': bonus.allStatPct += tpl.specialValue || 0; break;
                     case 'talentPower': bonus.talentPower += tpl.specialValue || 0; break;
                     case 'energyRegen': bonus.energyRegen += tpl.specialValue || 0; break;
                 }
@@ -3524,7 +3495,7 @@ const game = {
                 html += '<span style="color:' + c + ';font-weight:bold;font-size:13px">' + t.name + ' <span style="font-size:10px;color:var(--text-muted);font-weight:normal">[' + qn + ']</span></span>';
                 html += '<span style="font-size:11px;color:' + (isOwned ? 'var(--accent-success)' : 'var(--text-faint)') + '">' + (isOwned ? '✓ 已解锁' : '未解锁') + '</span>';
                 html += '</div>';
-                html += '<div style="color:var(--text-primary);font-size:12px;margin-top:2px">1级：' + lv1 + '</div>';
+                html += '<div style="color:var(--text-primary);font-size:12px;margin-top:2px">Lv.1：' + lv1 + '</div>';
                 if (t.advanceTo && advanceNames[t.advanceTo]) {
                     html += '<div style="color:var(--accent-warning);font-size:11px;margin-top:2px">⬇ 进化：' + advanceNames[t.advanceTo] + '</div>';
                 }
@@ -3539,7 +3510,7 @@ const game = {
                     (t.effects || []).forEach(e => {
                         if (e.level <= 1) return;
                         shownLv++;
-                        html += '<div style="font-size:11px;color:var(--text-secondary)">' + e.level + '级：' + (e.passive || '') + '</div>';
+                        html += '<div style="font-size:11px;color:var(--text-secondary)">Lv.' + e.level + '：' + (e.passive || '') + '</div>';
                     });
                     const lv1 = (t.effects && t.effects[0]) ? t.effects[0].passive : '';
                     const allSame = (t.effects || []).every(e => e.passive === lv1);
@@ -3602,7 +3573,7 @@ const game = {
             }));
         }
         const active = symEquipped && hasTalent;
-        let html = '';
+        let html = '<div class="tooltip-title">🔗 联动【' + combo.name + '】</div>';
         html += '<div class="tooltip-section"><span class="tooltip-label">效果</span><span class="tooltip-value">' + combo.effect + '</span></div>';
         html += '<div class="tooltip-section"><span class="tooltip-label">触发</span><span class="tooltip-value">装备' + (sym ? sym.name : combo.symbiontId) + ' + ' + (tags.join('、') || '对应体系') + '天赋</span></div>';
         if (combo.description) html += '<div class="tooltip-section"><span class="tooltip-label">说明</span><span class="tooltip-value">' + combo.description + '</span></div>';
@@ -3685,14 +3656,14 @@ const game = {
     // 获取共生体数值文本（辅助函数）
     getSymbiontStatsText(tpl) {
         let statsText = '';
-        const statNames = {maxHp:'生命', defense:'防御', attack:'攻击', speed:'先手值', crit:'暴击率', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', talentPower:'天赋强度', firstStrike:'先手', hp:'生命', hpRegen:'生命恢复', dotDamage:'持续伤害', cooldownReduction:'冷却缩减', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾', thorns:'荆棘'};
+        const statNames = {maxHp:'生命', defense:'防御', attack:'攻击', speed:'先手值', crit:'暴击率', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', talentPower:'天赋强度', firstStrike:'先手', hp:'生命', hpRegen:'生命恢复', dotDamage:'Dot伤害', cooldownReduction:'冷却缩减', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾', thorns:'荆棘'};
         if (tpl.stats) {
             for (const key in tpl.stats) {
                 if (tpl.stats[key]) statsText += (statNames[key] || key) + '+' + tpl.stats[key] + ' ';
             }
         }
         if (tpl.special) {
-            const specialNames = {hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤', lifeSteal:'吸血', critDamage:'暴击伤害', dodge:'闪避率', dodgeBonus:'闪避加成', firstStrike:'先手攻击伤害', hit:'命中率', energyRegen:'能量回复', maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击率', speed:'先手值', agility:'敏捷', strength:'力量', perception:'感知', evolution:'进化', maxEnergy:'能量', dotDamage:'持续伤害', cooldownReduction:'冷却缩减', talentPower:'天赋强度', dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动', energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成', allStatPct:'全属性加成', extraAttackChance:'额外行动', reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透', critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘', hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能', talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片', goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成', talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性', healMod:'治疗效果', damageMod:'伤害加成', damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成', perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比', vitality:'体质', first_strike:'先手值', talent_power:'天赋强度', energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血', reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透', dot_damage:'持续伤害', cooldown_reduction:'冷却缩减'};
+            const specialNames = {hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤', lifeSteal:'吸血', critDamage:'暴击伤害', dodge:'闪避率', dodgeBonus:'闪避加成', firstStrike:'先手攻击伤害', hit:'命中率', energyRegen:'能量回复', maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击率', speed:'先手值', agility:'敏捷', strength:'力量', perception:'感知', evolution:'进化', maxEnergy:'能量', dotDamage:'持续伤害', cooldownReduction:'冷却缩减', talentPower:'天赋强度', dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动', energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成', allStatPct:'全属性加成', extraAttackChance:'额外行动', reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透', critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘', hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能', talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片', goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成', talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性', healMod:'治疗效果', damageMod:'伤害加成', damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成', perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比', vitality:'体质', first_strike:'先手值', talent_power:'天赋强度', energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血', reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透', dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'};
             statsText += (specialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
         }
         return statsText.trim();
@@ -4146,7 +4117,7 @@ const game = {
                 skillHtml += '<br><span style="color:var(--text-secondary);font-size:12px">' + s.desc + '</span></div>';
             });
             skillHtml += '<p style="color:var(--text-muted);font-size:12px;margin-top:10px">技能通过装备天赋解锁，当前共' + skills.length + '个技能</p>';
-            skillHtml += '<button onclick="game.closePop();game.chooseBossRest(' + idx + ');" style="margin-top:10px">确认并迎战首领</button>';
+            skillHtml += '<button onclick="game.closePop();game.chooseBossRest(' + idx + ');" style="margin-top:10px">确认并迎战Boss</button>';
             this.showPopup(skillHtml);
             return;
         }
@@ -4162,7 +4133,7 @@ const game = {
         document.getElementById('storyText').innerHTML = narrative.replace(/\n/g, '<br>');
         
         // 更新敌人信息（修复Boss战前显示错误敌人的问题）
-        const typeLabel = '【首领】';
+        const typeLabel = '【BOSS】';
         const typeColor = 'var(--accent-danger)';
         const ehp = enemy.stats ? enemy.stats.hp : 0;
         const eatk = enemy.stats ? enemy.stats.atk : 0;
@@ -4279,10 +4250,6 @@ const game = {
             if (envEff.speedMod) enemy.stats.agi = Math.floor(enemy.stats.agi * envEff.speedMod);
         }
 
-        // 审计修复：敌方先手值-X%（菌丝网络）
-        if ((this.talentBonus || {}).enemySpeedReductionPct > 0) {
-            enemy.stats.agi = Math.max(1, Math.floor(enemy.stats.agi * (1 - this.talentBonus.enemySpeedReductionPct)));
-        }
         // 先手判定：比较先手值，相等随机
         const enemySpeed = enemy.stats.agi || 5;
         if (this.player.speed >= enemySpeed) {
@@ -4307,20 +4274,13 @@ const game = {
 
         // 天赋：战斗开始效果
         const startBonus = this.getEquippedTalentBonus();
-        if (startBonus.startStealth || (startBonus.startStealthChance > 0 && Math.random() < startBonus.startStealthChance)) {
-            this.addStatus(this.player, {id: 'stealth', name: '隐身', type: 'buff', subtype: 'stealth', duration: startBonus.startStealthDuration || 2, source: 'talent'});
+        if (startBonus.startStealth) {
+            this.addStatus(this.player, {id: 'stealth', name: '隐身', type: 'buff', subtype: 'stealth', duration: 2, source: 'talent'});
             this.appendBattleLog('你进入隐身状态！（2回合内敌人命中率降低）', 'log-info');
-        }
-        if (startBonus.startEnemyDebuff && startBonus.startEnemyDebuffChance > 0 && Math.random() < startBonus.startEnemyDebuffChance) {
-            const debuffPct = startBonus.startEnemyDebuffPct || 0;
-            if (debuffPct > 0 && enemy.stats) {
-                enemy.stats.atk = Math.max(1, Math.floor(enemy.stats.atk * (1 - debuffPct)));
-                this.appendBattleLog('【王者咆哮】敌人攻击力降低' + Math.floor(debuffPct * 100) + '%！', 'log-info');
-            }
         }
         if (startBonus.startCharm) {
             this.addStatus(enemy, {id: 'charm', name: '魅惑', type: 'control', subtype: 'charm', duration: 1, source: 'talent'});
-            this.appendBattleLog(enemy.name + '被魅惑！（1回合无法行动）', 'log-info');
+            this.appendBattleLog(enemy.name + '被魅惑！(1回合无法行动)', 'log-info');
         }
         if (startBonus.startShield > 0) {
             this.addStatus(this.player, {id: 'shield', name: '护盾', type: 'buff', subtype: 'shield', duration: 3, value: startBonus.startShield, source: 'talent'});
@@ -4438,11 +4398,6 @@ const game = {
                 hitResult = {hit: true, hitRate: 100};
                 this.appendBattleLog('【红外锁定】攻击无视闪避，必定命中！', 'log-info');
             }
-            // 审计修复：攻击无法被闪避（真实之姿/全视之眼）
-            if (!hitResult.hit && atkBonus.attackCannotDodge) {
-                hitResult = {hit: true, hitRate: 100};
-                this.appendBattleLog('【真实之姿】攻击无法被闪避，必定命中！', 'log-info');
-            }
         }
         if (!hitResult.hit) {
             this.appendBattleLog(`${atkName}的攻击被${defName}闪避了！`, 'log-info');
@@ -4455,19 +4410,6 @@ const game = {
                         const counterDmg = Math.floor(this.player.attack * (defBonus.dodgeCounterMult || 0.5));
                         attacker.stats.hp = Math.max(0, attacker.stats.hp - counterDmg);
                         this.appendBattleLog('反击造成 ' + counterDmg + ' 点伤害！', 'log-damage');
-                        // 审计修复：反击附带中毒（毒棘）
-                        if (defBonus.counterPoisonStacks > 0) {
-                            this.addStatus(attacker, {id:'poison', name:'中毒', type:'dot', subtype:'poison', stacks:defBonus.counterPoisonStacks, maxStacks:99, duration:3, source:'player'});
-                            this.appendBattleLog('反击附带 ' + defBonus.counterPoisonStacks + ' 层中毒！', 'log-info');
-                        }
-                    }
-                }
-                // 闪避回复（拟态再生等）
-                if (defBonus.dodgeHealPct > 0) {
-                    const dodgeHeal = Math.floor(this.player.maxHp * defBonus.dodgeHealPct);
-                    if (dodgeHeal > 0) {
-                        this.player.hp = Math.min(this.player.maxHp, this.player.hp + dodgeHeal);
-                        this.appendBattleLog('【拟态再生】闪避回复 ' + dodgeHeal + ' 点生命！', 'log-heal');
                     }
                 }
             }
@@ -4494,21 +4436,9 @@ const game = {
             const penPct = this.player.evoArmorPenetration / 100;
             baseDef = Math.max(0, baseDef * (1 - penPct));
         }
-        // 审计修复：无视防御（真实之姿/虚空之毒）
-        if (isPlayer && (this.talentBonus || {}).ignoreDefensePct > 0) {
-            baseDef = Math.max(0, baseDef * (1 - this.talentBonus.ignoreDefensePct));
-        }
-        // 审计修复：中毒目标全属性-20%（原初之毒/虚空之毒）——中毒目标防御降低
-        if (isPlayer && (this.talentBonus || {}).poisonAllStatsReductionPct > 0 && this.hasStatus(defender, 'poison')) {
-            baseDef = Math.max(0, baseDef * (1 - this.talentBonus.poisonAllStatsReductionPct));
-        }
         const reduction = baseDef / (baseDef + 100);
         const variance = 0.9 + Math.random() * 0.2;
         let damage = Math.floor(baseAtk * (1 - reduction) * critMult * variance);
-        // 审计修复：中毒敌人攻击降低（原初之毒/虚空之毒）
-        if (!isPlayer && (this.talentBonus || {}).poisonAllStatsReductionPct > 0 && this.hasStatus(attacker, 'poison')) {
-            damage = Math.floor(damage * (1 - this.talentBonus.poisonAllStatsReductionPct));
-        }
         // 进化抉择：普攻伤害加成（玩家普通攻击时）
         if (isPlayer && this.player.evoNormalDamageBonus) {
             damage = Math.floor(damage * (1 + this.player.evoNormalDamageBonus / 100));
@@ -4516,19 +4446,6 @@ const game = {
         // 天赋：造成伤害加成
         const atkTalent = isPlayer ? (this.talentBonus || {}) : {};
         if (atkTalent.damagePct) damage = Math.floor(damage * (1 + atkTalent.damagePct));
-        // 审计修复：低血攻击力加成（狼人血统）
-        if (isPlayer && atkTalent.lowHpAttackPct > 0 && this.player.hp / this.player.maxHp < (atkTalent.lowHpThreshold || 50) / 100) {
-            damage = Math.floor(damage * (1 + atkTalent.lowHpAttackPct));
-        }
-        // 审计修复：灼烧目标受到伤害+X%（不灭之焰）
-        if (isPlayer && (atkTalent.burnTargetDamageTakenPct || 0) > 0 && this.hasStatus(defender, 'burn')) {
-            damage = Math.floor(damage * (1 + atkTalent.burnTargetDamageTakenPct));
-        }
-        // 审计修复：追加攻击伤害倍率（额外行动触发的普攻）
-        if (isPlayer && this.player._extraAttackMult > 0) {
-            damage = Math.floor(damage * (1 + this.player._extraAttackMult));
-            this.player._extraAttackMult = 0;
-        }
         
         // 因果之链：附加上次记录的伤害
         if (isPlayer && this.player.causalDamage && this.player.causalDamage > 0) {
@@ -4539,7 +4456,7 @@ const game = {
             this.player.causalDamage = 0;
         }
         // 天赋：对低血量目标增伤
-        if (atkTalent.lowHpDamagePct && defender.stats && defender.stats.hp / defender.stats.maxHp < ((atkTalent.lowHpThreshold || 50) / 100)) {
+        if (atkTalent.lowHpDamagePct && defender.stats && defender.stats.hp / defender.stats.maxHp < 0.5) {
             damage = Math.floor(damage * (1 + atkTalent.lowHpDamagePct));
         }
         // 天赋：先手攻击额外伤害
@@ -4618,11 +4535,7 @@ const game = {
                 if (defender[usesKey] < (defBonus.lethalSaveMaxUses || 1)) {
                     defender[usesKey]++;
                     actualDamage = defender.hp - 1;
-                    const _lethalSrc = (defender === this.player)
-                        ? (this.player.equippedTalents.indexOf('tal_indestructible') >= 0 ? '不灭' :
-                           this.player.equippedTalents.indexOf('tal_giant_blood') >= 0 ? '巨兽之血' : '免死')
-                        : '免死';
-                    this.appendBattleLog('【' + _lethalSrc + '】致命伤害被化解，保留1点生命！', 'log-heal');
+                    this.appendBattleLog('【不灭之躯】致命伤害被化解，保留1点生命！', 'log-heal');
                 }
             }
             
@@ -4639,11 +4552,6 @@ const game = {
                 defender.shield = (defender.shield || 0) + shieldAmount;
                 this.appendBattleLog('【灵能护盾】触发护盾，吸收' + shieldAmount + '点伤害！', 'log-heal');
             }
-            // 受到近战攻击时概率麻痹（刺胞）
-            if (defBonus.meleeParalyzeChance > 0 && Math.random() < defBonus.meleeParalyzeChance && attacker && attacker.stats) {
-                this.addStatus(attacker, {id: 'paralyze', name: '麻痹', type: 'control', subtype: 'paralyze', duration: 1, source: 'talent'});
-                this.appendBattleLog('【刺胞】敌人被麻痹1回合！', 'log-info');
-            }
             // 受到近战攻击时概率反伤（骨刺反击）
             if (defBonus.meleeReflectChance > 0 && Math.random() < defBonus.meleeReflectChance) {
                 const reflectDmg = Math.floor(actualDamage * defBonus.meleeReflectPct);
@@ -4651,11 +4559,6 @@ const game = {
                     attacker.stats.hp = Math.max(0, attacker.stats.hp - reflectDmg);
                     this.appendBattleLog('【骨刺反击】反弹' + reflectDmg + '点伤害！', 'log-damage');
                 }
-            }
-            // 受到攻击时概率生成虚影规避伤害（幻影拟态）
-            if (defBonus.phantomDodgeChance > 0 && Math.random() < defBonus.phantomDodgeChance) {
-                actualDamage = 0;
-                this.appendBattleLog('【幻影拟态】虚影规避了本次伤害！', 'log-heal');
             }
             // 低血量无敌（天赋效果）
             if (defender.hp - actualDamage > 0 && defender.hp / defender.maxHp < 0.3 && defBonus.lowHpInvincibleChance > 0) {
@@ -4735,15 +4638,13 @@ const game = {
         
         // 攻击附加Dot（中毒/灼烧）
         bonus.dotOnHit.forEach(dot => {
-            if (Math.random() * 100 >= (dot.chance ?? 100)) return;
             const dotName = this.dotTypes[dot.type] ? this.dotTypes[dot.type].name : dot.type;
-            this.addStatus(defender, {id: dot.type, name: dotName, type: 'dot', subtype: dot.type, stacks: dot.stacks, duration: dot.duration || 3, source: 'player'});
+            this.addStatus(defender, {id: dot.type, name: dotName, type: 'dot', subtype: dot.type, stacks: dot.stacks, duration: 3, source: 'player'});
             this.appendBattleLog(defender.name + '获得' + dotName + '效果！', 'log-info');
         });
         // 攻击附加Dot（流血）
         bonus.bleedOnHit.forEach(dot => {
-            if (Math.random() * 100 >= (dot.chance ?? 100)) return;
-            this.addStatus(defender, {id: 'bleed', name: '流血', type: 'dot', subtype: 'bleed', stacks: dot.stacks, duration: dot.duration || 4, source: 'player'});
+            this.addStatus(defender, {id: 'bleed', name: '流血', type: 'dot', subtype: 'bleed', stacks: dot.stacks, duration: 4, source: 'player'});
             this.appendBattleLog(defender.name + '陷入流血！', 'log-info');
         });
         // 攻击附加Dot（凋零）
@@ -4790,7 +4691,7 @@ const game = {
         }
         // 攻击概率束缚
         if (bonus.bindChance > 0 && Math.random() < bonus.bindChance) {
-            let dur = isBoss ? 0 : (bonus.bindDuration || 1);
+            let dur = isBoss ? 0 : 1;
             if (dur > 0) {
                 this.addStatus(defender, {id: 'stun', name: '束缚', type: 'control', subtype: 'stun', duration: dur, source: 'player'});
                 this.appendBattleLog(defender.name + '被束缚！', 'log-info');
@@ -4802,10 +4703,10 @@ const game = {
             this.addStatus(defender, {id: 'silence', name: '沉默', type: 'control', subtype: 'silence', duration: dur, source: 'player'});
             this.appendBattleLog(defender.name + '被沉默！', 'log-info');
         }
-        // 攻击吸血（审计修复：回复效果加成）
+        // 攻击吸血
         const totalLifeSteal = (bonus.lifeStealPct || 0) + (bonus.lifeStealBonusPct || 0);
-        if (totalLifeSteal > 0 && Math.random() * 100 < (bonus.lifeStealChance || 100)) {
-            const heal = Math.floor(damage * totalLifeSteal / 100 * (1 + ((this.talentBonus || {}).healEffectPct || 0)));
+        if (totalLifeSteal > 0) {
+            const heal = Math.floor(damage * totalLifeSteal / 100);
             if (heal > 0) {
                 const actualHeal = Math.min(heal, this.player.maxHp - this.player.hp);
                 this.player.hp = Math.min(this.player.maxHp, this.player.hp + heal);
@@ -4845,8 +4746,8 @@ const game = {
     // 玩家受击时的天赋触发效果（反弹）
     applyTalentOnHitTakenEffects(attacker, damage) {
         const bonus = this.getEquippedTalentBonus();
-        if (bonus.reflectPct > 0 && Math.random() * 100 < (bonus.reflectChance || 100) && attacker.stats) {
-            const reflectDmg = Math.floor(damage * bonus.reflectPct / 100 * (1 + (bonus.reflectBonusPct || 0)));
+        if (bonus.reflectPct > 0 && attacker.stats) {
+            const reflectDmg = Math.floor(damage * bonus.reflectPct / 100);
             if (reflectDmg > 0) {
                 attacker.stats.hp = Math.max(0, attacker.stats.hp - reflectDmg);
                 this.appendBattleLog('反弹 ' + reflectDmg + ' 点伤害给' + attacker.name + '！', 'log-damage');
@@ -4983,32 +4884,14 @@ const game = {
     },
     controlTypes: {
         stun:     {name:"束缚", skipAction:true, maxDuration:2},
-        paralyze: {name:"麻痹", skipChance:0.5, speedMod:-0.5, desc:"50%无法行动+敏捷-50%（降低闪避），首领概率-20%"},
-        freeze:   {name:"冻结", skipAction:true, maxDuration:1, afterEffect:"slow", desc:"无法行动1回合+解冻后减速，首领持续-1回合"},
-        slow:     {name:"减速", speedMod:-0.5, maxDuration:3, desc:"敏捷-50%（降低闪避和先手），对首领全额生效"},
-        silence:  {name:"沉默", blockSkills:true, maxDuration:2, desc:"无法使用技能，首领持续-1回合"}
+        paralyze: {name:"麻痹", skipChance:0.5, speedMod:-0.5, desc:"50%无法行动+敏捷-50%（降低闪避），Boss概率-20%"},
+        freeze:   {name:"冻结", skipAction:true, maxDuration:1, afterEffect:"slow", desc:"无法行动1回合+解冻后减速，Boss持续-1回合"},
+        slow:     {name:"减速", speedMod:-0.5, maxDuration:3, desc:"敏捷-50%（降低闪避和先手），对Boss全额生效"},
+        silence:  {name:"沉默", blockSkills:true, maxDuration:2, desc:"无法使用技能，Boss持续-1回合"}
     },
     getStatuses(unit) { if(!unit.statuses) unit.statuses=[]; return unit.statuses; },
     addStatus(unit, s) {
         const list = this.getStatuses(unit);
-        // 审计修复：控制时间加成+减速持续时间（玩家施加的控制）
-        if(s.type === 'control' && s.source === 'player') {
-            const ctlTb = this.talentBonus || {};
-            if (ctlTb.allControlDurationPct > 0) s.duration = Math.round((s.duration || 1) * (1 + ctlTb.allControlDurationPct));
-            if (s.subtype === 'slow' && ctlTb.slowDurationBonus > 0) s.duration = (s.duration || 1) + ctlTb.slowDurationBonus;
-        }
-        // 审计修复：中毒无上限+中毒目标全属性下降（原初之毒/虚空之毒）
-        if(s.subtype === 'poison' && s.source === 'player' && unit !== this.player) {
-            const pb = this.talentBonus || {};
-            if (pb.poisonNoStackLimit) s.maxStacks = 99999;
-            if (pb.poisonAllStatsReductionPct > 0 && !s._weakDebuff) {
-                const weakList = this.getStatuses(unit);
-                const wex = weakList.find(x => x.id === 'poison_weak');
-                const weak = {id:'poison_weak', name:'中毒虚弱', type:'debuff', subtype:'allStats', stacks:1, maxStacks:1, duration:s.duration || 3, value:Math.round(pb.poisonAllStatsReductionPct*100), source:'player'};
-                if (wex) wex.duration = Math.max(wex.duration, weak.duration);
-                else weakList.push(weak);
-            }
-        }
         // 进化抉择：中毒持续时间加成（玩家施加的中毒效果）
         if(s.subtype === 'poison' && unit !== this.player && this.player.evoPoisonDurationBonus) {
             s.duration = (s.duration || 3) + this.player.evoPoisonDurationBonus;
@@ -5069,13 +4952,6 @@ const game = {
                 if(isBoss && dt.bossResist) dmg = Math.floor(dmg * (1 - dt.bossResist));
             }
             
-            // 审计修复：Dot/灼烧/每层中毒增伤（玩家造成的Dot）
-            if(dmg > 0 && !isPlayer && s.source === 'player') {
-                const dotBonus = this.talentBonus || {};
-                if (dotBonus.allDotDamagePct > 0) dmg = Math.floor(dmg * (1 + dotBonus.allDotDamagePct));
-                if (s.subtype === 'burn' && dotBonus.burnDamagePct > 0) dmg = Math.floor(dmg * (1 + dotBonus.burnDamagePct));
-                if (s.subtype === 'poison' && dotBonus.poisonPerStackDamagePct > 0) dmg = Math.floor(dmg * (1 + s.stacks * dotBonus.poisonPerStackDamagePct));
-            }
             // 应用Dot抗性和穿透（仅对敌人受到的Dot生效）
             if(dmg > 0 && !isPlayer && this.currentEnemy) {
                 const resist = this.getDotResistance(this.currentEnemy, s.subtype);
@@ -5095,10 +4971,6 @@ const game = {
                 if(isPlayer) {
                     const defBonus = this.getEquippedTalentBonus();
                     let actualDmg = dmg;
-                    // 冰火减伤（冰焰之躯，审计修复）
-                    if(s.subtype === 'burn' && defBonus.iceFireResistPct > 0) {
-                        actualDmg = Math.floor(actualDmg * (1 - defBonus.iceFireResistPct));
-                    }
                     // 灼烧抗性（热能吸收）
                     if(s.subtype === 'burn' && defBonus.burnResistancePct > 0) {
                         actualDmg = Math.floor(actualDmg * (1 - defBonus.burnResistancePct));
@@ -5116,7 +4988,7 @@ const game = {
                 } else {
                     unit.stats.hp -= dmg;
                 }
-                this.appendBattleLog(`${uname}受到${dt.name}伤害 ${dmg} 点！（层数：${s.stacks}）`,'log-damage');
+                this.appendBattleLog(`${uname}受到${dt.name}伤害 ${dmg} 点！(层数:${s.stacks})`,'log-damage');
             }
         });
         
@@ -5126,10 +4998,8 @@ const game = {
             if(s.type === 'dot') {
                 const dt = this.dotTypes[s.subtype];
                 if(dt && dt.decay) {
-                    // 衰减/递增层数（灼烧不衰减：玩家施加的灼烧每回合+1，审计修复）
-                    let dec = dt.decay;
-                    if (!isPlayer && s.source === 'player' && s.subtype === 'burn' && (this.talentBonus || {}).burnNoDecay) dec = 1;
-                    s.stacks = Math.max(0, s.stacks + dec);
+                    // 衰减/递增层数
+                    s.stacks = Math.max(0, s.stacks + dt.decay);
                     if(s.stacks <= 0) {
                         // 层数为0时移除状态
                         list.splice(i, 1);
@@ -5152,7 +5022,7 @@ const game = {
         const self = this;
         // 状态效果tooltip映射
         const statusTooltipMap = {
-            '中毒': 'poison', '灼烧': 'burn', '流血': 'bleed', '凋零': 'wither', '眩晕': 'stun',
+            '中毒': 'poison', '灼烧': 'burn', '流血': 'bleed', '凋零': 'wither',
             '束缚': 'stun', '麻痹': 'stun', '冻结': 'stun',
             '减速': 'slow', '沉默': 'silence'
         };
@@ -5172,17 +5042,17 @@ const game = {
                 className += 'status-debuff';
             }
             const tooltipKey = statusTooltipMap[s.name] || (s.type === 'buff' ? 'buff' : 'debuff');
-            return '<span class="' + className + '" data-tooltip="' + tooltipKey + '">' + s.name + '×' + s.stacks + '（' + s.duration + '回合）</span>';
+            return '<span class="' + className + '" data-tooltip="' + tooltipKey + '">' + s.name + '×' + s.stacks + '(' + s.duration + ')</span>';
         }).join(' ');
     },
 
     // ========== 主动技能系统 ==========
     skillTable: {
         skill_power_strike: {name:"强力一击",desc:"造成150%攻击力伤害",cost:25,cooldown:0,effects:[{type:"damage",multiplier:1.5}]},
-        skill_poison_strike: {name:"毒击",desc:"100%伤害+3层中毒（3回合）",cost:30,cooldown:1,effects:[{type:"damage",multiplier:1.0},{type:"dot",dotType:"poison",stacks:3,duration:3}]},
-        skill_bleed_slash: {name:"撕裂斩",desc:"80%伤害+5层流血（4回合）",cost:25,cooldown:1,effects:[{type:"damage",multiplier:0.8},{type:"dot",dotType:"bleed",stacks:5,duration:4}]},
-        skill_burn_blast: {name:"灼热烈焰",desc:"120%伤害+3层灼烧（3回合）",cost:35,cooldown:2,effects:[{type:"damage",multiplier:1.2},{type:"dot",dotType:"burn",stacks:3,duration:3}]},
-        skill_wither_touch: {name:"凋零之触",desc:"60%伤害+2层凋零（3回合）",cost:40,cooldown:2,effects:[{type:"damage",multiplier:0.6},{type:"dot",dotType:"wither",stacks:2,duration:3}]},
+        skill_poison_strike: {name:"毒击",desc:"100%伤害+3层中毒(3回合)",cost:30,cooldown:1,effects:[{type:"damage",multiplier:1.0},{type:"dot",dotType:"poison",stacks:3,duration:3}]},
+        skill_bleed_slash: {name:"撕裂斩",desc:"80%伤害+5层流血(4回合)",cost:25,cooldown:1,effects:[{type:"damage",multiplier:0.8},{type:"dot",dotType:"bleed",stacks:5,duration:4}]},
+        skill_burn_blast: {name:"灼热烈焰",desc:"120%伤害+3层灼烧(3回合)",cost:35,cooldown:2,effects:[{type:"damage",multiplier:1.2},{type:"dot",dotType:"burn",stacks:3,duration:3}]},
+        skill_wither_touch: {name:"凋零之触",desc:"60%伤害+2层凋零(3回合)",cost:40,cooldown:2,effects:[{type:"damage",multiplier:0.6},{type:"dot",dotType:"wither",stacks:2,duration:3}]},
         skill_stun_smash: {name:"重击",desc:"130%伤害+30%束缚1回合",cost:30,cooldown:2,effects:[{type:"damage",multiplier:1.3},{type:"control",controlType:"stun",duration:1,chance:0.3}]},
         skill_paralyze_bolt: {name:"麻痹电击",desc:"90%伤害+麻痹2回合",cost:30,cooldown:3,effects:[{type:"damage",multiplier:0.9},{type:"control",controlType:"paralyze",duration:2,chance:1.0}]},
         skill_freeze_wave: {name:"冰霜冲击",desc:"110%伤害+50%冻结1回合",cost:35,cooldown:2,effects:[{type:"damage",multiplier:1.1},{type:"control",controlType:"freeze",duration:1,chance:0.5}]},
@@ -5212,7 +5082,7 @@ const game = {
         skill_death_gaze: {name:"死亡凝视",desc:"目标+4层凋零，全属性额外-8%（持续到战斗结束）",cost:45,cooldown:3,effects:[{type:"dot",dotType:"wither",stacks:4,duration:4},{type:"debuff",stat:"allStats",value:8,duration:99}]},
         skill_decay: {name:"腐朽",desc:"目标凋零层数翻倍",cost:50,cooldown:4,effects:[{type:"dot_double",dotType:"wither"}]},
         skill_death_grip: {name:"死亡之握",desc:"目标+6层凋零，立即造成当前凋零层数×15直接伤害",cost:60,cooldown:5,effects:[{type:"dot",dotType:"wither",stacks:6,duration:5},{type:"dot_damage",dotType:"wither",multiplier:15}]},
-        skill_doom: {name:"末日审判",desc:"目标+8层凋零，全属性-20%（5回合），首领抗性降低20%",cost:80,cooldown:8,effects:[{type:"dot",dotType:"wither",stacks:8,duration:6},{type:"debuff",stat:"allStats",value:20,duration:5},{type:"debuff",stat:"bossResist",value:20,duration:5}]}
+        skill_doom: {name:"末日审判",desc:"目标+8层凋零，全属性-20%（5回合），Boss抗性降低20%",cost:80,cooldown:8,effects:[{type:"dot",dotType:"wither",stacks:8,duration:6},{type:"debuff",stat:"allStats",value:20,duration:5},{type:"debuff",stat:"bossResist",value:20,duration:5}]}
     },
     // Boss吞噬记忆（击败Boss后显示的短文本）
     bossDevourMemories: {
@@ -5327,7 +5197,7 @@ const game = {
         if (this.player.activeSkills.includes(sid)) return {success: false, msg: "已装备"};
         const maxSlots = this.getActiveSlots();
         if (this.player.activeSkills.length >= maxSlots) {
-            return {success: false, msg: "技能槽已满（" + maxSlots + "个）"};
+            return {success: false, msg: "主动槽已满（" + maxSlots + "个）"};
         }
         this.player.activeSkills.push(sid);
         return {success: true, msg: "装备成功"};
@@ -5347,7 +5217,7 @@ const game = {
         const maxSlots = this.getActiveSlots();
         let html = '<h3>主动技能选带</h3>';
         html += '<p style="color:var(--text-muted);font-size:13px">默认技能：强力一击、自愈、狂暴（不占槽位）</p>';
-        html += '<p style="color:var(--accent-info);font-size:14px">技能槽：' + equipped.length + '/' + maxSlots + '</p>';
+        html += '<p style="color:var(--accent-info);font-size:14px">主动槽：' + equipped.length + '/' + maxSlots + '</p>';
         if (pool.length === 0) {
             html += '<p style="color:var(--text-muted)">装备天赋后可解锁更多主动技能</p>';
         } else {
@@ -5398,15 +5268,7 @@ const game = {
                         const penPct = this.player.evoArmorPenetration / 100;
                         def = Math.max(0, def * (1 - penPct));
                     }
-                    // 审计修复：无视防御（真实之姿）
-                    if (isPlayerCaster && (this.talentBonus || {}).ignoreDefensePct > 0) {
-                        def = Math.max(0, def * (1 - this.talentBonus.ignoreDefensePct));
-                    }
                     let dmg = Math.max(1, Math.floor(atk * (effect.multiplier||1) * (1-def/(def+100)) * critMult * (0.9+Math.random()*0.2)));
-                    // 审计修复：技能伤害+X%（真实之姿）
-                    if (isPlayerCaster && (this.talentBonus || {}).skillDamagePct > 0) {
-                        dmg = Math.max(1, Math.floor(dmg * (1 + this.talentBonus.skillDamagePct)));
-                    }
                     // 进化抉择：技能伤害加成/减益（玩家技能攻击时）
                     if (isPlayerCaster && this.player.evoSkillDamageMod) {
                         dmg = Math.max(1, Math.floor(dmg * (1 + this.player.evoSkillDamageMod / 100)));
@@ -5417,9 +5279,7 @@ const game = {
                 }
                 case "heal": {
                     const maxHp = isPlayerCaster ? caster.maxHp : (caster.stats?.maxHp||100);
-                    let heal = Math.floor(maxHp * (effect.percent||0.2));
-                    // 审计修复：回复效果+X%（生命之源/巨兽之血/无限增殖）
-                    if (isPlayerCaster && (this.talentBonus || {}).healEffectPct > 0) heal = Math.floor(heal * (1 + this.talentBonus.healEffectPct));
+                    const heal = Math.floor(maxHp * (effect.percent||0.2));
                     if (isPlayerCaster) caster.hp = Math.min(caster.maxHp, caster.hp+heal);
                     else caster.stats.hp = Math.min(caster.stats.maxHp, caster.stats.hp+heal);
                     this.appendBattleLog(`${cName}使用【${skill.name}】，恢复 ${heal} 点生命！`,'log-heal');
@@ -5429,7 +5289,7 @@ const game = {
                     const dt = this.dotTypes[effect.dotType];
                     if (!dt || Math.random() >= (effect.chance||1)) return;
                     this.addStatus(target, {id:effect.dotType,name:dt.name,type:"dot",subtype:effect.dotType,stacks:effect.stacks||1,maxStacks:10,duration:effect.duration||3,source:isPlayerCaster?"player":"enemy"});
-                    this.appendBattleLog(`${tName}陷入${dt.name}！（${effect.stacks||1}层）`,'log-info');
+                    this.appendBattleLog(`${tName}陷入${dt.name}！(${effect.stacks||1}层)`,'log-info');
                     break;
                 }
                 case "control": {
@@ -5439,21 +5299,19 @@ const game = {
                     if (isTargetBoss && ct.skipAction) dur = Math.max(0, dur-1);
                     if (dur <= 0) return;
                     this.addStatus(target, {id:effect.controlType,name:ct.name,type:"control",subtype:effect.controlType,stacks:1,duration:dur,source:isPlayerCaster?"player":"enemy"});
-                    this.appendBattleLog(`${tName}被${ct.name}！（${dur}回合）`,'log-info');
+                    this.appendBattleLog(`${tName}被${ct.name}！(${dur}回合)`,'log-info');
                     break;
                 }
                 case "buff":
                 case "debuff": {
                     const unit = effect.type==="buff"?caster:target;
                     const uname = effect.type==="buff"?cName:tName;
-                    const statCn = {maxHp:'生命', attack:'攻击', defense:'防御', speed:'先手值', crit:'暴击率', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', damageTaken:'受伤', allStats:'全属性', bossResist:'首领抗性', healBlocked:'禁疗', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', talentPower:'天赋强度'};
-                    const sn = statCn[effect.stat] || effect.stat;
-                    this.addStatus(unit, {id:effect.stat+"_"+effect.type,name:(effect.type==="buff"?"增益·":"减益·")+sn,type:effect.type,subtype:effect.stat,stacks:1,duration:effect.duration||3,value:effect.value||10,source:isPlayerCaster?"player":"enemy"});
-                    this.appendBattleLog(`${uname}的${sn}${effect.type==="buff"?"提升":"降低"}${effect.value}%！（${effect.duration}回合）`,'log-info');
+                    this.addStatus(unit, {id:effect.stat+"_"+effect.type,name:(effect.type==="buff"?"增益":"减益")+effect.stat,type:effect.type,subtype:effect.stat,stacks:1,duration:effect.duration||3,value:effect.value||10,source:isPlayerCaster?"player":"enemy"});
+                    this.appendBattleLog(`${uname}的${effect.stat}${effect.type==="buff"?"提升":"降低"}${effect.value}%！(${effect.duration}回合)`,'log-info');
                     break;
                 }
                 case "dot_explosion": {
-                    // Dot爆发：立即结算目标所有持续伤害（或指定Dot类型）
+                    // Dot爆发：立即结算目标所有Dot伤害（或指定Dot类型）
                     const targetStatuses = this.getStatuses(target);
                     let totalDmg = 0;
                     const dotTypes = effect.dotType ? [effect.dotType] : ['poison','burn','bleed','wither'];
@@ -5480,20 +5338,14 @@ const game = {
                             if(isTargetBoss && dt.bossResist) dmg = Math.floor(dmg * (1 - dt.bossResist));
                         }
                         totalDmg += dmg;
-                        // 审计修复：毒爆保留层数（原初之毒/龙息）
-                        const retainPct = isPlayerCaster ? ((this.talentBonus || {}).dotExplosionRetainPct || 0) : 0;
-                        if (retainPct > 0) { s.stacks = Math.max(1, Math.round(s.stacks * retainPct)); }
-                        else { targetStatuses.splice(i, 1); }
+                        // 移除该Dot状态
+                        targetStatuses.splice(i, 1);
                     }
                     totalDmg = Math.floor(totalDmg * (effect.multiplier || 1));
-                    // 审计修复：毒爆伤害+X%（虚空之毒）
-                    if (isPlayerCaster && (this.talentBonus || {}).poisonExplosionDamagePct > 0) {
-                        totalDmg = Math.floor(totalDmg * (1 + this.talentBonus.poisonExplosionDamagePct));
-                    }
                     if(totalDmg > 0) {
                         if(isPlayerCaster) target.stats.hp -= totalDmg;
                         else target.hp -= totalDmg;
-                        this.appendBattleLog(`${cName}的【${skill.name}】触发持续伤害爆发，对${tName}造成 ${totalDmg} 点伤害！`,'log-damage');
+                        this.appendBattleLog(`${cName}的【${skill.name}】触发Dot爆发，对${tName}造成 ${totalDmg} 点伤害！`,'log-damage');
                     }
                     break;
                 }
@@ -5523,7 +5375,7 @@ const game = {
                         const dmg = Math.floor(totalStacks * (effect.multiplier || 10));
                         if(isPlayerCaster) target.stats.hp -= dmg;
                         else target.hp -= dmg;
-                        this.appendBattleLog(`${cName}的【${skill.name}】基于${totalStacks}层持续伤害造成 ${dmg} 点伤害！`,'log-damage');
+                        this.appendBattleLog(`${cName}的【${skill.name}】基于${totalStacks}层Dot造成 ${dmg} 点伤害！`,'log-damage');
                     }
                     break;
                 }
@@ -5562,14 +5414,8 @@ const game = {
         if (this.isSilenced(this.player, false)) { this.appendBattleLog("你被沉默，无法使用技能！",'log-info'); return; }
         this.closePop();
         this.player.energy -= skill.cost;
-        // 设置技能冷却（冷却缩减生效；审计修复：技能冷却-X回合）
-        if (skill.cooldown > 0) {
-            const cdBonus = this.getEquippedTalentBonus();
-            const cdRed = (cdBonus.cooldownReductionPct || 0);
-            let cdVal = Math.max(1, Math.round(skill.cooldown * (1 - cdRed)));
-            if (cdBonus.cooldownReductionTurns > 0) cdVal = Math.max(1, cdVal - cdBonus.cooldownReductionTurns);
-            this.player.skillCooldowns[skill.id] = cdVal;
-        }
+        // 设置技能冷却
+        if (skill.cooldown > 0) this.player.skillCooldowns[skill.id] = skill.cooldown;
 
         const target = skill.target === "self" ? this.player : this.currentEnemy;
         this.executeSkillEffects(skill, this.player, target, true);
@@ -5585,7 +5431,7 @@ const game = {
         if (this.battleEnding) return;
         if (!this.playerTurn || !this.inBattle) return;
         if (this.currentEnemy.type === 'boss') {
-            this.appendBattleLog("首领战无法逃跑！", 'log-info');
+            this.appendBattleLog("Boss战无法逃跑！", 'log-info');
             return;
         }
         if (Math.random() < 0.5) {
@@ -5631,18 +5477,7 @@ const game = {
             runKillBuffs.stat += 1;
             this.appendBattleLog('基因突变：' + gmNames[gmK] + '+1（本局累计提升' + runKillBuffs.stat + '点）', 'log-heal');
         }
-                if (this.player.equippedTalents.includes('tal_bloodthirst') && (runKillBuffs.atk || 0) < 999) {
-            runKillBuffs.atk = (runKillBuffs.atk || 0) + 1;
-            this.player.attack += 1;
-            this.appendBattleLog('嗜血渴望：攻击力+1（本局累计+' + runKillBuffs.atk + '）', 'log-heal');
-        }
-        if (this.player.equippedTalents.includes('tal_tenacity') && (runKillBuffs.hp || 0) < 999) {
-            runKillBuffs.hp = (runKillBuffs.hp || 0) + 3;
-            this.player.maxHp += 3;
-            this.player.hp = Math.min(this.player.maxHp, this.player.hp + 3);
-            this.appendBattleLog('坚韧：生命值+3（本局累计+' + runKillBuffs.hp + '）', 'log-heal');
-        }
-if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolution') && runKillBuffs.devour < 15) {
+        if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolution') && runKillBuffs.devour < 15) {
             runKillBuffs.devour += 1;
             ['attack', 'defense', 'agility', 'vitality', 'perception', 'evolution'].forEach(k => { if (this.player[k] !== undefined) this.player[k] += 3; });
             this.player.maxHp += 3;
@@ -5653,7 +5488,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         const goldMultiplier = e.type === 'boss' ? 5 : (e.type === 'elite' ? 2 : 1);
         const stageMultiplier = this.getGoldMultiplier();
         const goldReward = Math.floor((5 + this.currentFloor*2) * 0.5 * goldMultiplier * stageMultiplier);
-        const expReward = Math.floor((10 + this.currentFloor*3) * 0.5 * (1 + (this.getEquippedTalentBonus().expBonusPct || 0)));
+        const expReward = Math.floor((10 + this.currentFloor*3) * 0.5);
         // Boss掉落Boss核心
         if (e.type === 'boss' && e.id) {
             this.permanent.bossCores[e.id] = (this.permanent.bossCores[e.id] || 0) + 1;
@@ -5985,12 +5820,12 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
                 if (effect.type === 'dot') {
                     const dt = this.dotTypes[effect.dotType];
                     this.addStatus(target, {id:effect.dotType,name:dt.name,type:"dot",subtype:effect.dotType,stacks:effect.stacks||1,duration:effect.duration||3,source:"enemy"});
-                    this.appendBattleLog(`你陷入${dt.name}！（${effect.stacks||1}层）`, 'log-info');
+                    this.appendBattleLog(`你陷入${dt.name}！(${effect.stacks||1}层)`, 'log-info');
                 } else if (effect.type === 'control') {
                     const ct = this.controlTypes[effect.controlType];
                     if (Math.random() < (effect.chance||1)) {
                         this.addStatus(target, {id:effect.controlType,name:ct.name,type:"control",subtype:effect.controlType,stacks:1,duration:effect.duration||1,source:"enemy"});
-                        this.appendBattleLog(`你被${ct.name}！（${effect.duration}回合）`, 'log-info');
+                        this.appendBattleLog(`你被${ct.name}！(${effect.duration}回合)`, 'log-info');
                     }
                 } else if (effect.type === 'heal') {
                     const heal = Math.floor(enemy.stats.maxHp * (effect.percent||0.2));
@@ -6028,25 +5863,14 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         if (this.checkBattleEnd()) return;
         // 敌人回合结束：结算敌人Dot
         this.tickStatuses(this.currentEnemy, false, isBoss);
-        // 审计修复：近身毒素（毒表皮/蛰毛）——敌人每回合受最大生命%毒伤
-        const meleeTb = this.getEquippedTalentBonus();
-        if (meleeTb.meleePoisonMaxHpPct > 0 && this.currentEnemy) {
-            const meleeMax = this.currentEnemy.stats?.maxHp || this.currentEnemy.stats?.hp || 100;
-            const meleeDmg = Math.floor(meleeMax * meleeTb.meleePoisonMaxHpPct);
-            if (meleeDmg > 0) {
-                this.currentEnemy.stats.hp -= meleeDmg;
-                this.appendBattleLog('【近身毒素】' + this.currentEnemy.name + '受到 ' + meleeDmg + ' 点毒素伤害！', 'log-damage');
-            }
-        }
         if (this.checkBattleEnd()) return;
         // 玩家回合开始：结算玩家Dot + 环境法则效果 + 天赋每回合回复 + 能量回复
         this.tickStatuses(this.player, true, false);
         this.tickEnvironmentEffect(this.player);
-        // 天赋每回合回复生命（审计修复：回复效果+X%）
+        // 天赋每回合回复生命
         const regenBonus = this.getEquippedTalentBonus();
         if (regenBonus.hpRegen > 0) {
             let regenAmount = regenBonus.hpRegen;
-            if (regenBonus.healEffectPct > 0) regenAmount = Math.floor(regenAmount * (1 + regenBonus.healEffectPct));
             // 受到暴击伤害后恢复量翻倍（骨骼再生）
             if (regenBonus.critHealDouble && this.player.tookCritThisTurn) {
                 regenAmount = regenAmount * 2;
@@ -6054,43 +5878,15 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             }
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + regenAmount);
         }
-        // 审计修复：每回合回复已损失生命值X%（无限增殖）
-        if (regenBonus.hpRegenLostPct > 0) {
-            const lostHp = Math.max(0, this.player.maxHp - this.player.hp);
-            let regenLost = Math.floor(lostHp * regenBonus.hpRegenLostPct);
-            if (regenBonus.healEffectPct > 0) regenLost = Math.floor(regenLost * (1 + regenBonus.healEffectPct));
-            if (regenBonus.lowHpRegenDouble && this.player.hp / this.player.maxHp < (regenBonus.lowHpRegenDoubleThreshold || 30) / 100) regenLost = regenLost * 2;
-            this.player.hp = Math.min(this.player.maxHp, this.player.hp + regenLost);
-        }
-        // 每回合回复最大生命百分比（骨骼再生等），可带低血触发阈值
-        if (regenBonus.hpRegenPct > 0 && (!regenBonus.lowHpRegenThreshold || this.player.hp / this.player.maxHp < regenBonus.lowHpRegenThreshold / 100)) {
+        // 每回合回复最大生命百分比（骨骼再生等）
+        if (regenBonus.hpRegenPct > 0) {
             let regenPctAmount = Math.floor(this.player.maxHp * regenBonus.hpRegenPct);
-            // 审计修复：回复效果+X%
-            if (regenBonus.healEffectPct > 0) regenPctAmount = Math.floor(regenPctAmount * (1 + regenBonus.healEffectPct));
-            // 审计修复：生命低于X%时回复翻倍（冬眠再生/无限增殖）
-            if (regenBonus.lowHpRegenDouble && this.player.hp / this.player.maxHp < (regenBonus.lowHpRegenDoubleThreshold || 30) / 100) regenPctAmount = regenPctAmount * 2;
             // 受到暴击伤害后恢复量翻倍（骨骼再生）
             if (regenBonus.critHealDouble && this.player.tookCritThisTurn) {
                 regenPctAmount = regenPctAmount * 2;
                 this.appendBattleLog('【骨骼再生】受到暴击后恢复量翻倍！', 'log-heal');
             }
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + regenPctAmount);
-        }
-        // 审计修复：每回合开始随机获得增益（史前基因库/万物归一/全知全能/奇点）
-        if ((regenBonus.randomBuffPerTurn || 0) > 0 || regenBonus.randomMythicPerTurn) {
-            const buffPool = [
-                {msg:'攻击强化：攻击力+3！', apply:()=>{ this.player.attack += 3; }},
-                {msg:'防御强化：防御力+2！', apply:()=>{ this.player.defense += 2; }},
-                {msg:'速度强化：先手值+3！', apply:()=>{ this.player.speed += 3; }},
-                {msg:'能量涌动：能量+10！', apply:()=>{ this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + 10); }},
-                {msg:'暴击强化：暴击率+2%！', apply:()=>{ this.player.crit += 2; }}
-            ];
-            const buffCount = (regenBonus.randomBuffPerTurn || 0) + (regenBonus.randomMythicPerTurn ? 1 : 0);
-            for (let bi = 0; bi < buffCount; bi++) {
-                const bf = buffPool[Math.floor(Math.random() * buffPool.length)];
-                bf.apply();
-                this.appendBattleLog('【随机增益】' + bf.msg, 'log-info');
-            }
         }
         // 重置本回合暴击标记
         this.player.tookCritThisTurn = false;
@@ -6099,25 +5895,6 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         this.refreshBattleUI();
         this.playerTurn = true;
         document.querySelectorAll('#battleActions button').forEach(b => b.disabled = false);
-        // 近身毒素：每回合对敌人造成毒素伤害
-        const turnBonus2 = this.getEquippedTalentBonus();
-        if (turnBonus2.enemyPerTurnPoison > 0 && this.currentEnemy && this.currentEnemy.stats.hp > 0) {
-            this.addStatus(this.currentEnemy, {id: 'poison', name: '中毒', type: 'dot', subtype: 'poison', stacks: turnBonus2.enemyPerTurnPoison, duration: 1, source: 'talent'});
-        }
-        // 额外行动/追加攻击（回合开始概率触发）
-        const extraBonus = this.getEquippedTalentBonus();
-        const extraChance = (extraBonus.extraTurnChance || 0) + (extraBonus.extraAttackChance || 0);
-        if (extraChance > 0 && this.currentEnemy && this.currentEnemy.stats.hp > 0) {
-            const maxUses = extraBonus.extraTurnMaxUses || 999;
-            if ((this.player.extraActionCount || 0) < maxUses && Math.random() < extraChance) {
-                this.player.extraActionCount = (this.player.extraActionCount || 0) + 1;
-                // 审计修复：追加攻击伤害+X%（群体意识等）
-                if (extraBonus.extraAttackMult > 0) this.player._extraAttackMult = extraBonus.extraAttackMult;
-                this.appendBattleLog('【额外行动】追加一次攻击！', 'log-heal');
-                this.playerAttack();
-                if (this.checkBattleEnd()) return;
-            }
-        }
     },
 
     checkBattleEnd() {
@@ -6166,23 +5943,14 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         // 日常任务：战斗和击杀
         this.updateDailyTask('battles');
         this.updateDailyTask('kills');
-        // 击杀回血天赋（审计修复：回复效果+X%）
+        // 击杀回血天赋
         const killBonus = this.getEquippedTalentBonus();
         if (killBonus.healOnKillPct > 0) {
-            const killHeal = Math.floor(this.player.maxHp * killBonus.healOnKillPct / 100 * (1 + (killBonus.healEffectPct || 0)));
+            const killHeal = Math.floor(this.player.maxHp * killBonus.healOnKillPct / 100);
             if (killHeal > 0) {
                 this.player.hp = Math.min(this.player.maxHp, this.player.hp + killHeal);
                 this.appendBattleLog('击杀回血 ' + killHeal + ' 点生命！', 'log-heal');
             }
-        }
-        // 审计修复：击杀叠加攻击/暴击（百兽之祖/终焉之牙）
-        if (killBonus.killStackAttack > 0) {
-            this.player.attack = Math.floor(this.player.attack * (1 + killBonus.killStackAttack));
-            this.appendBattleLog('【百兽之祖】击杀后攻击力提升！', 'log-info');
-        }
-        if (killBonus.killStackCrit > 0) {
-            this.player.crit = Math.floor(this.player.crit + killBonus.killStackCrit);
-            this.appendBattleLog('【终焉之牙】击杀后暴击率提升！', 'log-info');
         }
         // 击杀回能天赋
         if (killBonus.energyOnKill > 0) {
@@ -6204,18 +5972,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             runKillBuffs.stat += 1;
             this.appendBattleLog('基因突变：' + gmNames[gmK] + '+1（本局累计提升' + runKillBuffs.stat + '点）', 'log-heal');
         }
-                if (this.player.equippedTalents.includes('tal_bloodthirst') && (runKillBuffs.atk || 0) < 999) {
-            runKillBuffs.atk = (runKillBuffs.atk || 0) + 1;
-            this.player.attack += 1;
-            this.appendBattleLog('嗜血渴望：攻击力+1（本局累计+' + runKillBuffs.atk + '）', 'log-heal');
-        }
-        if (this.player.equippedTalents.includes('tal_tenacity') && (runKillBuffs.hp || 0) < 999) {
-            runKillBuffs.hp = (runKillBuffs.hp || 0) + 3;
-            this.player.maxHp += 3;
-            this.player.hp = Math.min(this.player.maxHp, this.player.hp + 3);
-            this.appendBattleLog('坚韧：生命值+3（本局累计+' + runKillBuffs.hp + '）', 'log-heal');
-        }
-if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolution') && runKillBuffs.devour < 15) {
+        if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolution') && runKillBuffs.devour < 15) {
             runKillBuffs.devour += 1;
             ['attack', 'defense', 'agility', 'vitality', 'perception', 'evolution'].forEach(k => { if (this.player[k] !== undefined) this.player[k] += 3; });
             this.player.maxHp += 3;
@@ -6715,7 +6472,7 @@ ${transition.buff.desc}`);
             eh += `<div style="padding:8px;background:var(--bg-secondary);border-radius:6px">`;
             eh += `<div style="color:var(--text-primary);font-size:13px;font-weight:bold;margin-bottom:2px">${cfg.name}</div>`;
             eh += `<div style="color:var(--text-muted);font-size:11px;margin-bottom:4px">${cfg.desc}</div>`;
-            eh += `<div style="color:var(--accent-success);font-size:12px;margin-bottom:6px">${lv}/${cfg.maxLevel}级（+${bonusPercent}%）</div>`;
+            eh += `<div style="color:var(--accent-success);font-size:12px;margin-bottom:6px">Lv.${lv}/${cfg.maxLevel}（+${bonusPercent}%）</div>`;
             if (lv < cfg.maxLevel) {
                 eh += `<button onclick="game.upgradeEssence('${stat}')" ${canUpgrade?'':'disabled'} style="font-size:11px;padding:4px 8px;width:100%">升级（${cost}残留）</button>`;
             } else {
@@ -6755,7 +6512,7 @@ ${transition.buff.desc}`);
         // ============================================================
         let evoHtml = '<div style="margin-top:15px;padding:10px;background:var(--bg-card);border-radius:8px;border:1px solid var(--accent-purple)">';
         evoHtml += '<div style="color:var(--accent-purple);font-weight:bold;font-size:15px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> 进化抉择</div>';
-        evoHtml += '<div style="color:var(--text-muted);font-size:12px;margin-bottom:8px">击败章末首领后可选择进化方向，在基因记忆库中可消耗进化精粹切换方向</div>';
+        evoHtml += '<div style="color:var(--text-muted);font-size:12px;margin-bottom:8px">击败章末Boss后可选择进化方向，在基因记忆库中可消耗进化精粹切换方向</div>';
         
         // 显示7个章节的进化抉择
         for (let ch = 1; ch <= 7; ch++) {
@@ -6790,7 +6547,7 @@ ${transition.buff.desc}`);
                     evoHtml += `<button onclick="game.showEvolutionSwitchPanel(${ch})" ${canSwitch?'':'disabled'} style="font-size:10px;padding:2px 6px;margin-top:4px;background:var(--accent-warning)">切换方向（${switchCost}残留）</button>`;
                 }
             } else {
-                evoHtml += `<div style="color:var(--text-muted);font-size:11px;margin-top:2px">未选择（击败第${ch}章首领后可选择）</div>`;
+                evoHtml += `<div style="color:var(--text-muted);font-size:11px;margin-top:2px">未选择（击败第${ch}章Boss后可选择）</div>`;
             }
             evoHtml += '</div>';
         }
@@ -6867,7 +6624,7 @@ ${transition.buff.desc}`);
         });
     },
 
-    renderTalentUnlockList() {        const all = this.data.talents.talents;        if (!all) return;        const listEl = document.getElementById('talentUnlockList');        if (!listEl) return;        const unlocked = this.permanent.unlockedTalents;        const equipped = this.player.equippedTalents;        const passiveSlots = this.getPassiveSlots();        let html = '';        html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:6px">            <span style="color:var(--accent-warning)">天赋点：${this.permanent.talentPoints || 0}</span>            <span style="margin-left:20px;color:var(--accent-success)">天赋槽：${equipped.length}/${passiveSlots}</span>            <span style="margin-left:20px;color:var(--accent-info)">技能槽：${this.getActiveSlots()}</span>        </div>`;        const sorted = [...all].sort((a,b)=>a.quality-b.quality);        sorted.forEach(t => {            const isUnlocked = unlocked.includes(t.id);            const isEquipped = equipped.includes(t.id);            const lv = this.getTalentLevel(t.id);            const maxLv = t.maxLevel || 5;            const cost = t.unlockCost || {fragQuality: t.quality, fragCount: 10};            const canAfford = this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, cost.fragQuality) >= cost.fragCount;            let effectText = '';            if (isUnlocked) {                const eff = this.getTalentEffect(t.id);                effectText = eff ? eff.passive : '';            } else if (t.effects && t.effects.length > 0) {                effectText = t.effects[0].passive || '';            }            let upgradeBtn = '';            if (isUnlocked && lv < maxLv) {                const levelCosts = t.levelCost || [2,4,7,11,16];                const pointCost = levelCosts[lv-1] || 2;                const fragCost = pointCost;                const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, t.quality) >= fragCost;                const nextEff = this.getTalentNextEffect(t.id);                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px" title="${nextEff ? nextEff.passive : ''}">升级至${lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;            } else if (isUnlocked && lv >= maxLv) {                upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';            }            let actionBtn = '';
+    renderTalentUnlockList() {        const all = this.data.talents.talents;        if (!all) return;        const listEl = document.getElementById('talentUnlockList');        if (!listEl) return;        const unlocked = this.permanent.unlockedTalents;        const equipped = this.player.equippedTalents;        const passiveSlots = this.getPassiveSlots();        let html = '';        html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:6px">            <span style="color:var(--accent-warning)">天赋点：${this.permanent.talentPoints || 0}</span>            <span style="margin-left:20px;color:var(--accent-success)">被动槽：${equipped.length}/${passiveSlots}</span>            <span style="margin-left:20px;color:var(--accent-info)">主动槽：${this.getActiveSlots()}</span>        </div>`;        const sorted = [...all].sort((a,b)=>a.quality-b.quality);        sorted.forEach(t => {            const isUnlocked = unlocked.includes(t.id);            const isEquipped = equipped.includes(t.id);            const lv = this.getTalentLevel(t.id);            const maxLv = t.maxLevel || 5;            const cost = t.unlockCost || {fragQuality: t.quality, fragCount: 10};            const canAfford = this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, cost.fragQuality) >= cost.fragCount;            let effectText = '';            if (isUnlocked) {                const eff = this.getTalentEffect(t.id);                effectText = eff ? eff.passive : '';            } else if (t.effects && t.effects.length > 0) {                effectText = t.effects[0].passive || '';            }            let upgradeBtn = '';            if (isUnlocked && lv < maxLv) {                const levelCosts = t.levelCost || [2,3,5,8,12];                const pointCost = levelCosts[lv-1] || 2;                const fragCost = pointCost;                const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, t.quality) >= fragCost;                const nextEff = this.getTalentNextEffect(t.id);                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px" title="${nextEff ? nextEff.passive : ''}">升级Lv.${lv+1}(${pointCost}点+${fragCost}碎片)</button>`;            } else if (isUnlocked && lv >= maxLv) {                upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';            }            let actionBtn = '';
             if (!isUnlocked) {
                 const talentTag = (t.tags && t.tags.length > 0) ? t.tags[0] : 1;
                 // 只获取专属碎片数量（不包含万能碎片）
@@ -6893,7 +6650,7 @@ ${transition.buff.desc}`);
                     const canEquip = equipped.length < passiveSlots;
                     actionBtn = `${evolveBtn}<button onclick="game.equipTalentAndRefresh('${t.id}')" ${canEquip?'':'disabled'} style="font-size:12px;margin-left:4px">装备</button>`;
                 }
-            }            html += `<div class="talent-card" style="${isEquipped?'border-color:var(--accent-success)':''}">                <div>                    <div class="talent-name quality-${t.quality}" data-talent-id="${t.id}">${t.name}                        <span style="font-size:12px;color:var(--text-muted)">[${this.qualityNames[t.quality]}]</span>                        ${isUnlocked ? `<span style="font-size:12px;color:var(--accent-warning)">${lv}/${maxLv}级</span>` : ''}                        ${isEquipped ? '<span style="font-size:11px;color:var(--accent-success)">[已装备]</span>' : ''}                    </div>                    <div class="talent-desc">${effectText}</div>                    ${upgradeBtn}                </div>                <div>${actionBtn}</div>            </div>`;        });        if (listEl) listEl.innerHTML = html;    },    unlockTalentAndRefresh(tid) {        const r = this.unlockTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    upgradeTalentAndRefresh(tid) {        const r = this.upgradeTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    equipTalentAndRefresh(tid) {        const r = this.equipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    unequipTalentAndRefresh(tid) {        const r = this.unequipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },
+            }            html += `<div class="talent-card" style="${isEquipped?'border-color:var(--accent-success)':''}">                <div>                    <div class="talent-name quality-${t.quality}" data-talent-id="${t.id}">${t.name}                        <span style="font-size:12px;color:var(--text-muted)">[${this.qualityNames[t.quality]}]</span>                        ${isUnlocked ? `<span style="font-size:12px;color:var(--accent-warning)">Lv.${lv}/${maxLv}</span>` : ''}                        ${isEquipped ? '<span style="font-size:11px;color:var(--accent-success)">[已装备]</span>' : ''}                    </div>                    <div class="talent-desc">${effectText}</div>                    ${upgradeBtn}                </div>                <div>${actionBtn}</div>            </div>`;        });        if (listEl) listEl.innerHTML = html;    },    unlockTalentAndRefresh(tid) {        const r = this.unlockTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    upgradeTalentAndRefresh(tid) {        const r = this.upgradeTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    equipTalentAndRefresh(tid) {        const r = this.equipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    unequipTalentAndRefresh(tid) {        const r = this.unequipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },
     getTalentUnlockCost(quality) {
         return {1:5, 2:10, 3:20, 4:40, 5:80}[quality] || 10;
     },
@@ -7067,7 +6824,7 @@ ${transition.buff.desc}`);
             // 计算已投入的天赋点，全额返还
             let refundPoints = 0;
             const lv = self.getTalentLevel(talentId);
-            const costs = [2, 4, 7, 11, 16];
+            const costs = [2, 3, 5, 8, 12];
             for (let i = 0; i < lv - 1; i++) refundPoints += costs[i] || 2;
 
             // 从已解锁列表移除
@@ -7110,14 +6867,14 @@ ${transition.buff.desc}`);
         return all.filter(t => t.isFusion && t.fusionRecipe);
     },
 
-    // 检查融合配方是否可融合（两个材料都已解锁且5级，目标未解锁）
+    // 检查融合配方是否可融合（两个材料都已解锁且Lv.5，目标未解锁）
     canFuse(recipe) {
         if (!recipe || !recipe.fusionRecipe || recipe.fusionRecipe.length < 2) return false;
         const [id1, id2] = recipe.fusionRecipe;
         const t1 = this.data.talents.talents.find(x => x.id === id1);
         const t2 = this.data.talents.talents.find(x => x.id === id2);
         if (!t1 || !t2) return false;
-        // 两个材料都必须已解锁且5级
+        // 两个材料都必须已解锁且Lv.5
         if (!this.isTalentUnlocked(id1) || this.getTalentLevel(id1) < 5) return false;
         if (!this.isTalentUnlocked(id2) || this.getTalentLevel(id2) < 5) return false;
         // 目标不能已解锁
@@ -7125,11 +6882,11 @@ ${transition.buff.desc}`);
         return true;
     },
 
-    // 天赋融合：消耗两个5级史诗天赋，获得融合天赋
+    // 天赋融合：消耗两个Lv.5史诗天赋，获得融合天赋
     fuseTalents(recipeId) {
         const recipe = this.data.talents.talents.find(t => t.id === recipeId);
         if (!recipe || !recipe.fusionRecipe) { this.showGameAlert("提示", "融合配方不存在"); return; }
-        if (!this.canFuse(recipe)) { this.showGameAlert("提示", "材料不足：需要两个5级的史诗天赋，且目标未解锁"); return; }
+        if (!this.canFuse(recipe)) { this.showGameAlert("提示", "材料不足：需要两个Lv.5的史诗天赋，且目标未解锁"); return; }
 
         const [id1, id2] = recipe.fusionRecipe;
         const t1 = this.data.talents.talents.find(x => x.id === id1);
@@ -7139,7 +6896,7 @@ ${transition.buff.desc}`);
         this.showGameConfirm("确认融合", `确定融合？\n【${t1.name}】+【${t2.name}】→【${recipe.name}】\n两个材料天赋将被消耗，已投入天赋点全额返还`, function() {
             // 计算并返还天赋点（全额）
             let refundPoints = 0;
-            const costs = [2, 4, 7, 11, 16];
+            const costs = [2, 3, 5, 8, 12];
             [id1, id2].forEach(tid => {
                 const lv = self.getTalentLevel(tid);
                 for (let i = 0; i < lv - 1; i++) refundPoints += costs[i] || 2;
@@ -7180,7 +6937,7 @@ ${transition.buff.desc}`);
     openFusionPanel() {
         const recipes = this.getFusionRecipes();
         let html = '<h3>天赋融合</h3>';
-        html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">消耗两个5级的史诗天赋，融合成更强大的传说天赋。材料天赋将被消耗，已投入天赋点全额返还。</p>';
+        html += '<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">消耗两个Lv.5的史诗天赋，融合成更强大的传说天赋。材料天赋将被消耗，已投入天赋点全额返还。</p>';
         html += '<div class="scroll-area" style="padding-bottom:50px">';
 
         recipes.forEach(r => {
@@ -7202,9 +6959,9 @@ ${transition.buff.desc}`);
             html += `<div class="talent-desc" style="margin-bottom:6px">${r.description || ''}</div>`;
             html += `<div style="font-size:12px;color:var(--text-secondary)">满级效果：${effectText}</div>`;
             html += '<div style="margin-top:6px;font-size:12px">';
-            html += `<span style="color:${unlocked1 && lv1 >= 5 ? 'var(--accent-success)' : 'var(--accent-danger)'}">${t1 ? t1.name : '?'} ${unlocked1 ? lv1 + '级' : '(未解锁)'}</span>`;
+            html += `<span style="color:${unlocked1 && lv1 >= 5 ? 'var(--accent-success)' : 'var(--accent-danger)'}">${t1 ? t1.name : '?'} ${unlocked1 ? 'Lv.' + lv1 : '(未解锁)'}</span>`;
             html += ' <span style="color:var(--text-muted)">+</span> ';
-            html += `<span style="color:${unlocked2 && lv2 >= 5 ? 'var(--accent-success)' : 'var(--accent-danger)'}">${t2 ? t2.name : '?'} ${unlocked2 ? lv2 + '级' : '(未解锁)'}</span>`;
+            html += `<span style="color:${unlocked2 && lv2 >= 5 ? 'var(--accent-success)' : 'var(--accent-danger)'}">${t2 ? t2.name : '?'} ${unlocked2 ? 'Lv.' + lv2 : '(未解锁)'}</span>`;
             html += '</div>';
             html += '</div>';
             html += '<div>';
@@ -7240,7 +6997,7 @@ ${transition.buff.desc}`);
         
         // 检查Boss核心
         if (cost.bossCore && (!this.permanent.bossCores || (this.permanent.bossCores[cost.bossCore] || 0) < 1)) {
-            return {success: false, msg: '需要对应首领核心才能解锁'};
+            return {success: false, msg: '需要对应Boss核心才能解锁'};
         }
         
         // 检查碎片（专属+万能）
@@ -7326,10 +7083,10 @@ ${transition.buff.desc}`);
             ]
         },
         passiveSlots: {
-            title: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 天赋槽位',
+            title: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 被动槽位',
             sections: [
                 { label: '类型', value: '装备限制' },
-                { label: '说明', value: '当前装备的天赋数量 / 最大天赋槽位数。可以通过商店购买，或在天赋面板消耗进化精粹手动扩充。' }
+                { label: '说明', value: '当前装备的天赋数量 / 最大被动槽位数。可以通过商店购买，或在天赋面板消耗进化精粹手动扩充。' }
             ]
         },
         universalFragment: {
@@ -7355,7 +7112,7 @@ ${transition.buff.desc}`);
             sections: [
                 { label: '格式', value: '地图序号-层序号' },
                 { label: '说明', value: '例如3-2表示第3张地图的第2层' },
-                { label: '地图结构', value: '每张地图共5层，第5层为首领层' },
+                { label: '地图结构', value: '每张地图共5层，第5层为Boss层' },
                 { label: '进度', value: '通关当前地图后进入下一张地图，时代递进' }
             ]
         },
@@ -7511,7 +7268,7 @@ ${transition.buff.desc}`);
         vitality: {
             title: '体质',
             sections: [
-                { label: '效果', value: '每点+8最大生命，+0.4防御力' },
+                { label: '效果', value: '每点+8最大生命，+0.8防御力' },
                 { label: '主属性', value: '是生命值和防御力的主要来源' },
                 { label: '说明', value: '体质属性决定生存能力，适合坦克和续航流派。' }
             ]
@@ -7540,7 +7297,7 @@ ${transition.buff.desc}`);
         poison: {
             title: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a8 8 0 0 0-8 8c0 2.5 1 4.5 2.5 6L8 20h8l1.5-4c1.5-1.5 2.5-3.5 2.5-6a8 8 0 0 0-8-8z\"/><circle cx=\"9\" cy=\"12\" r=\"1.5\"/><circle cx=\"15\" cy=\"12\" r=\"1.5\"/><path d=\"M10 17h4\"/></svg>️ 中毒',
             sections: [
-                { label: '类型', value: '持续伤害（Dot）' },
+                { label: '类型', value: 'Dot伤害（持续伤害）' },
                 { label: '伤害公式', value: '每回合受到 攻击者攻击力×0.2×层数 的伤害' },
                 { label: '衰减', value: '每回合层数-1' },
                 { label: '附加效果', value: '削弱目标攻击力和防御力' },
@@ -7550,7 +7307,7 @@ ${transition.buff.desc}`);
         burn: {
             title: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/></svg> 灼烧',
             sections: [
-                { label: '类型', value: '持续伤害（Dot）' },
+                { label: '类型', value: 'Dot伤害（持续伤害）' },
                 { label: '伤害公式', value: '每回合受到 8×层数×(1+目标已损失生命%) 的伤害' },
                 { label: '衰减', value: '每回合层数-1' },
                 { label: '特殊效果', value: '斩杀效果：目标血量越低，灼烧伤害越高' },
@@ -7560,7 +7317,7 @@ ${transition.buff.desc}`);
         bleed: {
             title: '🩸 流血',
             sections: [
-                { label: '类型', value: '持续伤害（Dot）' },
+                { label: '类型', value: 'Dot伤害（持续伤害）' },
                 { label: '伤害公式', value: '每回合受到 5×层数 + 目标最大生命×0.01×层数 的伤害' },
                 { label: '递增', value: '每回合层数+1（越流越痛）' },
                 { label: '说明', value: '流血是递增型持续伤害，层数会越来越高，适合长时间战斗。流血系天赋可以增强流血效果。' }
@@ -7569,23 +7326,23 @@ ${transition.buff.desc}`);
         wither: {
             title: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a8 8 0 0 0-8 8c0 2.5 1 4.5 2.5 6L8 20h8l1.5-4c1.5-1.5 2.5-3.5 2.5-6a8 8 0 0 0-8-8z\"/><circle cx=\"9\" cy=\"12\" r=\"1.5\"/><circle cx=\"15\" cy=\"12\" r=\"1.5\"/><path d=\"M10 17h4\"/></svg> 凋零',
             sections: [
-                { label: '类型', value: '持续伤害（Dot）' },
+                { label: '类型', value: 'Dot伤害（持续伤害）' },
                 { label: '伤害公式', value: '每回合受到 目标最大生命×0.02×层数 的伤害' },
                 { label: '衰减', value: '每回合层数-1' },
                 { label: '附加效果', value: '全属性-10%' },
-                { label: '首领抗性', value: '首领对凋零伤害有50%抗性' },
-                { label: '说明', value: '凋零是百分比伤害，对高血量敌人效果显著，但首领有抗性。凋零系天赋可以增强凋零效果。' }
+                { label: 'Boss抗性', value: 'Boss对凋零伤害有50%抗性' },
+                { label: '说明', value: '凋零是百分比伤害，对高血量敌人效果显著，但Boss有抗性。凋零系天赋可以增强凋零效果。' }
             ]
         },
         stun: {
             title: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M8 9l2 2-2 2\"/><path d=\"M16 9l-2 2 2 2\"/><path d=\"M9 16h6\"/></svg> 束缚/麻痹/冻结',
             sections: [
                 { label: '类型', value: '控制效果' },
-                { label: '束缚', value: '无法行动，首领持续-1回合' },
-                { label: '麻痹', value: '50%无法行动+敏捷-50%（降低闪避），首领概率-20%' },
-                { label: '冻结', value: '无法行动1回合+解冻减速，首领持续-1回合' },
+                { label: '束缚', value: '无法行动，Boss持续-1回合' },
+                { label: '麻痹', value: '50%无法行动+敏捷-50%（降低闪避），Boss概率-20%' },
+                { label: '冻结', value: '无法行动1回合+解冻减速，Boss持续-1回合' },
                 { label: '控制铁律', value: '冷却回合必须大于控制持续回合，保证空窗期，不允许无限控制链' },
-                { label: '说明', value: '控制效果可以限制敌人行动，但首领有抗性，且不能无限控制。' }
+                { label: '说明', value: '控制效果可以限制敌人行动，但Boss有抗性，且不能无限控制。' }
             ]
         },
         slow: {
@@ -7593,8 +7350,8 @@ ${transition.buff.desc}`);
             sections: [
                 { label: '类型', value: '控制效果（Debuff）' },
                 { label: '效果', value: '敏捷-50%（降低闪避）' },
-                { label: '首领效果', value: '全额生效（不减半）' },
-                { label: '说明', value: '减速是软控制，不阻止行动但降低先手值，对首领全额生效。' }
+                { label: 'Boss效果', value: '全额生效（不减半）' },
+                { label: '说明', value: '减速是软控制，不阻止行动但降低先手值，对Boss全额生效。' }
             ]
         },
         silence: {
@@ -7602,7 +7359,7 @@ ${transition.buff.desc}`);
             sections: [
                 { label: '类型', value: '控制效果' },
                 { label: '效果', value: '无法使用技能' },
-                { label: '首领效果', value: '持续-1回合' },
+                { label: 'Boss效果', value: '持续-1回合' },
                 { label: '说明', value: '沉默阻止敌人使用技能，但不阻止普攻。对依赖技能的敌人效果显著。' }
             ]
         },
@@ -7847,7 +7604,7 @@ ${transition.buff.desc}`);
         let unlockText = `${cost.fragCount}个【${tagName}】${qualityNames[cost.fragQuality]}碎片`;
         unlockText += `<br><span style="font-size:11px;color:var(--text-muted)">专属：${exclusiveFragCount}，万能：${universalFragCount}</span>`;
         if (cost.bossCore) {
-            unlockText += ` + 1个对应首领核心`;
+            unlockText += ` + 1个对应Boss核心`;
         }
         
         // 进化路线
@@ -7864,9 +7621,9 @@ ${transition.buff.desc}`);
         if (talent.isFusion && talent.fusionRecipe) {
             const recipeNames = talent.fusionRecipe.map(id => {
                 const t = this.data.talents.talents.find(x => x.id === id);
-                return t ? t.name : '未知天赋';
+                return t ? t.name : id;
             }).join(' + ');
-            fusionText = `融合配方：${recipeNames}（均需5级）`;
+            fusionText = `融合配方：${recipeNames}（均需Lv.5）`;
         }
         
         const html = `
@@ -7885,7 +7642,7 @@ ${transition.buff.desc}`);
             ${isUnlocked ? `
             <div class="tooltip-section">
                 <div class="tooltip-label">等级</div>
-                <div class="tooltip-value">${lv}/${maxLv}级</div>
+                <div class="tooltip-value">Lv.${lv}/${maxLv}</div>
             </div>
             ` : ''}
             <div class="tooltip-section">
@@ -7942,17 +7699,16 @@ ${transition.buff.desc}`);
         // 效果描述
         let effectsText = skill.desc || '';
         if (skill.effects && skill.effects.length > 0) {
-            const statCn = {maxHp:'生命', attack:'攻击', defense:'防御', speed:'先手值', crit:'暴击率', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', damageTaken:'受伤', allStats:'全属性', bossResist:'首领抗性', healBlocked:'禁疗', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', talentPower:'天赋强度', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾'};
             effectsText = skill.effects.map(e => {
                 if (e.type === 'damage') return `造成${e.multiplier * 100}%攻击力伤害`;
                 if (e.type === 'heal') return `恢复${e.percent * 100}%最大生命`;
-                if (e.type === 'dot') { const dn = this.dotTypes[e.dotType] ? this.dotTypes[e.dotType].name : e.dotType; return `施加${e.stacks}层${dn}（${e.duration}回合）`; }
-                if (e.type === 'control') { const cn = this.controlTypes[e.controlType] ? this.controlTypes[e.controlType].name : e.controlType; return `${e.chance * 100}%概率${cn}（${e.duration}回合）`; }
-                if (e.type === 'buff') { const sn2 = statCn[e.stat] || e.stat; return `${sn2}+${e.value}%（${e.duration}回合）`; }
-                if (e.type === 'debuff') { const sn3 = statCn[e.stat] || e.stat; return `${sn3}-${e.value}%（${e.duration}回合）`; }
-                if (e.type === 'dot_explosion') return `立即结算持续伤害×${e.multiplier}`;
-                if (e.type === 'dot_double') { const dn2 = this.dotTypes[e.dotType] ? this.dotTypes[e.dotType].name : e.dotType; return `${dn2}层数翻倍`; }
-                if (e.type === 'dot_damage') return `造成持续伤害层数×${e.multiplier}直接伤害`;
+                if (e.type === 'dot') return `施加${e.stacks}层${e.dotType}（${e.duration}回合）`;
+                if (e.type === 'control') return `${e.chance * 100}%概率${e.controlType}（${e.duration}回合）`;
+                if (e.type === 'buff') return `${e.stat}+${e.value}%（${e.duration}回合）`;
+                if (e.type === 'debuff') return `${e.stat}-${e.value}%（${e.duration}回合）`;
+                if (e.type === 'dot_explosion') return `立即结算Dot伤害×${e.multiplier}`;
+                if (e.type === 'dot_double') return `${e.dotType}层数翻倍`;
+                if (e.type === 'dot_damage') return `造成Dot层数×${e.multiplier}直接伤害`;
                 return e.type;
             }).join('，');
         }
@@ -8018,35 +7774,7 @@ ${transition.buff.desc}`);
             } else if (eff.type === 'fragments') {
                 effectDetail = `获得${eff.value || 0}个${eff.quality || '普通'}碎片`;
             } else {
-                const effNames = {
-                    attack_boost: '攻击力+', defense_boost: '防御力+', speed_boost: '先手值+', all_boost: '全属性+',
-                    gain_fragments: '获得', exp_boost: '获得经验+', drop_boost: '掉落率+', gain_talent_points: '获得',
-                    revive: '死亡时以', unlock_passive_slot: '额外解锁天赋槽位', max_energy: '能量上限+',
-                    fragment_drop_bonus_percent: '碎片收益+', upgrade_success_rate_bonus: '升阶成功率+',
-                    start_with_item: '开局获得补给品', death_talent_bonus_percent: '死亡结算天赋加成+',
-                    move_speed_percent: '永久移动速度+', drop_quality_bonus: '稀有掉落概率提升',
-                    give_currency: '获得', random_fragment: '随机获得', give_items: '获得随机消耗品',
-                    upgrade_protection: '升阶失败不消耗材料', random_boss_core: '随机获得1个首领核心'
-                };
-                const effSuffix = {attack_boost:'', defense_boost:'', speed_boost:'', all_boost:'%', exp_boost:'%', drop_boost:'%', max_energy:'', move_speed_percent:'%', fragment_drop_bonus_percent:'%', death_talent_bonus_percent:'%', upgrade_success_rate_bonus:'%'};
-                const qNames = {1:'普通', 2:'稀有', 3:'史诗', 4:'传说', 5:'神话'};
-                const base = effNames[eff.type] || (eff.type || '特殊效果');
-                if (eff.type === 'gain_fragments') {
-                    effectDetail = `获得${eff.value || 0}个${qNames[eff.quality] || '普通'}碎片`;
-                } else if (eff.type === 'revive') {
-                    effectDetail = `死亡时以${eff.value || 30}%生命自动复活（本局1次）`;
-                } else if (eff.type === 'gain_talent_points') {
-                    effectDetail = `获得${eff.value || 0}点天赋点`;
-                } else if (eff.type === 'give_currency' && eff.value && eff.value.currency) {
-                    const curName = eff.value.currency === 'essence' ? '进化精粹' : (qNames[eff.value.currency.replace('fragments_','')] || '') + '碎片';
-                    effectDetail = `获得${eff.value.amount || 0}个${curName}`;
-                } else if (eff.type === 'random_fragment' && eff.value) {
-                    effectDetail = `随机获得${eff.value.amount || 0}个品质${eff.value.minQuality || 3}-${eff.value.maxQuality || 5}碎片`;
-                } else if (eff.value !== undefined && eff.value !== null && effSuffix[eff.type] !== undefined) {
-                    effectDetail = base + eff.value + effSuffix[eff.type];
-                } else {
-                    effectDetail = base;
-                }
+                effectDetail = eff.type || '特殊效果';
             }
         }
         
@@ -8425,12 +8153,12 @@ ${transition.buff.desc}`);
             } else {
                 let upgradeBtn = '';
                 if (t.lv < t.maxLv) {
-                    const levelCosts = t.levelCost || [2,4,7,11,16];
+                    const levelCosts = t.levelCost || [2,3,5,8,12];
                     const pointCost = levelCosts[t.lv-1] || 2;
                     const fragCost = pointCost;
                     const upgradeTagFrags = this.getTagFragmentCount(t.talentTag, t.quality);
                     const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && upgradeTagFrags >= fragCost;
-                    upgradeBtn = `<button onclick="game.upgradeTalentAndRefreshInRun('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:10px;padding:4px 8px">升级至${t.lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;
+                    upgradeBtn = `<button onclick="game.upgradeTalentAndRefreshInRun('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:10px;padding:4px 8px">升级Lv.${t.lv+1}(${pointCost}点+${fragCost}碎片)</button>`;
                 }
                 if (t.isEquipped) {
                     actionBtn = `<div style="display:flex;gap:6px;flex-wrap:wrap">${upgradeBtn}<button onclick="game.unequipTalentAndRefreshInRun('${t.id}')" style="font-size:11px;padding:5px 10px;background:var(--accent-danger)">卸下</button></div>`;
@@ -8445,7 +8173,7 @@ ${transition.buff.desc}`);
                 <div>
                     <div class="talent-name" data-talent-id="${t.id}">${t.name}
                         <span style="font-size:10px;opacity:0.7">[${this.qualityNames[t.quality]}]</span>
-                        ${t.isUnlocked ? `<span style="font-size:10px;color:var(--accent-warning)">${t.lv}/${t.maxLv}级</span>` : ''}
+                        ${t.isUnlocked ? `<span style="font-size:10px;color:var(--accent-warning)">Lv.${t.lv}/${t.maxLv}</span>` : ''}
                         ${t.isEquipped ? '<span style="font-size:9px;color:var(--accent-success)">[已装备]</span>' : ''}
                         ${t.canUnlock ? '<span style="font-size:9px;color:var(--accent-primary);margin-left:4px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>可解锁</span>' : ''}
                     </div>
@@ -8660,7 +8388,7 @@ ${transition.buff.desc}`);
         const activeManual = this.getActiveSlotManualProgress();
         html += `<div style="padding:10px;background:var(--bg-secondary);border-radius:6px;border-left:3px solid var(--accent-info)">`;
         html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
-        html += `<span style="color:var(--accent-info);font-weight:bold;font-size:13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 技能槽（主动）：${activeSlots}/6（可扩充）</span>`;
+        html += `<span style="color:var(--accent-info);font-weight:bold;font-size:13px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 技能槽（主动）：${activeSlots}/6</span>`;
         html += `<span style="color:var(--text-faint);font-size:11px">初始3 + 自动${activeAuto.autoSlots} + 手动${activeManual.manualSlots}</span>`;
         html += `</div>`;
         html += `<div style="font-size:11px;color:var(--text-muted);line-height:1.6;margin-bottom:8px">`;
@@ -8698,7 +8426,7 @@ ${transition.buff.desc}`);
                 const lv = this.getTalentLevel(tid);
                 html += `<div style="padding:6px 10px;background:var(--bg-primary);border:1px solid ${this.qualityColors[t.quality]};border-radius:6px;font-size:12px;display:flex;align-items:center;gap:6px">`;
                 html += `<span style="color:${this.qualityColors[t.quality]};font-weight:bold">${t.name}</span>`;
-                html += `<span style="color:var(--accent-warning);font-size:10px">${lv}级</span>`;
+                html += `<span style="color:var(--accent-warning);font-size:10px">Lv.${lv}</span>`;
                 html += `<button onclick="game.unequipTalentAndRefresh('${tid}')" style="padding:2px 6px;font-size:10px;background:var(--accent-danger);color:white;border:none;border-radius:3px;cursor:pointer">卸下</button>`;
                 html += `</div>`;
             });
@@ -8732,7 +8460,7 @@ ${transition.buff.desc}`);
         html += `</div>`;
         html += `<p style="font-size:11px;color:var(--text-muted);margin-bottom:8px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/><path d=\"M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z\"/></svg> 击败敌人掉落对应体系专属碎片，万能碎片可替代任意体系碎片</p>`;
         html += `<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">有进化路线的天赋可消耗自身+高阶碎片进化为指定高阶天赋；已投入天赋点全额返还</p>`;
-        html += `<div style="margin-bottom:10px;text-align:right"><button onclick="game.openFusionPanel()" style="font-size:13px;background:var(--accent-purple);color:white"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z\"/></svg> 天赋融合（双史诗5级合成传说）</button></div>`;
+        html += `<div style="margin-bottom:10px;text-align:right"><button onclick="game.openFusionPanel()" style="font-size:13px;background:var(--accent-purple);color:white"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z\"/></svg> 天赋融合（双史诗Lv.5合成传说）</button></div>`;
 
         // 核心筛选栏固定顶部（sticky）：只包含标签切换、品质、体系、搜索
         html += '<div class="talent-filter-sticky" style="position:sticky;top:0;z-index:10;background:var(--bg-primary);padding:8px 0;border-bottom:1px solid var(--border-secondary);margin-bottom:10px">';
@@ -8890,11 +8618,11 @@ ${transition.buff.desc}`);
             // 升级按钮
             let upgradeBtn = '';
             if (isUnlocked && lv < maxLv) {
-                const levelCosts = t.levelCost || [2,4,7,11,16];
+                const levelCosts = t.levelCost || [2,3,5,8,12];
                 const pointCost = levelCosts[lv-1] || 2;
                 const fragCost = pointCost;
                 const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, t.quality) >= fragCost;
-                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px">升级至${lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;
+                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px">升级Lv.${lv+1}(${pointCost}点+${fragCost}碎片)</button>`;
             } else if (isUnlocked && lv >= maxLv) {
                 upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';
             }
@@ -8934,7 +8662,7 @@ ${transition.buff.desc}`);
                 <div>
                     <div class="talent-name quality-${t.quality}" data-talent-id="${t.id}">${t.name}
                         <span style="font-size:12px;color:var(--text-muted)">[${this.qualityNames[t.quality]}]</span>
-                        ${isUnlocked ? `<span style="font-size:12px;color:var(--accent-warning)">${lv}/${maxLv}级</span>` : ''}
+                        ${isUnlocked ? `<span style="font-size:12px;color:var(--accent-warning)">Lv.${lv}/${maxLv}</span>` : ''}
                         ${isEquipped ? '<span style="font-size:11px;color:var(--accent-success)">[已装备]</span>' : ''}
                     </div>
                     <div class="talent-desc">${effectText}</div>
@@ -8991,7 +8719,7 @@ ${transition.buff.desc}`);
             this.presetDraftTalents.splice(idx, 1);
         } else {
             if (this.presetDraftTalents.length >= this.getPassiveSlots()) {
-                this.showGameAlert('提示', '预构筑最多选择 ' + this.getPassiveSlots() + ' 个天赋（当前天赋槽上限）');
+                this.showGameAlert('提示', '预构筑最多选择 ' + this.getPassiveSlots() + ' 个天赋（当前被动槽上限）');
                 return;
             }
             this.presetDraftTalents.push(id);
@@ -9054,7 +8782,7 @@ ${transition.buff.desc}`);
                 if (!p) return;
                 const names = (p.talents || []).map(id => {
                     const t = all.find(x => x.id === id);
-                    return t ? t.name : '未知天赋';
+                    return t ? t.name : id;
                 });
                 html += '<div style="padding:10px;background:var(--bg-card);border:1px solid ' + (p.isDefault ? 'var(--accent-warning)' : 'var(--border-secondary)') + ';border-radius:8px;margin-bottom:8px">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
@@ -9223,7 +8951,7 @@ ${transition.buff.desc}`);
         if (idx >= 0) {
             this.player.equippedTalents.splice(idx, 1);
         } else {
-            if (this.player.equippedTalents.length >= this.getPassiveSlots()) { this.showGameAlert("提示", "天赋槽已满（" + this.getPassiveSlots() + "个）"); return; }
+            if (this.player.equippedTalents.length >= this.getPassiveSlots()) { this.showGameAlert("提示", "被动槽已满（" + this.getPassiveSlots() + "个）"); return; }
             this.player.equippedTalents.push(talentId);
         }
         this.calcDerivedStats();
@@ -9295,7 +9023,7 @@ ${transition.buff.desc}`);
         this.consumeFragments(talentTag, fragQuality, fragCost);
         this.permanent.talentLevels[talentId] = lv + 1;
         this.savePermanent();
-        return {success: true, msg: t.name + " 升级到 " + (lv + 1) + "级"};
+        return {success: true, msg: t.name + " 升级到 Lv." + (lv + 1)};
     },
 
     // 进化精粹强化配置
@@ -9349,7 +9077,7 @@ ${transition.buff.desc}`);
         this.calcDerivedStats();
     },
 
-    // 获取天赋槽数量（混合模式：自动扩充 + 手动扩充）
+    // 获取被动槽数量（混合模式：自动扩充 + 手动扩充）
     getPassiveSlots() {
         // 初始5个槽
         let slots = 5;
@@ -9409,7 +9137,7 @@ ${transition.buff.desc}`);
             return false;
         }
         if (!progress.canAfford) {
-            this.showGameAlert('精粹不足', '手动扩充天赋槽需要${progress.cost || 50}局外精粹！\n当前精粹：' + progress.essence);
+            this.showGameAlert('精粹不足', '手动扩充天赋槽需要50局外精粹！\n当前精粹：' + progress.essence);
             return false;
         }
         this.permanent.essence -= progress.cost;
@@ -9419,7 +9147,7 @@ ${transition.buff.desc}`);
         return true;
     },
 
-    // 获取技能槽数量（混合模式：自动扩充 + 手动扩充）
+    // 获取主动槽数量（混合模式：自动扩充 + 手动扩充）
     getActiveSlots() {
         // 初始3个额外槽位（默认3个技能不占槽，始终可用）
         let slots = 3;
@@ -9486,7 +9214,7 @@ ${transition.buff.desc}`);
         if (!this.isTalentUnlocked(talentId)) return {success: false, msg: "未解锁"};
         if (this.player.equippedTalents.includes(talentId)) return {success: false, msg: "已装备"};
         if (this.player.equippedTalents.length >= this.getPassiveSlots()) {
-            return {success: false, msg: "天赋槽已满（" + this.getPassiveSlots() + "个）"};
+            return {success: false, msg: "被动槽已满（" + this.getPassiveSlots() + "个）"};
         }
         this.player.equippedTalents.push(talentId);
         this.calcDerivedStats();
@@ -9913,53 +9641,7 @@ ${transition.buff.desc}`);
     },
 
 
-    parsePassiveEffect(text, bonus) {        if (!text) return;        bonus = bonus || {};
-        text = text.replace(/[，,]/g, ' ');
-        // ===== 审计修复：先提取并从文本移除特殊格式，避免被点数正则误吃 =====
-        // 生命低于X%时攻击力+Y%（狼人血统）
-        let pre = text.match(/生命低于\s*(\d+)%\s*时攻击力\+(\d+)%/);
-        if (pre) {
-            bonus.lowHpAttackPct = (bonus.lowHpAttackPct||0) + parseInt(pre[2])/100;
-            bonus.lowHpThreshold = Math.min(bonus.lowHpThreshold || 100, parseInt(pre[1]));
-            text = text.replace(/生命低于\s*\d+%\s*时攻击力\+\s*\d+%/, ' ');
-        }
-        // 击杀叠加攻击（百兽之祖）
-        let ks = text.match(/击杀(?:敌人|单位)后攻击力\+(\d+)%.*可叠加/);
-        if (ks) {
-            bonus.killStackAttack = (bonus.killStackAttack||0) + parseInt(ks[1])/100;
-            bonus.killAttackStackPermanent = true;
-            text = text.replace(/击杀(?:敌人|单位)后攻击力\+\s*\d+%[^。]*?可叠加[^。]*?/, ' ');
-        }
-        // 击杀叠加暴击（终焉之牙）
-        let kc = text.match(/击杀(?:敌人|单位)后暴击率\+(\d+)%.*可叠加/);
-        if (kc) {
-            bonus.killStackCrit = (bonus.killStackCrit||0) + parseInt(kc[1]);
-            bonus.killCritStackPermanent = true;
-            text = text.replace(/击杀(?:敌人|单位)后暴击率\+\s*\d+%[^。]*?可叠加[^。]*?/, ' ');
-        }
-
-        let atkChance = 100;
-        let mc = text.match(/攻击(?:时)?\s*(\d+)%\s*概率/);
-        if (mc) atkChance = parseInt(mc[1]);
-        let atkDur = null;
-        let md = text.match(/[（(]\s*(\d+)\s*回合[)）]/);
-        if (md) atkDur = parseInt(md[1]);
-        let m = text.match(/攻击(?:力)?\s*\+\s*(\d+)(%)?/);        if (m) { if (m[2]) bonus.attackPct = (bonus.attackPct||0) + parseInt(m[1])/100; else bonus.attack += parseInt(m[1]); }        m = text.match(/(?:最大)?生命(?:值)?\s*\+\s*(\d+)(%)?/);        if (m) { if (m[2]) bonus.maxHpPct = (bonus.maxHpPct||0) + parseInt(m[1])/100; else bonus.maxHp += parseInt(m[1]); }        m = text.match(/防御(?:力)?\s*\+\s*(\d+)(%)?/);        if (m) { if (m[2]) bonus.defensePct = (bonus.defensePct||0) + parseInt(m[1])/100; else bonus.defense += parseInt(m[1]); }        m = text.match(/暴击(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.crit += parseInt(m[1]);        m = text.match(/暴击伤害\s*\+\s*(\d+)/);        if (m) bonus.critDamage += parseInt(m[1]);        m = text.match(/命中(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.hit += parseInt(m[1]);        m = text.match(/(?:先手值|先手|速度)\s*\+\s*(\d+)/);        if (m) bonus.speed += parseInt(m[1]);        m = text.match(/能量(?:上限)?\s*\+\s*(\d+)/);        if (m) bonus.maxEnergy += parseInt(m[1]);        m = text.match(/每回合回复\s*(\d+)\s*点?生命/);        if (m) bonus.hpRegen += parseInt(m[1]);        m = text.match(/吸取(?:造成)?伤害的\s*(\d+)%\s*为?生命/);        if (m) {
-            if (/攻击(?:时)?\s*\d+%\s*概率.*吸血/.test(text)) bonus.lifeStealChance = Math.min(bonus.lifeStealChance || 100, atkChance);
-            bonus.lifeStealPct += parseInt(m[1]);
-        }        if (!bonus.dotOnHit) bonus.dotOnHit = [];
-        if ((/中毒|毒素|猛毒|感染/.test(text)) && (/攻击(?:时)?|附加|附带|普攻|触击/.test(text)) && !/(受到攻击|近身|被攻击|攻击者|反击)/.test(text)) {            let st2 = 2;
-            let ms2 = text.match(/(\d+)层(?:中毒|毒素)/);
-            if (ms2) st2 = parseInt(ms2[1]);
-            bonus.dotOnHit.push({type: 'poison', stacks: st2, chance: atkChance, duration: atkDur || 3});        }        if (!bonus.dotOnHit) bonus.dotOnHit = [];
-        if ((/灼烧|火焰伤害/.test(text)) && (/攻击(?:时)?|附加/.test(text)) && !/(受到攻击|近身|被攻击|攻击者|反击)/.test(text)) {            let st3 = 1;
-            let ms3 = text.match(/(\d+)层(?:灼烧)/);
-            if (ms3) st3 = parseInt(ms3[1]);
-            bonus.dotOnHit.push({type: 'burn', stacks: st3, chance: atkChance, duration: atkDur || 3});        }        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*减速/);        if (m) bonus.controlOnHit.push({type: 'slow', chance: parseInt(m[1]), duration: 2});        if (/附加减速/.test(text)) {            bonus.controlOnHit.push({type: 'slow', chance: 100, duration: 2});        }        m = text.match(/受到攻击(?:时)?\s*(\d+)%\s*概率反弹\s*(\d+)%\s*伤害/);
-        if (m) {
-            bonus.reflectChance = Math.min(bonus.reflectChance || 100, parseInt(m[1]));
-            bonus.reflectPct += parseInt(m[2]);
-        }        m = text.match(/近战攻击反弹\s*(\d+)\s*点伤害/);        if (m) bonus.reflectFlat += parseInt(m[1]);        m = text.match(/击杀(?:敌人|单位)(?:后|时)?(?:回复|恢复)\s*(\d+)%\s*最大生命/);        if (m) bonus.healOnKillPct += parseInt(m[1]);        m = text.match(/所有属性\s*\+\s*(\d+)%/);        if (m) bonus.allStatPct += parseInt(m[1]) / 100;
+    parsePassiveEffect(text, bonus) {        if (!text) return;        let m = text.match(/攻击(?:力)?\s*\+\s*(\d+)/);        if (m) bonus.attack += parseInt(m[1]);        m = text.match(/(?:最大)?生命(?:值)?\s*\+\s*(\d+)/);        if (m) bonus.maxHp += parseInt(m[1]);        m = text.match(/防御(?:力)?\s*\+\s*(\d+)/);        if (m) bonus.defense += parseInt(m[1]);        m = text.match(/暴击(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.crit += parseInt(m[1]);        m = text.match(/暴击伤害\s*\+\s*(\d+)/);        if (m) bonus.critDamage += parseInt(m[1]);        m = text.match(/命中(?:率)?\s*\+\s*(\d+)/);        if (m) bonus.hit += parseInt(m[1]);        m = text.match(/(?:先手值|先手|速度)\s*\+\s*(\d+)/);        if (m) bonus.speed += parseInt(m[1]);        m = text.match(/能量(?:上限)?\s*\+\s*(\d+)/);        if (m) bonus.maxEnergy += parseInt(m[1]);        m = text.match(/每回合回复\s*(\d+)\s*点?生命/);        if (m) bonus.hpRegen += parseInt(m[1]);        m = text.match(/吸取(?:造成)?伤害的\s*(\d+)%\s*为?生命/);        if (m) bonus.lifeStealPct += parseInt(m[1]);        if ((/中毒|毒素|猛毒/.test(text)) && (/攻击(?:时)?|附加|普攻/.test(text))) {            bonus.dotOnHit.push({type: 'poison', stacks: 2});        }        if ((/灼烧|火焰伤害/.test(text)) && (/攻击(?:时)?|附加/.test(text))) {            bonus.dotOnHit.push({type: 'burn', stacks: 1});        }        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*减速/);        if (m) bonus.controlOnHit.push({type: 'slow', chance: parseInt(m[1]), duration: 2});        if (/附加减速/.test(text)) {            bonus.controlOnHit.push({type: 'slow', chance: 100, duration: 2});        }        m = text.match(/受到攻击(?:时)?\s*(\d+)%\s*概率反弹\s*(\d+)%\s*伤害/);        if (m) bonus.reflectPct += parseInt(m[2]) * (parseInt(m[1]) / 100);        m = text.match(/近战攻击反弹\s*(\d+)\s*点伤害/);        if (m) bonus.reflectFlat += parseInt(m[1]);        m = text.match(/击杀(?:敌人|单位)(?:后|时)?回复\s*(\d+)%\s*最大生命/);        if (m) bonus.healOnKillPct += parseInt(m[1]);        m = text.match(/所有属性\s*\+\s*(\d+)%/);        if (m) bonus.allStatPct += parseInt(m[1]);
         // 五维基础属性
         m = text.match(/力量\s*\+\s*(\d+)/); if (m) bonus.strength = (bonus.strength||0) + parseInt(m[1]);
         m = text.match(/敏捷\s*\+\s*(\d+)/); if (m) bonus.agility = (bonus.agility||0) + parseInt(m[1]);
@@ -9971,13 +9653,8 @@ ${transition.buff.desc}`);
         // 增伤/减伤
         m = text.match(/造成(?:的)?伤害\s*\+\s*(\d+)%/); if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
         m = text.match(/受到(?:的)?伤害\s*-\s*(\d+)%/); if (m) bonus.damageReductionPct = (bonus.damageReductionPct||0) + parseInt(m[1])/100;
-        // 对低血量增伤（含阈值格式）
-        m = text.match(/对(?:生命值)?低于(\d+)%的目标伤害\s*\+\s*(\d+)%/); if (m) { bonus.lowHpDamagePct = (bonus.lowHpDamagePct||0) + parseInt(m[2])/100; bonus.lowHpThreshold = Math.min(bonus.lowHpThreshold || 100, parseInt(m[1])); }
-        m = text.match(/对低血量目标伤害\s*\+\s*(\d+)%/); if (m) { bonus.lowHpDamagePct = (bonus.lowHpDamagePct||0) + parseInt(m[1])/100; bonus.lowHpThreshold = Math.min(bonus.lowHpThreshold || 100, 50); }
-        // 生命低于X%时造成的伤害+Y%
-        m = text.match(/生命低于\s*(\d+)%\s*时(?:造成的)?伤害\s*\+\s*(\d+)%/); if (m) { bonus.lowHpDamagePct = (bonus.lowHpDamagePct||0) + parseInt(m[2])/100; bonus.lowHpThreshold = Math.min(bonus.lowHpThreshold || 100, parseInt(m[1])); }
-        // 生命低于X%时每回合回复Y%最大生命
-        m = text.match(/生命低于\s*(\d+)%\s*时每回合回复\s*(\d+)%\s*最大生命/); if (m) { bonus.hpRegenPct = (bonus.hpRegenPct||0) + parseInt(m[2])/100; bonus.lowHpRegenThreshold = Math.min(bonus.lowHpRegenThreshold || 100, parseInt(m[1])); }
+        // 对低血量增伤
+        m = text.match(/对低血量目标伤害\s*\+\s*(\d+)%/); if (m) bonus.lowHpDamagePct = (bonus.lowHpDamagePct||0) + parseInt(m[1])/100;
         // 先手攻击额外伤害
         m = text.match(/先手攻击额外伤害\s*\+\s*(\d+)%/); if (m) bonus.firstStrikeDamagePct = (bonus.firstStrikeDamagePct||0) + parseInt(m[1])/100;
         // 额外攻击概率
@@ -9986,12 +9663,8 @@ ${transition.buff.desc}`);
         m = text.match(/技能冷却\s*-\s*(\d+)%/); if (m) bonus.cooldownReduction = (bonus.cooldownReduction||0) + parseInt(m[1])/100;
         // ========== 新增效果解析 ==========
         // Dot：流血
-        if (!bonus.bleedOnHit) bonus.bleedOnHit = [];
         if ((/流血|撕裂伤/.test(text)) && (/攻击(?:时)?|附加|普攻/.test(text))) {
-            let st4 = 2;
-            let ms4 = text.match(/(\d+)层(?:流血)/);
-            if (ms4) st4 = parseInt(ms4[1]);
-            bonus.bleedOnHit.push({type: 'bleed', stacks: st4, chance: atkChance, duration: atkDur || 2});
+            bonus.bleedOnHit.push({type: 'bleed', stacks: 2});
         }
         // Dot：凋零
         if ((/凋零|枯萎/.test(text)) && (/攻击(?:时)?|附加|普攻/.test(text))) {
@@ -10018,9 +9691,7 @@ ${transition.buff.desc}`);
         if (m) bonus.silenceChance += parseInt(m[1]) / 100;
         else if (/附加沉默/.test(text)) bonus.silenceChance += 0.3;
         // 战斗开始：隐身
-        let sm = text.match(/战斗开始(?:时)?\s*(\d+)%\s*概率进入隐身(?:状态)?(?:，?持续(\d+)回合)?/);
-        if (sm) { bonus.startStealthChance = parseInt(sm[1]) / 100; if (sm[2]) bonus.startStealthDuration = parseInt(sm[2]); }
-        else if (/战斗开始.*隐身|入场.*隐身|开局.*隐身/.test(text)) bonus.startStealth = true;
+        if (/战斗开始.*隐身|入场.*隐身|开局.*隐身/.test(text)) bonus.startStealth = true;
         // 战斗开始：魅惑
         if (/战斗开始.*魅惑|入场.*魅惑|开局.*魅惑/.test(text)) bonus.startCharm = true;
         // 战斗开始：护盾
@@ -10061,11 +9732,11 @@ ${transition.buff.desc}`);
             m2 = text.match(/追加.*?(\d+)%伤害/);
             if (m2) bonus.critExtraAttackMult = parseInt(m2[1])/100;
         }
-        // 致命伤害保留1点（概率+次数）
-        m = text.match(/受到致命伤害(?:时)?\s*(\d+)%\s*概率保留1点生命(?:，?每局限(\d+)次)?/);
+        // 致命伤害保留1点
+        m = text.match(/受到致命伤害时保留1点生命.*?(\d+)次/);
         if (m) {
-            bonus.lethalSaveChance = parseInt(m[1]) / 100;
-            if (m[2]) bonus.lethalSaveMaxUses = parseInt(m[2]);
+            bonus.lethalSaveChance = 1.0;
+            bonus.lethalSaveMaxUses = parseInt(m[1]);
         }
         // 吸血转护盾
         m = text.match(/吸血量超过最大生命时(\d+)?%?转化为护盾/);
@@ -10073,27 +9744,18 @@ ${transition.buff.desc}`);
             bonus.lifeStealToShieldPct = m[1] ? parseInt(m[1])/100 : 0.5;
         }
         // 闪避反击
-        m = text.match(/闪避(?:时|后)(\d+)%概率反击/);
+        m = text.match(/闪避后(\d+)%概率反击/);
         if (m) {
             bonus.dodgeCounterChance = parseInt(m[1])/100;
             m2 = text.match(/反击.*?(\d+)%伤害/);
             if (m2) bonus.dodgeCounterMult = parseInt(m2[1])/100;
         }
-        m = text.match(/闪避(?:时|后)回复\s*(\d+)%\s*最大生命/);
-        if (m) bonus.dodgeHealPct = (bonus.dodgeHealPct||0) + parseInt(m[1])/100;
         // 额外行动
         m = text.match(/(?:每回合|回合开始)(\d+)%概率获得额外行动/);
         if (m) {
             bonus.extraTurnChance = parseInt(m[1])/100;
             m2 = text.match(/每局限(\d+)次/);
             if (m2) bonus.extraTurnMaxUses = parseInt(m2[1]);
-        }
-        // 攻击时X%概率追加攻击（套装群体意识等）
-        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率追加(?:一次)?攻击/);
-        if (m) {
-            bonus.extraAttackChance = (bonus.extraAttackChance||0) + parseInt(m[1])/100;
-            m2 = text.match(/追加(?:攻击)?伤害\s*\+\s*(\d+)%/);
-            if (m2) bonus.extraAttackMult = (bonus.extraAttackMult||0) + parseInt(m2[1])/100;
         }
         // 击杀叠加攻击力
         m = text.match(/击杀(?:敌人|单位)后攻击力\+(\d+)%.*可叠加/);
@@ -10122,53 +9784,9 @@ ${transition.buff.desc}`);
         // 所有控制时间加成
         m = text.match(/所有控制时间\+(\d+)%/);
         if (m) bonus.allControlDurationPct = parseInt(m[1])/100;
-        // 无视防御（含"攻击无视X%防御"）
+        // 无视防御
         m = text.match(/无视目标(\d+)%防御/);
         if (m) bonus.ignoreDefensePct = parseInt(m[1])/100;
-        m = text.match(/攻击无视\s*(\d+)%\s*防御/);
-        if (m) bonus.armorPenetration = (bonus.armorPenetration||0) + parseInt(m[1]);
-        // 灼烧伤害+X%
-        m = text.match(/灼烧伤害\s*\+\s*(\d+)%/);
-        if (m) bonus.burnDamagePct = (bonus.burnDamagePct||0) + parseInt(m[1])/100;
-        // 所有元素抗性+X%
-        m = text.match(/所有元素抗性\s*\+\s*(\d+)%/);
-        if (m) bonus.allResist = (bonus.allResist||0) + parseInt(m[1]);
-        // 吞噬额外获取X%碎片收益
-        m = text.match(/吞噬(?:敌人|单位)?额外获取\s*(\d+)%\s*碎片收益/);
-        if (m) bonus.fragmentBonusPct = (bonus.fragmentBonusPct||0) + parseInt(m[1])/100;
-        // 撕咬伤害+X%
-        m = text.match(/撕咬伤害\s*\+\s*(\d+)%/);
-        if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
-        // 先手攻击增伤X%
-        m = text.match(/先手攻击增伤\s*(\d+)%/);
-        if (m) bonus.firstStrikeDamagePct = (bonus.firstStrikeDamagePct||0) + parseInt(m[1])/100;
-        // 撕咬降低敌方X%防御
-        m = text.match(/撕咬降低敌方\s*(\d+)%\s*防御/);
-        if (m) { bonus.hitDefenseReductionChance = 1.0; bonus.hitDefenseReductionPct = parseInt(m[1]); if (!bonus.hitDefenseReductionDuration) bonus.hitDefenseReductionDuration = 3; }
-        // 被近战攻击时X%概率麻痹
-        m = text.match(/被近战攻击(?:时)?有?\s*(\d+)%\s*概率麻痹/);
-        if (m) bonus.meleeParalyzeChance = (bonus.meleeParalyzeChance||0) + parseInt(m[1])/100;
-        // 近身敌方每回合受到X点毒素伤害
-        m = text.match(/近身敌方每回合受到\s*(\d+)\s*点毒素伤害/);
-        if (m) bonus.enemyPerTurnPoison = (bonus.enemyPerTurnPoison||0) + parseInt(m[1]);
-        // 战斗开始时降低敌人攻击力（王者咆哮，必触发）
-        m = text.match(/战斗开始(?:时)?降低敌人攻击力(\d+)%/);
-        if (m) { bonus.startEnemyDebuff = true; bonus.startEnemyDebuffChance = 1.0; bonus.startEnemyDebuffPct = parseInt(m[1])/100; }
-        // 周围敌方单位攻击-X%（王者咆哮变体）
-        m = text.match(/周围敌方单位攻击\s*-\s*(\d+)%/);
-        if (m) { bonus.startEnemyDebuff = true; bonus.startEnemyDebuffChance = 1.0; bonus.startEnemyDebuffPct = (bonus.startEnemyDebuffPct||0) + parseInt(m[1])/100; }
-        // 束缚(无概率=100%，触击/菌丝)
-        m = text.match(/束缚(?:敌人|目标)?\s*(\d+)?\s*回合/);
-        if (m) { bonus.bindChance = Math.max(bonus.bindChance || 0, 100); if (m[1]) bonus.bindDuration = Math.max(bonus.bindDuration||0, parseInt(m[1])); }
-        // 对原始生物伤害+X%（原核核心，泛化为增伤）
-        m = text.match(/对原始生物伤害\s*\+\s*(\d+)%/);
-        if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
-        // 受到攻击时X%概率生成虚影规避伤害（幻影拟态）
-        m = text.match(/受到攻击(?:时)?有?\s*(\d+)%\s*概率生成虚影(?:规避伤害)?/);
-        if (m) bonus.phantomDodgeChance = (bonus.phantomDodgeChance||0) + parseInt(m[1])/100;
-        // 蛰伏状态受到伤害降低X%（蛰伏之躯，泛化为通用减伤）
-        m = text.match(/蛰伏状态受到伤害降低\s*(\d+)%/);
-        if (m) bonus.damageReductionPct = (bonus.damageReductionPct||0) + parseInt(m[1])/100;
         // 攻击无法被闪避
         if (/攻击无法被闪避/.test(text)) bonus.attackCannotDodge = true;
         // 中毒无层数上限
@@ -10186,7 +9804,7 @@ ${transition.buff.desc}`);
         if (m) bonus.healEffectPct = parseInt(m[1])/100;
         // 吸血比例加成
         m = text.match(/吸血比例\+(\d+)%/);
-        if (m) bonus.lifeStealBonusPct = parseInt(m[1]);
+        if (m) bonus.lifeStealBonusPct = parseInt(m[1])/100;
         // 护盾效果加成
         m = text.match(/护盾效果\+(\d+)%/);
         if (m) bonus.shieldEffectPct = parseInt(m[1])/100;
@@ -10199,7 +9817,9 @@ ${transition.buff.desc}`);
         // 减伤百分比
         m = text.match(/减伤\+(\d+)%/);
         if (m) bonus.damageReductionPct = parseInt(m[1])/100;
-        // 所有属性百分比加成（统一走 allStatPct 小数）
+        // 所有属性百分比加成
+        m = text.match(/所有属性\+(\d+)%/);
+        if (m) bonus.allStatPctBonus = parseInt(m[1])/100;
         // 冷却缩减百分比
         m = text.match(/技能冷却-(\d+)%/);
         if (m) bonus.cooldownReductionPct = parseInt(m[1])/100;
@@ -10238,7 +9858,7 @@ ${transition.buff.desc}`);
         }
         // ========== 新增天赋效果解析 ==========
         // 攻击时概率造成额外伤害（鹰眼、弱点洞察）
-        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*造成\s*(\d+)%\s*攻击?力?伤害/);
+        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率.*造成\s*(\d+)%\s*伤害/);
         if (m) {
             bonus.attackProcDamageChance = parseInt(m[1]) / 100;
             bonus.attackProcDamageMult = parseInt(m[2]) / 100;
@@ -10270,7 +9890,7 @@ ${transition.buff.desc}`);
         m = text.match(/能量满(?:时)?.*下一次攻击造成\s*(\d+)%\s*伤害/);
         if (m) bonus.energyFullDamageMult = parseInt(m[1]) / 100;
         // 受到火焰伤害转化为生命（热能吸收）
-        m = text.match(/受到火焰伤害(?:时)?\s*(\d+)%\s*转化为.*生命/);
+        m = text.match(/受到火焰伤害(?:时)?.*(\d+)%.*转化为.*生命/);
         if (m) bonus.fireDamageLifeStealPct = parseInt(m[1]) / 100;
         // 灼烧抗性（热能吸收）
         m = text.match(/灼烧抗性\s*\+\s*(\d+)%/);
@@ -10285,71 +9905,6 @@ ${transition.buff.desc}`);
         if (/受到暴击伤害后.*恢复量.*翻倍|暴击.*恢复.*翻倍/.test(text)) {
             bonus.critHealDouble = true;
         }
-        // ================= 审计修复：新增解析模式 =================
-        // 攻击时X%概率吸血Y%（狼人血统）
-        m = text.match(/攻击(?:时)?\s*(\d+)%\s*概率吸血\s*(\d+)%/);
-        if (m) { bonus.lifeStealChance = Math.min(bonus.lifeStealChance || 100, parseInt(m[1])); bonus.lifeStealPct = (bonus.lifeStealPct||0) + parseInt(m[2]); }
-        // 技能冷却-X回合（时流神经）
-        m = text.match(/技能冷却-\s*(\d+)\s*回合/);
-        if (m) bonus.cooldownReductionTurns = Math.max(bonus.cooldownReductionTurns || 0, parseInt(m[1]));
-        // 每回合回复已损失生命值X%（无限增殖）
-        m = text.match(/每回合回复已损失生命值\s*(\d+)%/);
-        if (m) bonus.hpRegenLostPct = (bonus.hpRegenLostPct||0) + parseInt(m[1])/100;
-        // 中毒目标全属性-X%（原初之毒/虚空之毒）
-        m = text.match(/中毒目标全属性-(\d+)%/);
-        if (m) bonus.poisonAllStatsReductionPct = Math.max(bonus.poisonAllStatsReductionPct || 0, parseInt(m[1])/100);
-        // 毒爆伤害+X%（虚空之毒）
-        m = text.match(/毒爆伤害\+(\d+)%/);
-        if (m) bonus.poisonExplosionDamagePct = (bonus.poisonExplosionDamagePct||0) + parseInt(m[1])/100;
-        // 技能伤害+X%（真实之姿）
-        m = text.match(/技能伤害\+(\d+)%/);
-        if (m) bonus.skillDamagePct = (bonus.skillDamagePct||0) + parseInt(m[1])/100;
-        // 群体攻击伤害+X%（尾鞭，战斗为1v1，映射为总伤害加成）
-        m = text.match(/群体攻击伤害\+(\d+)%/);
-        if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
-        // 受到的冰火伤害-X%（冰焰之躯；灼烧为火系主要伤害）
-        m = text.match(/受到的冰火伤害-(\d+)%/);
-        if (m) bonus.iceFireResistPct = (bonus.iceFireResistPct||0) + parseInt(m[1])/100;
-        // 减速持续时间+X回合（冰焰之躯）
-        m = text.match(/减速持续时间\+(\d+)回合/);
-        if (m) bonus.slowDurationBonus = Math.max(bonus.slowDurationBonus || 0, parseInt(m[1]));
-        // 敌方先手值-X%（菌丝网络）
-        m = text.match(/敌方先手值-(\d+)%/);
-        if (m) bonus.enemySpeedReductionPct = Math.max(bonus.enemySpeedReductionPct || 0, parseInt(m[1])/100);
-        // 近身/受击反弹最大生命%毒素（毒表皮/蛰毛；排除“每回合回复X%最大生命”）
-        m = text.match(/每回合(?!回复)(\d+)%最大生命(?:的)?(?:毒素伤害|伤害)/);
-        if (m) bonus.meleePoisonMaxHpPct = Math.max(bonus.meleePoisonMaxHpPct || 0, parseInt(m[1])/100);
-        // 生命低于X%时回复(效果)翻倍（冬眠再生/无限增殖）
-        m = text.match(/生命低于(\d+)%时回复(?:效果)?翻倍/);
-        if (m) { bonus.lowHpRegenDouble = true; bonus.lowHpRegenDoubleThreshold = Math.min(bonus.lowHpRegenDoubleThreshold || 100, parseInt(m[1])); }
-        // 通用无视防御（含“无视100%防御”，真实之姿）
-        m = text.match(/无视\s*(\d+)%\s*防御/);
-        if (m) bonus.ignoreDefensePct = Math.max(bonus.ignoreDefensePct || 0, parseInt(m[1])/100);
-        // 反伤+X%（不灭）
-        m = text.match(/反伤\+(\d+)%/);
-        if (m) bonus.reflectBonusPct = (bonus.reflectBonusPct||0) + parseInt(m[1])/100;
-        // 每回合开始随机获得（“一个”/N个）增益（万物归一/全知全能）
-        m = text.match(/每回合开始随机获得(?:(\d+)|一个)个?增益/);
-        if (m) bonus.randomBuffPerTurn = m[1] ? parseInt(m[1]) : 1;
-        // 持续伤害（中文表述）兼容：先处理“所有持续伤害”，再处理“持续伤害”（奇点等）
-        m = text.match(/所有持续伤害\+(\d+)%/);
-        if (m) { bonus.allDotDamagePct = (bonus.allDotDamagePct||0) + parseInt(m[1])/100; text = text.replace(/所有持续伤害\+\s*\d+%/, ' '); }
-        m = text.match(/持续伤害\+(\d+)%/);
-        if (m) bonus.allDotDamagePct = (bonus.allDotDamagePct||0) + parseInt(m[1])/100;
-        m = text.match(/(?:全持续伤害|所有持续伤害)穿透\+(\d+)%/);
-        if (m) bonus.allDotPenetration = (bonus.allDotPenetration||0) + parseInt(m[1])/100;
-        // 反击附带X层中毒（毒棘）
-        m = text.match(/反击附带(\d+)层中毒/);
-        if (m) bonus.counterPoisonStacks = Math.max(bonus.counterPoisonStacks || 0, parseInt(m[1]));
-        // 先手值+X（声波感知/套装）
-        m = text.match(/先手值\+(\d+)/);
-        if (m) bonus.speed = (bonus.speed||0) + parseInt(m[1]);
-        // 命中率+X%（套装/图鉴）
-        m = text.match(/命中率\+(\d+)%/);
-        if (m) bonus.hit = (bonus.hit||0) + parseInt(m[1]);
-        // 每回合回复已损失生命值（的）X%
-        m = text.match(/每回合回复已损失生命值(?:的)?\s*(\d+)%/);
-        if (m) bonus.hpRegenLostPct = (bonus.hpRegenLostPct||0) + parseInt(m[1])/100;
     },    //  商店
     // ============================================================
     openShop(category) {
@@ -10429,13 +9984,13 @@ ${transition.buff.desc}`);
                     energy: '恢复能量', energy_percent: '恢复能量', max_energy: '能量上限',
                     attack_boost: '攻击力', defense_boost: '防御力', speed_boost: '先手值',
                     all_boost: '全属性', exp_boost: '经验获取', drop_boost: '掉落率',
-                    unlock_passive_slot: '天赋槽位', fragment_drop_bonus_percent: '碎片掉落',
+                    unlock_passive_slot: '被动槽位', fragment_drop_bonus_percent: '碎片掉落',
                     upgrade_success_rate_bonus: '升阶成功率', start_with_item: '开局道具',
                     gain_fragments: '获得碎片', gain_talent_points: '获得天赋点',
                     gain_gold: '获得基因精华', revive: '复活', revive_percent: '复活恢复',
                     damage_boost: '伤害提升', crit_boost: '暴击率', crit_damage_boost: '暴击伤害',
                     hit_boost: '命中率', dodge_boost: '闪避率', hp_regen: '生命恢复',
-                    energy_regen: '能量恢复', dot_damage: '持续伤害', cooldown_reduction: '冷却缩减',
+                    energy_regen: '能量恢复', dot_damage: 'Dot伤害', cooldown_reduction: '冷却缩减',
                     life_steal: '吸血', reflect_damage: '反伤', shield: '护盾',
                     armor_penetration: '护甲穿透', crit_resistance: '暴击抗性',
                     firstStrike: '先手值', first_strike: '先手值',
@@ -10997,7 +10552,7 @@ ${transition.buff.desc}`);
             agility: '敏捷：每点敏捷+1先手值，影响闪避率',
             vitality: '体质：每点体质+8最大生命+0.4防御力',
             perception: '感知：每点感知+0.8暴击率+0.2命中率',
-            evolution: '进化：每点进化+5能量上限+0.5%持续伤害+0.2%技能冷却缩减',
+            evolution: '进化：每点进化+5能量上限+0.5% Dot伤害+0.2%技能冷却缩减',
             attack: '攻击力：决定物理伤害的基础值',
             defense: '防御力：减少受到的物理伤害',
             crit: '暴击率：攻击时触发暴击的概率',
@@ -11066,7 +10621,7 @@ ${transition.buff.desc}`);
         const activeManual = this.getActiveSlotManualProgress();
         html += '<div style="padding:10px;background:var(--bg-secondary);border-radius:6px;border-left:3px solid var(--accent-info)">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-        html += '<span style="color:var(--accent-info);font-weight:bold;font-size:13px">技能槽（主动）：' + activeSlots + '/6（可扩充）</span>';
+        html += '<span style="color:var(--accent-info);font-weight:bold;font-size:13px">技能槽（主动）：' + activeSlots + '/6</span>';
         html += '<span style="color:var(--text-faint);font-size:11px">初始3 + 自动' + activeAuto.autoSlots + ' + 手动' + activeManual.manualSlots + '</span>';
         html += '</div>';
         html += '<div style="font-size:11px;color:var(--text-muted);line-height:1.6;margin-bottom:8px">';
@@ -11233,8 +10788,8 @@ ${transition.buff.desc}`);
                 title: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 进化',
                 sections: [
                     { label: '类型', value: '核心属性' },
-                    { label: '效果', value: '每点进化+5能量上限+0.5%持续伤害+0.2%技能冷却缩减' },
-                    { label: '说明', value: '进化是游戏的核心属性，决定能量、持续伤害和技能效率，适合技能和Dot流派。' }
+                    { label: '效果', value: '每点进化+5能量上限+0.5% Dot伤害+0.2%技能冷却缩减' },
+                    { label: '说明', value: '进化是游戏的核心属性，决定能量、Dot伤害和技能效率，适合技能和Dot流派。' }
                 ]
             },
             attack: {
@@ -11404,7 +10959,7 @@ ${transition.buff.desc}`);
                     html += '<div style="font-size:11px;color:' + qualityColors[s.quality || 1] + ';margin-bottom:4px">' + qualityNames[s.quality || 1] + '品质</div>';
                     if (statText.length > 0) html += '<div style="font-size:12px;color:var(--text-secondary)">' + statText.join('，') + '</div>';
                     if (s.special) {
-                        const specialNames = {firstStrike:'先手值', first_strike:'先手值', talentPower:'天赋强度', talent_power:'天赋强度', energyRegen:'能量恢复', energy_regen:'能量恢复', hpRegen:'生命恢复', hp_regen:'生命恢复', lifeSteal:'吸血', life_steal:'吸血', reflectDamage:'反伤', reflect_damage:'反伤', critDamage:'暴击伤害', crit_damage:'暴击伤害', armorPenetration:'护甲穿透', armor_penetration:'护甲穿透', dotDamage:'持续伤害', dot_damage:'持续伤害', cooldownReduction:'冷却缩减', cooldown_reduction:'冷却缩减', shield:'护盾', dodge:'闪避率', dodgeBonus:'闪避加成', hit:'命中率', crit:'暴击率', attack:'攻击力', defense:'防御力', maxHp:'最大生命', maxEnergy:'能量上限', speed:'先手值', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', dotOnHit:'攻击附带Dot', bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧', freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹', slowOnHit:'攻击附带减速', extraAttack:'额外攻击', extraAttackChance:'额外攻击概率', damagePct:'伤害百分比', damageReduction:'伤害减免', reflectPct:'反伤百分比', energyOnHit:'攻击回能', critChance:'暴击率', hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能', talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片', expBonus:'经验加成', goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成', talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性', physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性', poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性', holyResist:'神圣抗性', arcaneResist:'奥术抗性', physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透', poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透', holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透'};
+                        const specialNames = {firstStrike:'先手值', first_strike:'先手值', talentPower:'天赋强度', talent_power:'天赋强度', energyRegen:'能量恢复', energy_regen:'能量恢复', hpRegen:'生命恢复', hp_regen:'生命恢复', lifeSteal:'吸血', life_steal:'吸血', reflectDamage:'反伤', reflect_damage:'反伤', critDamage:'暴击伤害', crit_damage:'暴击伤害', armorPenetration:'护甲穿透', armor_penetration:'护甲穿透', dotDamage:'Dot伤害', dot_damage:'Dot伤害', cooldownReduction:'冷却缩减', cooldown_reduction:'冷却缩减', shield:'护盾', dodge:'闪避率', dodgeBonus:'闪避加成', hit:'命中率', crit:'暴击率', attack:'攻击力', defense:'防御力', maxHp:'最大生命', maxEnergy:'能量上限', speed:'先手值', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', dotOnHit:'攻击附带Dot', bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧', freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹', slowOnHit:'攻击附带减速', extraAttack:'额外攻击', extraAttackChance:'额外攻击概率', damagePct:'伤害百分比', damageReduction:'伤害减免', reflectPct:'反伤百分比', energyOnHit:'攻击回能', critChance:'暴击率', hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能', talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片', expBonus:'经验加成', goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成', talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性', physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性', poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性', holyResist:'神圣抗性', arcaneResist:'奥术抗性', physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透', poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透', holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透'};
                         const specialName = specialNames[s.special] || s.special;
                         html += '<div style="font-size:11px;color:var(--accent-warning);margin-top:4px">特殊：' + specialName + (s.specialValue ? ' +' + s.specialValue : '') + '</div>';
                     }
@@ -11484,7 +11039,7 @@ ${transition.buff.desc}`);
             energyRegen:'能量恢复', energy_regen:'能量恢复', hpRegen:'生命恢复', hp_regen:'生命恢复',
             lifeSteal:'吸血', life_steal:'吸血', reflectDamage:'反伤', reflect_damage:'反伤',
             critDamage:'暴击伤害', crit_damage:'暴击伤害', armorPenetration:'护甲穿透', armor_penetration:'护甲穿透',
-            dotDamage:'持续伤害', dot_damage:'持续伤害', cooldownReduction:'冷却缩减', cooldown_reduction:'冷却缩减',
+            dotDamage:'Dot伤害', dot_damage:'Dot伤害', cooldownReduction:'冷却缩减', cooldown_reduction:'冷却缩减',
             shield:'护盾', dodge:'闪避率', dodgeBonus:'闪避加成', hit:'命中率', crit:'暴击率',
             attack:'攻击力', defense:'防御力', maxHp:'最大生命', maxEnergy:'能量上限', speed:'先手值',
             extraAttack:'额外攻击', extraAttackChance:'额外攻击概率', damagePct:'伤害百分比',
@@ -11618,7 +11173,7 @@ ${transition.buff.desc}`);
                 html += '<div style="background:var(--bg-card);padding:10px;border-radius:8px;border-left:3px solid ' + qualityColors[t.quality] + '">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
                 html += '<span style="color:var(--text-primary);font-weight:bold">' + t.name + '</span>';
-                html += '<span style="font-size:11px;color:' + qualityColors[t.quality] + '">' + lv + '级 ' + qualityNames[t.quality] + '</span>';
+                html += '<span style="font-size:11px;color:' + qualityColors[t.quality] + '">Lv.' + lv + ' ' + qualityNames[t.quality] + '</span>';
                 html += '</div>';
                 const eff = this.getTalentEffect(tid);
                 if (eff) html += '<div style="font-size:12px;color:var(--text-secondary)">' + eff.passive + '</div>';
@@ -11723,7 +11278,7 @@ ${transition.buff.desc}`);
             this.player.activeSkills.splice(idx, 1);
         } else {
             if (this.player.activeSkills.length >= this.getActiveSlots()) {
-                this.showGameAlert('提示', '技能槽已满（' + this.getActiveSlots() + '个）');
+                this.showGameAlert('提示', '主动槽已满（' + this.getActiveSlots() + '个）');
                 return;
             }
             this.player.activeSkills.push(id);
@@ -11820,7 +11375,7 @@ ${transition.buff.desc}`);
                         firstStrike:'先手攻击伤害', hit:'命中率', energyRegen:'能量回复',
                         maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击',
                         speed:'速度', agility:'敏捷', strength:'力量', perception:'感知',
-                        evolution:'进化', maxEnergy:'能量', dotDamage:'持续伤害',
+                        evolution:'进化', maxEnergy:'能量', dotDamage:'Dot伤害',
                         cooldownReduction:'冷却缩减', talentPower:'天赋强度',
                         dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率',
                         energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成',
@@ -11845,7 +11400,7 @@ ${transition.buff.desc}`);
                         vitality:'体质', first_strike:'先手值', talent_power:'天赋强度',
                         energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血',
                         reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透',
-                        dot_damage:'持续伤害', cooldown_reduction:'冷却缩减'
+                        dot_damage:'Dot伤害', cooldown_reduction:'冷却缩减'
                     };
                     statsText += (specialNames[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
                 }
@@ -11994,7 +11549,7 @@ ${transition.buff.desc}`);
                 formula: '伤害 = 目标最大生命 × 2% × 层数',
                 effect: '目标全属性-10%',
                 duration: '3回合，层数-1/回合',
-                special: '首领抗性50%（伤害减半），对普通敌人效果最强'
+                special: 'Boss抗性50%（伤害减半），对普通敌人效果最强'
             }
         ];
         
@@ -12015,20 +11570,12 @@ ${transition.buff.desc}`);
         
         const controlEffects = [
             {
-                name: '眩晕', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15a4 4 0 0 0 8 0"/></svg>', color: 'var(--accent-warning)',
-                desc: '目标被眩晕，无法行动，同时更容易被暴击',
-                effect: '跳过行动1回合，受到的暴击伤害+15%',
-                duration: '1回合',
-                boss: '首领持续-1回合（最短1回合）',
-                special: '常见于锤击、震荡与音波类攻击，可与束缚/麻痹共存'
-            },
-            {
                 name: '束缚', icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/></svg>', color: 'var(--text-muted)',
                 desc: '目标被束缚，完全无法行动',
                 effect: '跳过行动回合',
                 duration: '2回合',
-                boss: '首领持续-1回合（最短1回合）',
-                special: '最强控制，但对首领效果减弱'
+                boss: 'Boss持续-1回合（最短1回合）',
+                special: '最强控制，但对Boss效果减弱'
             },
             {
                 name: '麻痹', icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>', color: 'var(--quality-legendary)',
@@ -12043,7 +11590,7 @@ ${transition.buff.desc}`);
                 desc: '目标被冻结，完全无法行动1回合，解冻后速度降低',
                 effect: '跳过行动1回合，解冻后附加减速',
                 duration: '1回合 + 减速2回合',
-                boss: '首领持续-1回合（可能免疫）',
+                boss: 'Boss持续-1回合（可能免疫）',
                 special: '冻结结束后自动附加减速，控制链衔接'
             },
             {
@@ -12052,15 +11599,15 @@ ${transition.buff.desc}`);
                 effect: '敏捷-50%（降低闪避）',
                 duration: '3回合',
                 boss: '全额生效',
-                special: '唯一对首领全额生效的控制，降低敌人敏捷从而降低闪避率'
+                special: '唯一对Boss全额生效的控制，降低敌人敏捷从而降低闪避率'
             },
             {
                 name: '沉默', icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5\"/><path d=\"M8 12h.01\"/><path d=\"M12 12h.01\"/><path d=\"M16 12h.01\"/></svg>', color: 'var(--quality-epic)',
                 desc: '目标被沉默，无法使用技能，只能普通攻击',
                 effect: '无法使用技能',
                 duration: '2回合',
-                boss: '首领持续-1回合（最短1回合）',
-                special: '克制依赖技能的敌人，首领技能被封锁时输出大降'
+                boss: 'Boss持续-1回合（最短1回合）',
+                special: '克制依赖技能的敌人，Boss技能被封锁时输出大降'
             }
         ];
         
@@ -12071,7 +11618,7 @@ ${transition.buff.desc}`);
             html += `<div style="font-size:12px;color:var(--text-secondary);line-height:1.8">`;
             html += `<div><span style="color:var(--accent-warning)">控制效果：</span>${e.effect}</div>`;
             html += `<div><span style="color:var(--accent-warning)">持续时间：</span>${e.duration}</div>`;
-            html += `<div><span style="color:var(--accent-warning)">对首领：</span>${e.boss}</div>`;
+            html += `<div><span style="color:var(--accent-warning)">对Boss：</span>${e.boss}</div>`;
             html += `<div><span style="color:var(--accent-success)">特殊机制：</span>${e.special}</div>`;
             html += `</div></div>`;
         });
@@ -12092,7 +11639,7 @@ ${transition.buff.desc}`);
                 desc: '目标被魅惑，无法行动',
                 effect: '跳过行动1回合',
                 duration: '1回合',
-                special: '水系/声系天赋（海妖之歌）专属控制，对普通敌人效果稳定'
+                special: '灵能系天赋专属控制，对普通敌人效果稳定'
             },
             {
                 name: '护盾', icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg>️', color: 'var(--accent-success)',
@@ -12119,10 +11666,10 @@ ${transition.buff.desc}`);
         html += '<div style="color:var(--accent-warning);font-size:14px;font-weight:bold;margin-bottom:8px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3v18\"/><path d=\"M3 7h18\"/><path d=\"M7 7l-3 6a3 3 0 0 0 6 0z\"/><path d=\"M17 7l-3 6a3 3 0 0 0 6 0z\"/></svg>️ 控制铁律</div>';
         html += '<div style="color:var(--text-secondary);font-size:12px;line-height:1.8">';
         html += '<div>• 控制技能的冷却回合必须大于控制持续回合，保证空窗期</div>';
-        html += '<div>• 不允许无限控制链，首领有控制抗性</div>';
-        html += '<div>• 减速是唯一对首领全额生效的控制</div>';
-        html += '<div>• 束缚/冻结/沉默对首领持续时间-1回合</div>';
-        html += '<div>• 麻痹对首领触发概率-20%</div>';
+        html += '<div>• 不允许无限控制链，Boss有控制抗性</div>';
+        html += '<div>• 减速是唯一对Boss全额生效的控制</div>';
+        html += '<div>• 束缚/冻结/沉默对Boss持续时间-1回合</div>';
+        html += '<div>• 麻痹对Boss触发概率-20%</div>';
         html += '</div></div>';
         
         html += '<button onclick="game.closePop()" style="margin-top:15px;width:100%;padding:12px;border-radius:8px;font-size:15px">关闭</button>';
@@ -12184,7 +11731,7 @@ ${transition.buff.desc}`);
         html += '<div><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"10\"/></svg> 普通碎片×3：65%</div>';
         html += '<div><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--quality-rare)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"10\"/></svg> 稀有碎片×2：25%</div>';
         html += '<div><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--quality-epic)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"10\"/></svg> 史诗碎片×1：10%</div>';
-        html += '<div style="color:var(--accent-warning);margin-top:5px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/><path d=\"M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z\"/></svg> 传说/神话碎片需通过击杀首领获得，无法通过抽奖获取</div>';
+        html += '<div style="color:var(--accent-warning);margin-top:5px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/><path d=\"M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z\"/></svg> 传说/神话碎片需通过击杀Boss获得，无法通过抽奖获取</div>';
         html += '</div>';
 
         // 抽奖按钮

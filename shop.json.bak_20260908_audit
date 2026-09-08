@@ -1,0 +1,616 @@
+{
+  "consumables": [
+    {
+      "id": "con_health_small",
+      "name": "再生孢子",
+      "type": "consumable",
+      "category": "heal",
+      "icon": "seedling",
+      "description": "注入再生基因的孢子，能快速修复受损的细胞组织",
+      "effect": {
+        "type": "heal_percent",
+        "value": 25
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 25
+      },
+      "limitPerRun": 5
+    },
+    {
+      "id": "con_health_large",
+      "name": "愈合囊肿",
+      "type": "consumable",
+      "category": "heal",
+      "icon": "heartGreen",
+      "description": "蕴含强大再生能力的基因囊肿，能在短时间内治愈重伤",
+      "effect": {
+        "type": "heal_percent",
+        "value": 60
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 96
+      },
+      "limitPerRun": 3
+    },
+    {
+      "id": "con_health_full",
+      "name": "生命本源",
+      "type": "consumable",
+      "category": "heal",
+      "icon": "spark",
+      "description": "提取自生命起源的纯粹能量，能完全恢复身体的一切损伤",
+      "effect": {
+        "type": "full_restore"
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 125
+      },
+      "limitPerRun": 2
+    },
+    {
+      "id": "con_energy_small",
+      "name": "能量腺体",
+      "type": "consumable",
+      "category": "energy",
+      "icon": "bolt",
+      "description": "能快速分泌能量激素的腺体，为身体补充战斗能量",
+      "effect": {
+        "type": "energy_percent",
+        "value": 40
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 20
+      },
+      "limitPerRun": 5
+    },
+    {
+      "id": "con_energy_large",
+      "name": "源能核心",
+      "type": "consumable",
+      "category": "energy",
+      "icon": "battery",
+      "description": "浓缩了大量本源能量的核心，能瞬间将能量槽充满",
+      "effect": {
+        "type": "energy_percent",
+        "value": 80
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 72
+      },
+      "limitPerRun": 3
+    },
+    {
+      "id": "con_attack_boost",
+      "name": "狂暴腺体",
+      "type": "consumable",
+      "category": "buff",
+      "icon": "flame",
+      "description": "分泌狂暴激素的基因腺体，激活后攻击力大幅提升",
+      "effect": {
+        "type": "attack_boost",
+        "value": 20
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 120
+      },
+      "limitPerRun": 2
+    },
+    {
+      "id": "con_defense_boost",
+      "name": "铁壁甲壳",
+      "type": "consumable",
+      "category": "buff",
+      "icon": "shield",
+      "description": "提取自重甲生物的基因片段，能在体表形成坚硬的甲壳",
+      "effect": {
+        "type": "defense_boost",
+        "value": 25
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 120
+      },
+      "limitPerRun": 2
+    },
+    {
+      "id": "con_speed_boost",
+      "name": "疾风肌腱",
+      "type": "consumable",
+      "category": "buff",
+      "icon": "wind",
+      "description": "强化肌肉纤维的基因改造，能大幅提升行动速度和反应",
+      "effect": {
+        "type": "speed_boost",
+        "value": 15
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 96
+      },
+      "limitPerRun": 2
+    },
+    {
+      "id": "con_all_boost",
+      "name": "全能基因",
+      "type": "consumable",
+      "category": "buff",
+      "icon": "dna",
+      "description": "蕴含全方位强化的稀有基因，能全面提升各项属性",
+      "effect": {
+        "type": "all_boost",
+        "value": 10
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 200
+      },
+      "limitPerRun": 1
+    },
+    {
+      "id": "pack_fragments_1",
+      "name": "基因碎片包",
+      "type": "consumable",
+      "category": "resource",
+      "icon": "box",
+      "description": "商人收集的普通基因碎片，包含10个可用碎片",
+      "effect": {
+        "type": "gain_fragments",
+        "quality": 1,
+        "value": 10
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 50
+      },
+      "limitPerRun": 3
+    },
+    {
+      "id": "pack_fragments_2",
+      "name": "稀有基因包",
+      "type": "consumable",
+      "category": "resource",
+      "icon": "gift",
+      "description": "精心挑选的稀有基因碎片，包含5个高品质碎片",
+      "effect": {
+        "type": "gain_fragments",
+        "quality": 2,
+        "value": 5
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 100
+      },
+      "limitPerRun": 2
+    },
+    {
+      "id": "con_exp_boost",
+      "name": "进化催化剂",
+      "type": "consumable",
+      "category": "special",
+      "icon": "trendUp",
+      "description": "加速基因进化的特殊催化剂，本局获得的经验大幅提升",
+      "effect": {
+        "type": "exp_boost",
+        "value": 50
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 144
+      },
+      "limitPerRun": 1
+    },
+    {
+      "id": "con_drop_boost",
+      "name": "猎食本能",
+      "type": "consumable",
+      "category": "special",
+      "icon": "meat",
+      "description": "唤醒体内的猎食本能，击杀敌人后获得更多基因碎片",
+      "effect": {
+        "type": "drop_boost",
+        "value": 50
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 150
+      },
+      "limitPerRun": 1
+    },
+    {
+      "id": "con_talent_point",
+      "name": "天赋精华",
+      "type": "consumable",
+      "category": "special",
+      "icon": "star",
+      "description": "浓缩了无数天赋的精华，能永久获得3点天赋点",
+      "effect": {
+        "type": "gain_talent_points",
+        "value": 3
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 150
+      },
+      "limitPerRun": 1
+    },
+    {
+      "id": "con_revive",
+      "name": "不死孢子",
+      "type": "consumable",
+      "category": "special",
+      "icon": "skull",
+      "description": "蕴含不死基因的神秘孢子，死亡时能自动复活一次",
+      "effect": {
+        "type": "revive",
+        "value": 30
+      },
+      "price": {
+        "currency": "gold",
+        "amount": 250
+      },
+      "limitPerRun": 1
+    }
+  ],
+  "permanentItems": [
+    {
+      "id": "perm_passive_slot",
+      "name": "额外被动槽位",
+      "type": "permanent",
+      "description": "永久解锁一个额外的被动槽位",
+      "effect": {
+        "type": "unlock_passive_slot",
+        "value": 1,
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 50
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    },
+    {
+      "id": "perm_energy_cap",
+      "name": "能量上限提升",
+      "type": "permanent",
+      "description": "永久提升30点能量上限",
+      "effect": {
+        "type": "max_energy",
+        "value": 30,
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 30
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    },
+    {
+      "id": "perm_fragment_bonus",
+      "name": "碎片收获加成",
+      "type": "permanent",
+      "description": "全局基因碎片掉落数量增加10%",
+      "effect": {
+        "type": "fragment_drop_bonus_percent",
+        "value": 10,
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 40
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    },
+    {
+      "id": "perm_upgrade_prob",
+      "name": "升阶催化剂",
+      "type": "permanent",
+      "description": "基因升阶成功率永久提高15%",
+      "effect": {
+        "type": "upgrade_success_rate_bonus",
+        "value": 15,
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 60
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    },
+    {
+      "id": "perm_start_item",
+      "name": "开局补给",
+      "type": "permanent",
+      "description": "每局开始时获得一个小生命药剂",
+      "effect": {
+        "type": "start_with_item",
+        "value": "con_health_potion_small",
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 25
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    },
+    {
+      "id": "perm_death_bonus",
+      "name": "死亡馈赠",
+      "type": "permanent",
+      "description": "死亡结算时额外获得20%天赋点",
+      "effect": {
+        "type": "death_talent_bonus_percent",
+        "value": 20,
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 35
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    },
+    {
+      "id": "perm_move_speed",
+      "name": "永久移速",
+      "type": "permanent",
+      "description": "永久增加5%移动速度",
+      "effect": {
+        "type": "move_speed_percent",
+        "value": 5,
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 20
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    },
+    {
+      "id": "perm_luck_perm",
+      "name": "稀有感知",
+      "type": "permanent",
+      "description": "全局掉落品质小幅提升",
+      "effect": {
+        "type": "drop_quality_bonus",
+        "value": 1,
+        "duration": "permanent"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 45
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": null,
+      "icon": "upgrade"
+    }
+  ],
+  "dailyItems": [
+    {
+      "id": "daily_fragment_pack_3",
+      "name": "史诗碎片包",
+      "type": "daily",
+      "description": "获得5个品质3的基因碎片",
+      "effect": {
+        "type": "give_currency",
+        "value": {
+          "currency": "fragments_3",
+          "amount": 5
+        },
+        "duration": "instant"
+      },
+      "price": {
+        "currency": "fragments_2",
+        "amount": 30
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": "daily",
+      "icon": "daily"
+    },
+    {
+      "id": "daily_essence_pack",
+      "name": "精粹小包",
+      "type": "daily",
+      "description": "获得10个进化精粹",
+      "effect": {
+        "type": "give_currency",
+        "value": {
+          "currency": "essence",
+          "amount": 10
+        },
+        "duration": "instant"
+      },
+      "price": {
+        "currency": "fragments_3",
+        "amount": 50
+      },
+      "limitPerRun": null,
+      "stockLimit": 2,
+      "refreshCycle": "daily",
+      "icon": "daily"
+    },
+    {
+      "id": "daily_random_fragment",
+      "name": "随机品质碎片",
+      "type": "daily",
+      "description": "随机获得品质3~5的基因碎片3个",
+      "effect": {
+        "type": "random_fragment",
+        "value": {
+          "minQuality": 3,
+          "maxQuality": 5,
+          "amount": 3
+        },
+        "duration": "instant"
+      },
+      "price": {
+        "currency": "fragments_2",
+        "amount": 25
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": "daily",
+      "icon": "daily"
+    },
+    {
+      "id": "daily_boost_pack",
+      "name": "消耗品礼包",
+      "type": "daily",
+      "description": "获得小生命药剂、攻击强化药剂、幸运药剂各1个",
+      "effect": {
+        "type": "give_items",
+        "value": [
+          "con_health_potion_small",
+          "con_attack_boost",
+          "con_luck_boost"
+        ],
+        "duration": "instant"
+      },
+      "price": {
+        "currency": "fragments_1",
+        "amount": 40
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": "daily",
+      "icon": "daily"
+    },
+    {
+      "id": "daily_gene_upgrade_protect",
+      "name": "升阶稳定剂",
+      "type": "daily",
+      "description": "使用后下次基因升阶失败不降级(限当日)",
+      "effect": {
+        "type": "upgrade_protection",
+        "value": 1,
+        "duration": "daily"
+      },
+      "price": {
+        "currency": "fragments_4",
+        "amount": 10
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": "daily",
+      "icon": "daily"
+    }
+  ],
+  "weeklyItems": [
+    {
+      "id": "weekly_epic_fragment",
+      "name": "传说碎片礼盒",
+      "type": "weekly",
+      "description": "获得3个品质4的基因碎片",
+      "effect": {
+        "type": "give_currency",
+        "value": {
+          "currency": "fragments_4",
+          "amount": 3
+        },
+        "duration": "instant"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 80
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": "weekly",
+      "icon": "weekly"
+    },
+    {
+      "id": "weekly_legendary_fragment",
+      "name": "神话碎片",
+      "type": "weekly",
+      "description": "获得1个品质5的基因碎片",
+      "effect": {
+        "type": "give_currency",
+        "value": {
+          "currency": "fragments_5",
+          "amount": 1
+        },
+        "duration": "instant"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 150
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": "weekly",
+      "icon": "weekly"
+    },
+    {
+      "id": "weekly_boss_core",
+      "name": "Boss核心兑换",
+      "type": "weekly",
+      "description": "消耗进化精粹兑换一个随机Boss核心",
+      "effect": {
+        "type": "random_boss_core",
+        "value": 1,
+        "duration": "instant"
+      },
+      "price": {
+        "currency": "essence",
+        "amount": 200
+      },
+      "limitPerRun": null,
+      "stockLimit": 1,
+      "refreshCycle": "weekly",
+      "icon": "weekly"
+    }
+  ],
+  "adConfig": [
+    {
+      "id": "transgenic_upgrade",
+      "trigger": "on_transgenic_upgrade",
+      "effect": "next_upgrade_guaranteed_success_with_tag_selection",
+      "dailyLimit": null
+    },
+    {
+      "id": "boss_core_double",
+      "trigger": "after_boss_kill",
+      "effect": "double_boss_core_reward",
+      "dailyLimit": null
+    },
+    {
+      "id": "mythic_essence",
+      "trigger": "daily_claim",
+      "effect": "gain_mythic_essence",
+      "dailyLimit": 3
+    },
+    {
+      "id": "death_revive",
+      "trigger": "on_death_out_of_revives",
+      "effect": "revive_30_percent_hp",
+      "limitPerRun": 1
+    }
+  ]
+}
