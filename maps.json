@@ -8796,7 +8796,7 @@
         {
           "id": "fight",
           "name": "直接迎战",
-          "description": "不做任何准备，直接挑战Boss",
+          "description": "不做任何准备，直接挑战首领",
           "effect": {
             "type": "none"
           }
@@ -9187,7 +9187,7 @@
         {
           "id": "fight",
           "name": "直接迎战",
-          "description": "不做任何准备，直接挑战Boss",
+          "description": "不做任何准备，直接挑战首领",
           "effect": {
             "type": "none"
           }
@@ -9603,7 +9603,7 @@
         {
           "id": "fight",
           "name": "直接迎战",
-          "description": "不做任何准备，直接挑战Boss",
+          "description": "不做任何准备，直接挑战首领",
           "effect": {
             "type": "none"
           }
@@ -9644,7 +9644,7 @@
         {
           "id": "rest_fight",
           "name": "直接迎战",
-          "description": "不做休整，直接挑战Boss",
+          "description": "不做休整，直接挑战首领",
           "effect": {
             "type": "none"
           }

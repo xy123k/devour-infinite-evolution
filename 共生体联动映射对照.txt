@@ -1,0 +1,45 @@
+===== 12个共生体联动 combos（talent_sets.json） =====
+id: combo_poison_fang | 名称: 剧毒獠牙 | 引用的symbiontId: poison_fang | 要求体系: 毒 | 效果: 所有Dot伤害+30% | 描述: 毒牙共生体+毒系天赋
+id: combo_fire_claw | 名称: 烈焰利爪 | 引用的symbiontId: fire_claw | 要求体系: 火 | 效果: 攻击时30%概率造成灼烧 | 描述: 火焰爪共生体+火系天赋
+id: combo_ice_scale | 名称: 寒冰鳞片 | 引用的symbiontId: ice_scale | 要求体系: 冰 | 效果: 受到的伤害-20% | 描述: 冰鳞共生体+冰系天赋
+id: combo_thunder_horn | 名称: 雷霆之角 | 引用的symbiontId: thunder_horn | 要求体系: 雷 | 效果: 暴击时20%概率追加攻击 | 描述: 雷角共生体+雷系天赋
+id: combo_blood_heart | 名称: 血怒之心 | 引用的symbiontId: blood_heart | 要求体系: 血 | 效果: 吸取造成伤害的15%为生命 | 描述: 血心共生体+血系天赋
+id: combo_physical_fist | 名称: 蛮力之拳 | 引用的symbiontId: power_fist | 要求体系: 物理 | 效果: 造成的伤害+20% | 描述: 力量拳共生体+物理系天赋
+id: combo_speed_leg | 名称: 疾风之腿 | 引用的symbiontId: speed_leg | 要求体系: 速 | 效果: 先手+20 | 描述: 速腿共生体+速系天赋
+id: combo_shell_armor | 名称: 重甲壁垒 | 引用的symbiontId: shell_armor | 要求体系: 甲壳 | 效果: 防御+25 | 描述: 甲壳共生体+甲壳系天赋
+id: combo_ice_wing | 名称: 冰霜之翼 | 引用的symbiontId: ice_wing | 要求体系: 冰+翼 | 效果: 闪避率+15，攻击时20%概率冻结 | 描述: 冰翼共生体+冰系+翼系
+id: combo_thunder_sensor | 名称: 雷霆感知 | 引用的symbiontId: thunder_sensor | 要求体系: 雷+感知 | 效果: 命中率+20，暴击率+10 | 描述: 雷感器共生体+雷系+感知系
+id: combo_poison_core | 名称: 剧毒核心 | 引用的symbiontId: poison_core | 要求体系: 毒 | 效果: 所有Dot伤害+40%，中毒层数无上限 | 描述: 毒核共生体+毒系
+id: combo_fire_motor | 名称: 烈焰引擎 | 引用的symbiontId: fire_motor | 要求体系: 火+速 | 效果: 先手+20，灼烧不衰减 | 描述: 火引擎共生体+火系+速系
+
+===== 30个共生体（symbionts.json 实际数据） =====
+id: sym_core_1 | 名称: 原始细胞核 | 部位: 核心 | 特殊:   | 描述: 最原始的细胞核心，提供基础生命保障
+id: sym_core_2 | 名称: 稳定核膜 | 部位: 核心 | 特殊:   | 描述: 稳定的核膜结构，提升生命和防御
+id: sym_core_3 | 名称: 硬化核膜 | 部位: 核心 | 特殊: hpRegen 3 | 描述: 硬化的核膜结构，每回合回复3点生命
+id: sym_core_4 | 名称: 龙之心核 | 部位: 核心 | 特殊: healOnKill 5 | 描述: 巨龙的心脏核心，击杀敌人回复5%生命
+id: sym_core_5 | 名称: 混沌原核 | 部位: 核心 | 特殊: damageReduction 10 | 描述: 混沌之源的原核，受到伤害减少10%
+id: sym_pred_1 | 名称: 锐利口器 | 部位: 捕食 | 特殊:   | 描述: 基础的锐利口器，提升攻击和暴击
+id: sym_pred_2 | 名称: 撕裂颚 | 部位: 捕食 | 特殊:   | 描述: 强力的撕裂颚，显著提升攻击
+id: sym_pred_3 | 名称: 毒牙 | 部位: 捕食 | 特殊: dotOnHit 2 | 描述: 剧毒的獠牙，攻击附加2层中毒
+id: sym_pred_4 | 名称: 毁灭之爪 | 部位: 捕食 | 特殊: critDamage 20 | 描述: 毁灭之力凝聚的利爪，暴击伤害+20%
+id: sym_pred_5 | 名称: 吞噬之口 | 部位: 捕食 | 特殊: lifeSteal 10 | 描述: 吞噬一切的巨口，吸取造成伤害的10%为生命
+id: sym_sensor_1 | 名称: 感光点 | 部位: 感知 | 特殊:   | 描述: 基础的感光点，提升命中和感知
+id: sym_sensor_2 | 名称: 复眼 | 部位: 感知 | 特殊:   | 描述: 复杂的复眼结构，大幅提升命中
+id: sym_sensor_3 | 名称: 热感应器官 | 部位: 感知 | 特殊: firstStrike 5 | 描述: 热感应器官，先手攻击伤害+5%
+id: sym_sensor_4 | 名称: 天眼 | 部位: 感知 | 特殊: dodgeBonus 5 | 描述: 洞察一切的天眼，闪避率+5%
+id: sym_sensor_5 | 名称: 全知之眼 | 部位: 感知 | 特殊: critChance 10 | 描述: 全知全能的眼睛，暴击率+10%
+id: sym_motor_1 | 名称: 纤毛 | 部位: 运动 | 特殊:   | 描述: 基础的运动纤毛，提升先手和敏捷
+id: sym_motor_2 | 名称: 鞭毛 | 部位: 运动 | 特殊:   | 描述: 强力的鞭毛，显著提升移动速度
+id: sym_motor_3 | 名称: 喷水管 | 部位: 运动 | 特殊: extraAttack 5 | 描述: 喷水推进器官，5%概率额外行动
+id: sym_motor_4 | 名称: 瞬步肌 | 部位: 运动 | 特殊: dodgeBonus 8 | 描述: 瞬步肌肉，闪避率+8%
+id: sym_motor_5 | 名称: 时脉腺 | 部位: 运动 | 特殊: cooldownReduction 10 | 描述: 操控时间的腺体，技能冷却-10%
+id: sym_energy_1 | 名称: 线粒体 | 部位: 能量 | 特殊:   | 描述: 基础的线粒体，提升能量上限和回复
+id: sym_energy_2 | 名称: 能量囊 | 部位: 能量 | 特殊:   | 描述: 储存能量的囊泡，大幅提升能量容量
+id: sym_energy_3 | 名称: 高能线粒体 | 部位: 能量 | 特殊: energyOnHit 5 | 描述: 高能线粒体，攻击命中回复5点能量
+id: sym_energy_4 | 名称: 暗能线粒体 | 部位: 能量 | 特殊: damagePct 8 | 描述: 暗能线粒体，造成伤害+8%
+id: sym_energy_5 | 名称: 奇点线粒体 | 部位: 能量 | 特殊: energyRegen 5 | 描述: 奇点线粒体，每回合额外回复5点能量
+id: sym_evo_1 | 名称: 进化芽 | 部位: 进化 | 特殊:   | 描述: 基础的进化芽，提升进化和天赋强度
+id: sym_evo_2 | 名称: 基因重组腺 | 部位: 进化 | 特殊:   | 描述: 基因重组腺体，加速进化进程
+id: sym_evo_3 | 名称: 超速进化腺 | 部位: 进化 | 特殊: expBonus 10 | 描述: 超速进化腺体，获得经验+10%
+id: sym_evo_4 | 名称: 始祖基因 | 部位: 进化 | 特殊: allStatPct 3 | 描述: 始祖生物的基因，所有属性+3%
+id: sym_evo_5 | 名称: 无限进化腺 | 部位: 进化 | 特殊: talentPower 10 | 描述: 无限进化的腺体，天赋效果强度+10%

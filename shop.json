@@ -571,7 +571,7 @@
    "id": "weekly_boss_core",
    "name": "首领核心兑换",
    "type": "weekly",
-   "description": "消耗进化精粹兑换一个随机Boss核心",
+   "description": "消耗进化精粹兑换一个随机首领核心",
    "effect": {
     "type": "random_boss_core",
     "value": 1,

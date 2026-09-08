@@ -734,7 +734,7 @@
       "options": [
         {"text": "用身体吸附光点", "result": "随机获得了一段古老基因，可能是任何纪元的低级特性。", "effect": "random_gene_fragment"},
         {"text": "将光点收集压缩", "result": "凝聚成一枚基因胶囊，储存备用。", "effect": "gene_capsule"},
-        {"text": "击散光点，观察反应", "result": "光点重组为一面记忆之镜，映出你曾吞噬的某个Boss的影像，获得经验。", "effect": "exp_boost"}
+        {"text": "击散光点，观察反应", "result": "光点重组为一面记忆之镜，映出你曾吞噬的某个首领的影像，获得经验。", "effect": "exp_boost"}
       ]
     },
     {
@@ -745,7 +745,7 @@
       "chainStep": null,
       "description": "时间裂隙中传出各种纪元的回声——巨龙的咆哮、冰原的暴风、虫鸣的浪潮。",
       "options": [
-        {"text": "侧耳倾听回声", "result": "你从中解析出各个纪元的弱点信息，对相关Boss伤害略微提升。", "effect": "boss_knowledge"},
+        {"text": "侧耳倾听回声", "result": "你从中解析出各个纪元的弱点信息，对相关首领伤害略微提升。", "effect": "boss_knowledge"},
         {"text": "模仿回声发出共鸣", "result": "你的声音与裂隙共振，临时打开了一条通往未知区域的通道。", "effect": "shortcut"},
         {"text": "在回声中小憩", "result": "这些生命之声抚慰了你的基因，生命值完全恢复。", "effect": "heal_full"}
       ]
@@ -1055,7 +1055,7 @@
       "isChain": true,
       "chainId": "chain_08",
       "chainStep": 1,
-      "description": "终焉空间中，你遇到一个由凝滞时间构成的回廊，墙上挂着你曾经击败的各个Boss的静态影像。",
+      "description": "终焉空间中，你遇到一个由凝滞时间构成的回廊，墙上挂着你曾经击败的各个首领的静态影像。",
       "options": [
         {"text": "穿越回廊", "result": "你感受到每个影像中残留的微弱基因，它们为你打开一扇门。", "effect": "chain_08_step2_unlock"},
         {"text": "击碎所有影像", "result": "影像爆裂，能量四溢，你吸收了一些但未能打开通道。", "effect": "random_buff"},
