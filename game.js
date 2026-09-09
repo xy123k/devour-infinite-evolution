@@ -1662,6 +1662,8 @@ const game = {
         } else {
             this.showScreen('mainScreen');
             this.refreshMainUI();
+            const eb = document.getElementById('exploreBtn');
+            if (eb) eb.disabled = false;
         }
     },
 
@@ -3028,6 +3030,7 @@ const game = {
                 const item = consumables[Math.floor(Math.random() * consumables.length)];
                 if (!this.player.items) this.player.items = [];
                 this.player.items.push(item.id);
+                this._lastGachaItem = item.id;
                 resultText = `获得消耗品：${item.name}！`;
                 resultIcon = item.icon || '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10 2v7.31\"/><path d=\"M14 9.3V1.99\"/><path d=\"M8.5 2h7\"/><path d=\"M14 9.3a6.5 6.5 0 1 1-4 0\"/></svg>';
             } else {
@@ -3054,6 +3057,7 @@ const game = {
                 `<div style="text-align:center;margin:20px 0"><div style="font-size:50px;margin-bottom:12px">${resultIcon}</div><div style="font-size:17px;color:var(--text-primary);font-weight:bold">${resultText}</div></div>` +
                 `<div style="color:var(--accent-warning);text-align:center;margin-bottom:10px">剩余基因精华：${this.player.gold}</div>`;
             document.getElementById('eventOptions').innerHTML =
+                (prizeKey === 'item' ? `<button onclick="game.useLastGachaItem()" style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;background:var(--accent-warning);color:white;margin-bottom:8px">立即使用</button>` : '') +
                 `<button onclick="game.playGachaEvent()" style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;background:var(--accent-purple);color:white;margin-bottom:8px">继续抽奖（${gachaCost}精华）</button>` +
                 `<button onclick="game.closeEvent()" style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;background:var(--accent-success);color:white">继续探索</button>`;
         });
@@ -6434,6 +6438,15 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
                 // 重置按钮状态
                 const battleButtons = document.querySelectorAll('#battleActions button');
                 battleButtons.forEach(b => b.disabled = false);
+                // 审计修复：结算后确保主界面完全可用（防探索按钮disabled残留导致卡死）
+                const eb2 = document.getElementById('exploreBtn');
+                if (eb2) eb2.disabled = false;
+                const evArea = document.getElementById('eventArea');
+                if (evArea) evArea.style.display = 'none';
+                const enArea = document.getElementById('encounterArea');
+                if (enArea) enArea.style.display = 'none';
+                const mArea = document.getElementById('merchantArea');
+                if (mArea) mArea.style.display = 'none';
                 this.showScreen('mainScreen');
                 this.refreshMainUI();
                 this.showRandomStory();
@@ -10799,11 +10812,12 @@ ${transition.buff.desc}`);
         } else {
             if (!this.player.items) this.player.items = [];
             this.player.items.push(item.id);
+            this._lastBoughtItem = item.id;
             resultMsg = `购买了【${item.name}】，已存入背包！\n当前背包：${this.player.items.length}个物品`;
         }
 
         // 用游戏内弹窗显示结果
-        this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 购买成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><div style="display:flex;gap:10px;margin-top:15px"><button onclick="game.openShop()" style="flex:1;padding:10px;border-radius:6px">继续购物</button><button onclick="game.openInventory()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white">打开背包</button></div>`);
+        this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 购买成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><div style="display:flex;gap:10px;margin-top:15px">${(item.type === 'daily' || item.type === 'weekly') ? '' : '<button onclick="game.useLastBoughtItem()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-warning);color:white">立即使用</button>'}<button onclick="game.openShop()" style="flex:1;padding:10px;border-radius:6px">继续购物</button><button onclick="game.openInventory()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white">打开背包</button></div>`);
         this.savePermanent();
         this.refreshMainUI();
     },
@@ -12085,8 +12099,52 @@ ${transition.buff.desc}`);
         this.savePermanent();
         this.refreshMainUI();
 
+        // 立即刷新背包视图，避免使用后图标残留（再次点击才提示无此物品）
+        if (this.characterTab === 'inventory') this.renderCharacterPanel();
+        const invScreen = document.getElementById('inventoryScreen');
+        if (invScreen && invScreen.style.display !== 'none') this.openInventory();
+
         // 显示结果并返回背包
-        this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 使用成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><div style="display:flex;gap:10px;margin-top:15px"><button onclick="game.openInventory()" style="flex:1;padding:10px;border-radius:6px">返回背包</button><button onclick="game.closePop()" style="flex:1;padding:10px;border-radius:6px">关闭</button></div>`);
+        this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 使用成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><div style="display:flex;gap:10px;margin-top:15px"><button onclick="game.closePop(); game.openInventory()" style="flex:1;padding:10px;border-radius:6px">返回背包</button><button onclick="game.closePop(); game.openInventory()" style="flex:1;padding:10px;border-radius:6px">关闭</button></div>`);
+    },
+
+    // 获得消耗品后询问是否立即使用
+    promptUseConsumable(itemId) {
+        const item = (this.data.shop && this.data.shop.consumables || []).find(x => x.id === itemId);
+        if (!item) return;
+        this.showPopup(`<h3 style="color:var(--accent-warning)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10 2v7.31\"/><path d=\"M14 9.3V1.99\"/><path d=\"M8.5 2h7\"/><path d=\"M14 9.3a6.5 6.5 0 1 1-4 0\"/></svg> 获得消耗品</h3><p style="color:var(--text-secondary);line-height:1.8">获得【${item.name}】，是否立即使用？</p><div style="display:flex;gap:10px;margin-top:15px"><button onclick="game.usePromptedItem('${itemId}')" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white">立即使用</button><button onclick="game.closePop()" style="flex:1;padding:10px;border-radius:6px">暂不使用</button></div>`);
+    },
+
+    // 使用刚获得的消耗品（从背包移除并应用效果）
+    usePromptedItem(itemId) {
+        const items = this.player.items || [];
+        const idx = items.lastIndexOf(itemId);
+        if (idx >= 0) items.splice(idx, 1);
+        const item = (this.data.shop && this.data.shop.consumables || []).find(x => x.id === itemId);
+        if (!item) return;
+        this.closePop();
+        const resultMsg = this.applyItemEffect(item);
+        this.savePermanent();
+        this.refreshMainUI();
+        this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 使用成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><button onclick="game.closePop()" style="width:100%;padding:10px;border-radius:6px;margin-top:15px">确定</button>`);
+    },
+
+    // 转盘抽到消耗品后立即使用
+    useLastGachaItem() {
+        const id = this._lastGachaItem;
+        this._lastGachaItem = null;
+        if (!id) return;
+        this.closeEvent();
+        this.usePromptedItem(id);
+    },
+
+    // 商店购买消耗品后立即使用
+    useLastBoughtItem() {
+        const id = this._lastBoughtItem;
+        this._lastBoughtItem = null;
+        if (!id) return;
+        this.closePop();
+        this.usePromptedItem(id);
     },
 
     // ============================================================
