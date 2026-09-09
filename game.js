@@ -98,12 +98,12 @@ const game = {
         opening: [
             "冰冷的培养皿中，你睁开了眼。",
             "你是编号X-001的实验体，被注入了传说中的'无限吞噬基因'。",
-            "警报声突然响起，设备故障，培养皿的玻璃碎裂。",
-            "你顺着排水管道逃入了城市的下水道，原始的吞噬本能开始觉醒。",
+            "培养皿中温热的原液，正是这片原始海洋的微缩复制——你的进化之路，从这里开始。",
+            "实验中断了，你坠入培养皿深处的黑暗，只有吞噬的本能还在燃烧。",
             "活下去，吞噬一切，重走那条属于你的进化之路。"
         ],
         eraStories: {
-            modern: { name: "现代世界", text: ["你从下水道爬出，进入了人类的城市。", "钢铁与混凝土的丛林中，无数现代生物在活动。", "吞噬它们，获取它们的基因，让自己变得更强。"] },
+            modern: { name: "现代世界", text: ["你逃出了实验室的废墟，跌入现代世界的荒野。", "无垠的海洋、茂密的丛林、辽阔的草原——无数现代生物在此生息。", "吞噬它们，获取它们的基因，让自己变得更强。"] },
             ice_age: { name: "冰河世纪", text: ["基因深处的记忆被唤醒，你穿越到了两万年前的冰河世纪。", "无尽的冰雪覆盖了大地，猛犸象、剑齿虎在雪原上漫步。", "适应严寒，吞噬巨兽，在冰河时代留下你的传说。"] },
             dragon_age: { name: "巨龙时代", text: ["炽热的龙息照亮了天空，你来到了巨龙统治的时代。", "山脉中盘踞着远古巨龙，火山深处沉睡着炎魔。", "挑战巨龙，吞噬它们的力量，成为新的霸主。"] },
             insect_age: { name: "巨虫时代", text: ["潮湿的空气中弥漫着信息素，你进入了巨虫横行的时代。", "三米长的蜈蚣、车轮大的蜘蛛、成群的食肉蚂蚁...", "在虫群的包围中生存，吞噬虫后的基因，成为虫群之主。"] },
@@ -115,21 +115,21 @@ const game = {
         },
         // 7个章节的过渡事件（进入新章节第一张地图时触发，含微增益）
         chapterTransitions: [
-            {
+{
                 chapter: 1,
                 name: '起源之汤',
                 startMapIndex: 0,
                 text: [
-                    '温暖的原始汤中，你第一次睁开了"眼"——那还不是真正的眼睛，只是一团对光线敏感的蛋白质。',
+                    '温暖的原始汤中，你再次睁开了"眼"——原来实验室的培养皿，正是这片原始海洋的微缩复制。',
                     '周围是无尽的有机物，你感到一种原始的饥饿在体内涌动。',
                     '吞噬吧，这是进化的第一步。'
                 ],
                 buff: { type: 'maxHp', value: 10, desc: '最大生命+10（章节加成）' }
             },
-            {
-                chapter: 2,
-                name: '登陆之时',
-                startMapIndex: 5,
+{
+    chapter: 2,
+    name: '登陆之时',
+    startMapIndex: 13,
                 text: [
                     '潮水退去，你第一次感受到了空气——那是一种陌生而又充满机遇的介质。',
                     '你的鳍开始变形，逐渐能够支撑你在陆地上爬行。',
@@ -137,33 +137,10 @@ const game = {
                 ],
                 buff: { type: 'attack', value: 2, desc: '攻击力+2（章节加成）' }
             },
-            {
-                chapter: 3,
-                name: '冰河纪元',
-                startMapIndex: 8,
-                text: [
-                    '气温骤降，冰雪覆盖了大地。你感到体内的血液开始凝固。',
-                    '为了生存，你的体型开始变大——更大的体型意味着更小的表面积与体积比，更容易保持体温。',
-                    '冰河时代，是体型的竞赛。'
-                ],
-                buff: { type: 'defense', value: 2, desc: '防御力+2（章节加成）' }
-            },
-            {
-                chapter: 4,
-                name: '巨龙时代',
-                startMapIndex: 11,
-                text: [
-                    '炽热的龙息照亮了天空，你来到了巨龙统治的时代。',
-                    '山脉中盘踞着远古巨龙，火山深处沉睡着炎魔。',
-                    '你的鳞片开始硬化，你感到体内有一股火焰在燃烧。',
-                    '挑战巨龙，吞噬它们的力量，成为新的霸主。'
-                ],
-                buff: { type: 'maxHp', value: 20, desc: '最大生命+20（章节加成）' }
-            },
-            {
-                chapter: 5,
-                name: '族群觉醒',
-                startMapIndex: 14,
+{
+    chapter: 3,
+    name: '族群觉醒',
+    startMapIndex: 15,
                 text: [
                     '潮湿的空气中弥漫着信息素，你进入了巨虫横行的时代。',
                     '三米长的蜈蚣、车轮大的蜘蛛、成群的食肉蚂蚁...',
@@ -172,10 +149,33 @@ const game = {
                 ],
                 buff: { type: 'speed', value: 2, desc: '先手值+2（章节加成）' }
             },
-            {
-                chapter: 6,
-                name: '封神之路',
-                startMapIndex: 16,
+{
+    chapter: 4,
+    name: '冰河纪元',
+    startMapIndex: 18,
+                text: [
+                    '气温骤降，冰雪覆盖了大地。你感到体内的血液开始凝固。',
+                    '为了生存，你的体型开始变大——更大的体型意味着更小的表面积与体积比，更容易保持体温。',
+                    '冰河时代，是体型的竞赛。'
+                ],
+                buff: { type: 'defense', value: 2, desc: '防御力+2（章节加成）' }
+            },
+{
+    chapter: 5,
+    name: '巨龙时代',
+    startMapIndex: 25,
+                text: [
+                    '炽热的龙息照亮了天空，你来到了巨龙统治的时代。',
+                    '山脉中盘踞着远古巨龙，火山深处沉睡着炎魔。',
+                    '你的鳞片开始硬化，你感到体内有一股火焰在燃烧。',
+                    '挑战巨龙，吞噬它们的力量，成为新的霸主。'
+                ],
+                buff: { type: 'maxHp', value: 20, desc: '最大生命+20（章节加成）' }
+            },
+{
+    chapter: 6,
+    name: '封神之路',
+    startMapIndex: 32,
                 text: [
                     '你突破了现实的边界，进入了传说中的领域。',
                     '圣剑之主、神魔之主、圣殿之主...这些只存在于传说中的存在正在等待你。',
@@ -184,10 +184,10 @@ const game = {
                 ],
                 buff: { type: 'crit', value: 5, desc: '暴击率+5%（章节加成）' }
             },
-            {
-                chapter: 7,
-                name: '超越存在',
-                startMapIndex: 22,
+{
+    chapter: 7,
+    name: '超越存在',
+    startMapIndex: 50,
                 text: [
                     '你来到了一切的终点与起点——混沌轮回。',
                     '混沌之主、轮回之主、虚空之主...这些超越时空的存在正在沉睡。',
@@ -199,7 +199,7 @@ const game = {
         ],
         // 进化抉择数据（7个章节，每章二选一）
         evolutionChoices: [
-            {
+{
                 chapter: 1,
                 title: '第一章·起源之汤 - 进化抉择',
                 description: '你吞噬了起源之汤的顶点生物，基因开始发生根本性的变化。你要选择怎样的进化方向？',
@@ -208,7 +208,7 @@ const game = {
                     { id: 'devour_enhance', name: '吞噬强化', desc: '攻击力+10%，吞噬敌人获得的碎片+10%', buff: { attack: 10, fragmentBonus: 10 } }
                 ]
             },
-            {
+{
                 chapter: 2,
                 title: '第二章·登陆之时 - 进化抉择',
                 description: '你离开了海洋，踏上了陆地。你的身体需要适应全新的环境。',
@@ -217,34 +217,34 @@ const game = {
                     { id: 'swift_nerve', name: '敏捷神经', desc: '先手值+15%，额外先手值+5，闪避率+5%', buff: { speed: 15, firstStrike: 5, dodge: 5 } }
                 ]
             },
-            {
+{
                 chapter: 3,
-                title: '第三章·冰河纪元 - 进化抉择',
-                description: '极端的寒冷考验着你的生存能力。你要如何应对冰河时代？',
-                options: [
-                    { id: 'cold_resist', name: '耐寒基因', desc: '受到的所有伤害-10%，每回合回复1%最大生命', buff: { allResist: 10, hpRegen: 1 } },
-                    { id: 'hot_blood', name: '热血沸腾', desc: '暴击率+10%，暴击伤害+15%，但受到的伤害+5%', buff: { crit: 10, critDamage: 15, damageTaken: 5 } }
-                ]
-            },
-            {
-                chapter: 4,
-                title: '第四章·巨龙时代 - 进化抉择',
-                description: '巨型生物统治了这个时代。你要选择巨龙之躯还是疾风之翼？',
-                options: [
-                    { id: 'dragon_body', name: '巨龙之躯', desc: '最大生命+30%，防御力+10%，但速度-10%', buff: { maxHp: 30, defense: 10, speed: -10 } },
-                    { id: 'wind_wing', name: '疾风之翼', desc: '速度+20%，闪避率+10%，先手值+10，但最大生命-10%', buff: { speed: 20, dodge: 10, firstStrike: 10, maxHp: -10 } }
-                ]
-            },
-            {
-                chapter: 5,
-                title: '第五章·族群觉醒 - 进化抉择',
+                title: '第三章·族群觉醒 - 进化抉择',
                 description: '社会性生物开始崛起。你要选择毒腺进化还是利刃强化？',
                 options: [
                     { id: 'poison_gland', name: '毒腺进化', desc: '中毒伤害+30%，中毒持续时间+1回合，敌人命中率-5%', buff: { poisonDamage: 30, poisonDuration: 1, enemyHit: -5 } },
                     { id: 'blade_enhance', name: '利刃强化', desc: '暴击伤害+30%，无视防御+10%，但命中率-5%', buff: { critDamage: 30, armorPenetration: 10, hit: -5 } }
                 ]
             },
-            {
+{
+                chapter: 4,
+                title: '第四章·冰河纪元 - 进化抉择',
+                description: '极端的寒冷考验着你的生存能力。你要如何应对冰河时代？',
+                options: [
+                    { id: 'cold_resist', name: '耐寒基因', desc: '受到的所有伤害-10%，每回合回复1%最大生命', buff: { allResist: 10, hpRegen: 1 } },
+                    { id: 'hot_blood', name: '热血沸腾', desc: '暴击率+10%，暴击伤害+15%，但受到的伤害+5%', buff: { crit: 10, critDamage: 15, damageTaken: 5 } }
+                ]
+            },
+{
+                chapter: 5,
+                title: '第五章·巨龙时代 - 进化抉择',
+                description: '巨型生物统治了这个时代。你要选择巨龙之躯还是疾风之翼？',
+                options: [
+                    { id: 'dragon_body', name: '巨龙之躯', desc: '最大生命+30%，防御力+10%，但速度-10%', buff: { maxHp: 30, defense: 10, speed: -10 } },
+                    { id: 'wind_wing', name: '疾风之翼', desc: '速度+20%，闪避率+10%，先手值+10，但最大生命-10%', buff: { speed: 20, dodge: 10, firstStrike: 10, maxHp: -10 } }
+                ]
+            },
+{
                 chapter: 6,
                 title: '第六章·封神之路 - 进化抉择',
                 description: '你触及了神的领域。你要窃取神力还是自身成神？',
@@ -253,13 +253,13 @@ const game = {
                     { id: 'become_god', name: '自身成神', desc: '普攻伤害+25%，暴击率+10%，但技能伤害-10%', buff: { normalDamage: 25, crit: 10, skillDamage: -10 } }
                 ]
             },
-            {
+{
                 chapter: 7,
                 title: '第七章·超越存在 - 最终抉择',
                 description: '你站在了存在的顶点。这是你最终的选择，它将决定你的结局。',
                 options: [
                     { id: 'become_void', name: '成为虚无', desc: '结局A：吞噬一切，成为新的虚无。游戏通关，解锁"虚无之主"称号。', buff: { ending: 'void' } },
-                    { id: 'eternal_cycle', name: '永恒轮回', desc: '结局B：选择无限循环，解锁新游戏+模式，每次轮回永久属性+3%。', buff: { ending: 'eternal', perRunBonus: 3 } }
+                    { id: 'eternal_cycle', name: '永恒轮回', desc: '结局B：选择无限循环，解锁新游戏+模式，每次轮回永久属性+5%。', buff: { ending: 'eternal', perRunBonus: 5 } }
                 ]
             }
         ],
@@ -282,17 +282,6 @@ const game = {
             }
             return null;
         },
-        getEraByMapIndex(index) {
-            if (index <= 8) return 'modern';
-            if (index <= 11) return 'ice_age';
-            if (index <= 14) return 'dragon_age';
-            if (index <= 17) return 'insect_age';
-            if (index <= 20) return 'life_landing';
-            if (index <= 23) return 'primordial_ocean';
-            if (index <= 26) return 'legend_realm';
-            if (index <= 29) return 'mythic_sky';
-            return 'chaos_reincarnation';
-        }
     },
 
     showStory(storyLines, callback) {
@@ -418,9 +407,22 @@ const game = {
     // 基因精华获取倍率：前3层+40%，4-6层+20%，7层后正常
     getGoldMultiplier() {
         const floor = this.currentFloor || 1;
-        if (floor <= 3) return 1.4;
-        if (floor <= 6) return 1.2;
-        return 1.0;
+        // 前期保护 → 中后期递增（对应时代：现代/远古/冰河/巨龙/传说/神话/混沌）
+        let mult = 1.0;
+        if (floor <= 3) mult = 1.4;
+        else if (floor <= 6) mult = 1.2;
+        else if (floor <= 15) mult = 1.0;
+        else if (floor <= 24) mult = 1.15;
+        else if (floor <= 32) mult = 1.3;
+        else if (floor <= 40) mult = 1.5;
+        else if (floor <= 50) mult = 1.8;
+        else mult = 2.2;
+        // 混沌深层（无限轮回）：每5层奖励+10%，封顶+100%
+        if (floor > 50) {
+            const deepBonus = Math.min(100, Math.floor((floor - 50) / 5) * 10);
+            mult = mult * (1 + deepBonus / 100);
+        }
+        return mult;
     },
 
     // 天赋体系标签名称
@@ -434,30 +436,61 @@ const game = {
     // Boss核心ID到名称的映射表
     bossCoreNames: {
         "primordial_soup_boss_01": "原始巨核·普罗托斯",
-        "primordial_soup_boss_02": "原始巨核·普罗托斯（第二形态）",
-        "primordial_soup_boss_03": "原始巨核·普罗托斯（最终形态）",
         "tidal_flat_boss_01": "滩涂之主·泥噬巨蠕",
-        "tidal_flat_boss_02": "滩涂之主·泥噬巨蠕（第二形态）",
-        "tidal_flat_boss_03": "滩涂之主·泥噬巨蠕（最终形态）",
         "coral_rubble_boss_01": "珊瑚巨灵·礁噬口",
-        "coral_rubble_boss_02": "珊瑚巨灵·礁噬口（第二形态）",
-        "coral_rubble_boss_03": "珊瑚巨灵·礁噬口（最终形态）",
         "temperate_forest_floor_boss_01": "腐殖之王·菌丝巨怪",
-        "temperate_forest_floor_boss_02": "腐殖之王·菌丝巨怪（第二形态）",
-        "temperate_forest_floor_boss_03": "腐殖之王·菌丝巨怪（最终形态）",
-        "rainforest_floor_boss_01": "丛林幽魂·影豹",
-        "rainforest_floor_boss_02": "丛林幽魂·影豹（第二形态）",
-        "rainforest_floor_boss_03": "丛林幽魂·影豹（最终形态）",
         "east_african_savanna_boss_01": "草原霸主·金鬃狮",
-        "east_african_savanna_boss_02": "草原霸主·金鬃狮（第二形态）",
-        "east_african_savanna_boss_03": "草原霸主·金鬃狮（最终形态）",
         "intertidal_rocks_boss_01": "远古蝎鲎",
-        "intertidal_rocks_boss_02": "远古蝎鲎（第二形态）",
-        "intertidal_rocks_boss_03": "远古蝎鲎（最终形态）",
         "fern_swamp_boss_01": "远古巨蝎",
-        "fern_swamp_boss_02": "远古巨蝎（第二形态）",
-        "fern_swamp_boss_03": "远古巨蝎（最终形态）"
+        "ice_tundra_mammoth": "远古猛犸象",
+        "glacier_rift_dragon": "冰霜巨龙",
+        "permafrost_titan": "冰河泰坦",
+        "dragon_mountain_king": "山脉龙王",
+        "volcano_emperor": "炎魔皇帝",
+        "abyss_dragon_emperor": "龙皇遗骸",
+        "insect_forest_king": "虫群之王",
+        "spider_maze_queen": "蜘蛛女王",
+        "insect_nest_queen": "虫后",
+        "holy_ruins_king": "圣剑之主",
+        "battlefield_god_demon_king": "神魔之主",
+        "temple_master": "圣殿之主",
+        "divine_gate_keeper": "天门守护者",
+        "gods_bf_king": "众神之主",
+        "creation_god": "创世神",
+        "chaos_abyss_king": "混沌之主",
+        "reincarnation_king": "轮回之主",
+        "void_king": "虚空之主",
+        "primordial_pool_boss": "原初热泉之心",
+        "rainforest_understory_boss": "雨林霸主·巨森蚺王",
+        "north_american_plains_boss": "平原霸主·牛群之王",
+        "cliff_face_boss": "悬崖之王·石翼龙",
+        "mountain_peak_boss": "山之君王·雪山巨猿",
+        "continental_shelf_boss": "大陆架之王·巨鲭鲨",
+        "abyssal_deep_boss": "深渊之王·利维坦",
+        "jungle_monitor_boss": "巨蜥之王·丛林泰坦",
+        "desert_dragon_boss": "荒漠龙王·沙暴巨龙",
+        "coastal_hunting_boss": "海滨之王·鲸王",
+        "volcanic_plain_boss": "火山之王·熔岩巨魔",
+        "mammoth_steppe_boss": "冰河之王·猛犸巨象",
+        "tundra_permafrost_boss": "苔原之王·北极熊王",
+        "glacial_icefield_boss": "冰川之王·冰霜巨鲸",
+        "coastal_tundra_boss": "冻海之王·白鲸王",
+        "glimmer_woods_boss": "幽光之王·荧光巨鹿",
+        "encircling_sea_boss": "环海之王·漩涡龙王",
+        "frost_abyss_boss": "冰渊之王·永冻巨兽",
+        "magma_abyss_boss": "熔渊之王·炎魔领主",
+        "celestial_zenith_boss": "天阙之王·苍穹巨龙",
+        "dragon_lair_boss": "龙巢之王·太古龙王",
+        "spirit_woods_boss": "灵域之王·万灵之树",
+        "sacred_beast_forest_boss": "圣林之王·万兽之祖",
+        "deep_mystery_boss": "秘境之王·时空守护者",
+        "beast_divine_court_boss": "神庭之王·万兽神尊",
+        "beast_lair_boss": "巢穴之王·兽群霸主",
+        "prehistoric_colosseum_boss": "角斗之王·霸王龙之王",
+        "final_trial_boss": "终焉之王·灭世者",
+        "chaos_cycle_boss": "混沌之主·轮回化身",
     },
+
     // 获取Boss核心名称
     getBossCoreName(bossId) {
         if (this.bossCoreNames[bossId]) return this.bossCoreNames[bossId];
@@ -705,6 +738,45 @@ const game = {
             doAdd(4, 1);
         }
         return { tagName: dropTagName || '万能', fragQuality, fragCount };
+    },
+    // 完整天赋掉落：精英2%/Boss5%直接获得对应完整天赋；已解锁则分解为等值同品质碎片（100%返还）
+    rollCompleteTalentDrop(e, ratio) {
+        const mul = ratio || 1;
+        const tid = e.lootableTalentId;
+        if (!tid) return null;
+        const rate = (e.type === 'boss' ? 0.05 : (e.type === 'elite' ? 0.02 : 0)) * mul;
+        if (Math.random() >= rate) return null;
+        const t = this.data.talents.talents.find(x => x.id === tid);
+        if (!t) {
+            console.warn('lootableTalentId 不存在:', tid);
+            return null;
+        }
+        if (this.permanent.unlockedTalents.includes(tid)) {
+            // 已解锁：分解为等值同品质碎片（100%返还，按该天赋解锁成本）
+            const cost = t.unlockCost || { fragQuality: t.quality, fragCount: this.getTalentUnlockCost(t.quality) };
+            const q = parseInt(cost.fragQuality) || parseInt(t.quality) || 1;
+            const c = parseInt(cost.fragCount) || this.getTalentUnlockCost(q);
+            const tag = (t.tags && t.tags.length > 0) ? parseInt(t.tags[0]) : 1;
+            this.addTagFragment(tag, q, c);
+            this.appendBattleLog(`重复天赋【${t.name}】分解为 ${c} 个【${this.tagNames[tag] || ('标签' + tag)}】${this.qualityNames[q]}碎片！`, 'log-info');
+            return { type: 'duplicate', talentId: tid, fragments: c, quality: q };
+        }
+        // 未解锁：直接免费解锁（跳过碎片与Boss核心要求）
+        this.directUnlockTalent(tid);
+        this.appendBattleLog(`获得完整天赋：${t.name}！`, 'log-victory');
+        return { type: 'new', talentId: tid };
+    },
+    // 直接解锁天赋（完整掉落专用：跳过碎片/Boss核心消耗，仍触发图鉴加成）
+    directUnlockTalent(talentId) {
+        const t = this.data.talents.talents.find(x => x.id === talentId);
+        if (!t || this.permanent.unlockedTalents.includes(talentId)) return false;
+        if (!this.permanent.talentLevels) this.permanent.talentLevels = {};
+        this.permanent.unlockedTalents.push(talentId);
+        this.permanent.talentLevels[talentId] = 1;
+        this.checkCodexBonuses();
+        this.savePermanent();
+        this.refreshGrowthUI();
+        return true;
     },
     // 轮回难度：敌人属性 ×1.05^min(轮回次数,15)（封顶×2.08，第0轮回恒1，老存档无感）
     getReincarnationDifficulty() {
@@ -1687,7 +1759,7 @@ const game = {
             // 日常任务：轮回
             this.updateDailyTask('reincarnations');
         }
-        // 永恒轮回加成（新游戏+模式，每次轮回永久属性+3%）
+        // 永恒轮回加成（新游戏+模式，每次轮回永久属性+5%）
         const eternalBonus = this.permanent.eternalBonus || {};
         const eternalStrMult = 1 + (eternalBonus.strength || 0) / 100;
         const eternalAgiMult = 1 + (eternalBonus.agility || 0) / 100;
@@ -2148,7 +2220,7 @@ const game = {
     refreshMainUI() {
         const currentMap = this.getCurrentMap();
         const mapName = currentMap ? currentMap.name : '未知区域';
-        document.getElementById('floorInfo').innerText = `${mapName} · 第 ${this.currentLayer}/${currentMap ? currentMap.totalLayers : '?'} 层（全局第 ${this.currentFloor} 层）`;
+        document.getElementById('floorInfo').innerText = `${mapName} · 第 ${this.currentLayer}${currentMap && currentMap.totalLayers === -1 ? ' 层（无限轮回）' : '/' + (currentMap ? currentMap.totalLayers : '?') + ' 层'}（全局第 ${this.currentFloor} 层）`;
         // 隐藏遭遇确认区域
         const enc = document.getElementById('encounterArea');
         if (enc) enc.style.display = 'none';
@@ -2280,7 +2352,7 @@ const game = {
         const currentMap = this.getCurrentMap();
         const envEff = this.getEnvironmentEffect();
         if (currentMap && envEff) {
-            const isBossFloor = this.currentLayer >= (currentMap.totalLayers || 3);
+            const isBossFloor = currentMap && currentMap.totalLayers === -1 ? (this.currentLayer % 5 === 0) : (this.currentLayer >= (currentMap.totalLayers || 3));
             const bossHint = isBossFloor ? "<br><br><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent-danger)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg> <span style=\"color:var(--accent-danger)\">前方是首领层，做好准备！</span>" : "";
             document.getElementById('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${envEff.name}<br>${envEff.desc}${bossHint}`;
             return;
@@ -2297,79 +2369,155 @@ const game = {
     //  环境法则系统
     // ============================================================
     // 每张地图的环境法则实际效果（有游戏性的属性倾向）
-    environmentEffects: {
-        primordial_soup: {
-            name: "丰饶原液",
-            desc: "治疗效果+30%，每回合回复3%最大生命",
-            healMod: 1.3,
-            perTurnHealPct: 0.03
-        },
-        tidal_flat: {
-            name: "潮汐周期",
-            desc: "所有单位先手值+15%，先手优势",
-            speedMod: 1.15
-        },
-        coral_rubble: {
-            name: "珊瑚迷踪",
-            desc: "受到伤害-15%，命中率-10%",
-            damageTakenMod: 0.85,
-            hitMod: -10
-        },
-        temperate_forest_floor: {
-            name: "落叶庇护",
-            desc: "防御+20%，生命低于50%时每回合回复5%",
-            defMod: 1.2,
-            lowHpHealPct: 0.05,
-            lowHpThreshold: 0.5
-        },
-        rainforest_floor: {
-            name: "密林瘴气",
-            desc: "攻击+10%，每回合受到2点伤害",
-            atkMod: 1.1,
-            perTurnDamage: 2
-        },
-        east_african_savanna: {
-            name: "稀树烈日",
-            desc: "攻击+15%，治疗效果-30%",
-            atkMod: 1.15,
-            healMod: 0.7
-        }
-    },
+    // 环境法则效果：数据驱动（V8），从 maps.json 每图的 environmentLaw 字段翻译
+    // 覆盖字段：attackBonus/defenseBonus/speedBonus/speedPenalty/hitPenalty/dodgeBonus/hpBonus
+    //          damageTakenPenalty/damageTakenBonus/healPenalty/healBonus/enemyAttackBonus
+    //          playerHeal/enemyDamage/hpDrain/lowHpHealPct/lowHpThreshold/interval
+    // 注：随机单位/免疫标签/冻结/状态重置等复杂机制暂以确定性近似或未接通（见落地报告）
 
     // 获取当前地图的环境法则效果
     getEnvironmentEffect() {
         const map = this.getCurrentMap();
-        if (!map) return null;
-        return this.environmentEffects[map.id] || null;
+        if (!map || !map.environmentLaw) return null;
+        const law = map.environmentLaw;
+        const eff = { name: law.name || '环境法则', desc: law.effect || '' };
+        // 属性修正（双方，战斗开始时应用）
+        if (law.attackBonus) eff.atkMod = 1 + law.attackBonus / 100;
+        if (law.defenseBonus) eff.defMod = 1 + law.defenseBonus / 100;
+        if (law.defensePenalty) eff.defMod = 1 - law.defensePenalty / 100;
+        if (law.speedBonus) eff.speedMod = 1 + law.speedBonus / 100;
+        if (law.speedPenalty) eff.speedMod = 1 - law.speedPenalty / 100;
+        if (law.hitPenalty) eff.hitMod = -law.hitPenalty;
+        if (law.playerPerceptionPenalty) eff.hitMod = (eff.hitMod || 0) - law.playerPerceptionPenalty;
+        if (law.dodgeBonus) eff.dodgeMod = 1 + law.dodgeBonus / 100;
+        if (law.hpBonus) eff.maxHpMod = 1 + law.hpBonus / 100;
+        // 受到伤害修正（玩家受击时应用）
+        if (law.damageTakenPenalty) eff.damageTakenMod = 1 - law.damageTakenPenalty / 100;
+        if (law.damageTakenBonus) eff.damageTakenMod = 1 + law.damageTakenBonus / 100;
+        // 治疗修正（每回合回复类）
+        if (law.healPenalty) eff.healMod = 1 - law.healPenalty / 100;
+        if (law.healBonus) eff.healMod = 1 + law.healBonus / 100;
+        // 敌人专属
+        if (law.enemyAttackBonus) eff.enemyAtkMod = 1 + law.enemyAttackBonus / 100;
+        // 每回合效果
+        if (law.playerHeal) eff.perTurnHealPct = law.playerHeal / 100;
+        if (law.enemyDamage) eff.perTurnDamage = law.enemyDamage;
+        if (law.hpDrain) eff.perTurnDamagePct = law.hpDrain / 100;
+        if (law.lowHpHealPct && law.lowHpThreshold) {
+            eff.lowHpHealPct = law.lowHpHealPct / 100;
+            eff.lowHpThreshold = law.lowHpThreshold / 100;
+        }
+        if (law.interval) eff.interval = law.interval;
+        // 免疫标签：优先 immuneTagNum；数字 immuneTag 直接用；字符串映射（冰/火/龙/神/混沌/虚空系）
+        const immuneMap = { ice: 7, fire: 6, dragon: 27, divine: 25, holy: 25, chaos: 26, void: 25 };
+        let itag = law.immuneTagNum;
+        if (itag === undefined && typeof law.immuneTag === 'number') itag = law.immuneTag;
+        if (itag === undefined && typeof law.immuneTag === 'string' && immuneMap[law.immuneTag]) itag = immuneMap[law.immuneTag];
+        if (itag !== undefined) eff.immuneTag = itag;
+        // 随机单位效果（每回合随机1个单位）
+        if (law.randomEffects) eff.randomEffects = law.randomEffects;
+        return eff;
+    },
+
+    // 单位标签集合（玩家=装备天赋 tags 并集；敌人=自身 tags）
+    getUnitTags(unit) {
+        if (unit === this.player) {
+            const tags = new Set();
+            (this.player.equippedTalents || []).forEach(tid => {
+                const t = this.data.talents && this.data.talents.talents.find(x => x.id === tid);
+                if (t && t.tags) t.tags.forEach(tg => tags.add(tg));
+            });
+            return tags;
+        }
+        return new Set((unit && unit.tags) || []);
+    },
+
+    // 单位是否免疫环境法则（immuneTag 数字标签）
+    isImmuneToEnv(unit, immuneTag) {
+        if (!immuneTag) return false;
+        return this.getUnitTags(unit).has(immuneTag);
+    },
+
+    // 环境随机效果的属性键（玩家/敌人结构不同）
+    _envAttr(unit, type) {
+        const pm = { atk: 'attack', def: 'defense', speed: 'speed', dodge: 'dodge' };
+        if (unit === this.player) return pm[type];
+        const em = { atk: 'atk', def: 'def', speed: 'agi', dodge: null };
+        return em[type];
     },
 
     // 战斗开始时应用环境法则属性加成
     applyEnvironmentStats(unit) {
         const eff = this.getEnvironmentEffect();
         if (!eff) return;
-        if (eff.atkMod) unit.attack = Math.floor(unit.attack * eff.atkMod);
-        if (eff.defMod) unit.defense = Math.floor(unit.defense * eff.defMod);
-        if (eff.speedMod) unit.speed = Math.floor(unit.speed * eff.speedMod);
-        if (eff.hitMod) unit.hit = Math.max(10, Math.min(100, unit.hit + eff.hitMod));
+        // 免疫单位跳过负面修正（正面加成照常生效）
+        const imm = this.isImmuneToEnv(unit, eff.immuneTag);
+        const isNeg = (v) => v !== undefined && v < 1;
+        if (eff.atkMod && !(imm && isNeg(eff.atkMod))) unit.attack = Math.floor(unit.attack * eff.atkMod);
+        if (eff.defMod && !(imm && isNeg(eff.defMod))) unit.defense = Math.floor(unit.defense * eff.defMod);
+        if (eff.speedMod && !(imm && isNeg(eff.speedMod))) unit.speed = Math.floor(unit.speed * eff.speedMod);
+        if (eff.hitMod && !(imm && eff.hitMod < 0)) unit.hit = Math.max(10, Math.min(100, unit.hit + eff.hitMod));
+        if (eff.dodgeMod && !(imm && isNeg(eff.dodgeMod))) unit.dodge = Math.floor((unit.dodge || 0) * eff.dodgeMod);
+        if (eff.maxHpMod && !(imm && isNeg(eff.maxHpMod))) unit.maxHp = Math.floor(unit.maxHp * eff.maxHpMod);
     },
 
     // 每回合结算环境法则效果（回复/伤害）
     tickEnvironmentEffect(unit) {
+        const _envMap = this.getCurrentMap();
+        if (this.envImmunityMap && _envMap && this.envImmunityMap === _envMap.id) return;
         const eff = this.getEnvironmentEffect();
         if (!eff) return;
-        // 每回合回复
+        const imm = this.isImmuneToEnv(unit, eff.immuneTag);
+        // 间隔触发：以玩家回合为基准计数（如每3回合一次龙息）
+        if (eff.interval) {
+            if (unit === this.player) this._envTick = (this._envTick || 0) + 1;
+            if ((this._envTick || 0) % eff.interval !== 0) return;
+        }
+        // 随机单位效果（每回合1个随机单位获得1回合效果；以玩家回合为基准）
+        if (eff.randomEffects && eff.randomEffects.length && unit === this.player) {
+            // 还原上一回合的随机效果
+            if (this._envRandApplied && this._envRandApplied.target) {
+                const pr = this._envRandApplied;
+                if (pr.target === this.player) pr.target[pr.statKey] = pr.origVal;
+                else if (pr.target.stats && pr.target.stats[pr.statKey] !== undefined) pr.target.stats[pr.statKey] = pr.origVal;
+                this._envRandApplied = null;
+            }
+            // 随机选择效果与目标
+            const r = eff.randomEffects[Math.floor(Math.random() * eff.randomEffects.length)];
+            let target = this.player;
+            if (r.target === 'enemy') target = this.currentEnemy;
+            else if (r.target === 'random') target = Math.random() < 0.5 ? this.player : this.currentEnemy;
+            if (target && target.hp > 0) {
+                const attr = this._envAttr(target, r.type);
+                if (attr) {
+                    const orig = target === this.player ? target[attr] : target.stats[attr];
+                    if (orig !== undefined) {
+                        const val = r.value >= 0 ? Math.floor(orig * (1 + r.value / 100)) : Math.max(1, Math.floor(orig * (1 + r.value / 100)));
+                        if (target === this.player) target[attr] = val;
+                        else target.stats[attr] = val;
+                        this._envRandApplied = { target: target, statKey: attr, origVal: orig };
+                    }
+                }
+            }
+        }
+        // 每回合回复（受环境治疗修正影响；免疫不阻断正面回复）
         if (eff.perTurnHealPct) {
-            const heal = Math.floor(unit.maxHp * eff.perTurnHealPct);
+            const heal = Math.floor(unit.maxHp * eff.perTurnHealPct * (eff.healMod || 1));
             unit.hp = Math.min(unit.maxHp, unit.hp + heal);
         }
         // 低血量回复
         if (eff.lowHpHealPct && unit.hp / unit.maxHp < eff.lowHpThreshold) {
-            const heal = Math.floor(unit.maxHp * eff.lowHpHealPct);
+            const heal = Math.floor(unit.maxHp * eff.lowHpHealPct * (eff.healMod || 1));
             unit.hp = Math.min(unit.maxHp, unit.hp + heal);
         }
-        // 每回合伤害
-        if (eff.perTurnDamage) {
+        // 每回合伤害（固定值；免疫跳过）
+        if (eff.perTurnDamage && !imm) {
             unit.hp = Math.max(1, unit.hp - eff.perTurnDamage);
+        }
+        // 每回合伤害（百分比；免疫跳过）
+        if (eff.perTurnDamagePct && !imm) {
+            const dmg = Math.max(1, Math.floor(unit.maxHp * eff.perTurnDamagePct));
+            unit.hp = Math.max(1, unit.hp - dmg);
         }
     },
 
@@ -2391,6 +2539,14 @@ const game = {
         return playable[this.currentMapIndex % playable.length];
     },
 
+    // 获取当前地图的时代（时代跟随地图的 eraEn 字段，重排地图顺序时代标注自动正确）
+    getCurrentMapEra(mapIndex) {
+        const playable = this.getPlayableMaps();
+        if (playable.length === 0) return 'modern';
+        const m = playable[mapIndex % playable.length];
+        return (m && m.eraEn) ? m.eraEn : 'modern';
+    },
+
     // 切换到下一张地图
     advanceToNextMap() {
         const playable = this.getPlayableMaps();
@@ -2402,12 +2558,12 @@ const game = {
             return;
         }
         
-        const oldEra = this.storyData.getEraByMapIndex(this.currentMapIndex);
+        const oldEra = this.getCurrentMapEra(this.currentMapIndex);
         const oldChapter = this.storyData.getCurrentChapter(this.currentMapIndex);
         this.currentMapIndex = (this.currentMapIndex + 1) % playable.length;
         this.currentLayer = 1;
         const nextMap = playable[this.currentMapIndex];
-        const newEra = this.storyData.getEraByMapIndex(this.currentMapIndex);
+        const newEra = this.getCurrentMapEra(this.currentMapIndex);
         const newChapter = this.storyData.getCurrentChapter(this.currentMapIndex);
         this.appendBattleLog(`进入新地图：${nextMap.name}！`, 'log-info');
         
@@ -2487,12 +2643,17 @@ const game = {
         }
         
         console.log(`[进化抉择] 第${chapter}章选择了: ${optionId}`);
+        // 立即重算属性，避免加成延迟一局生效
+        this.calcDerivedStats();
+        this.refreshMainUI();
     },
     
-    // 应用进化抉择加成（简化版，先记录）
+    // 应用进化抉择加成（按 key 累加，避免同名 buff 互相覆盖）
     applyEvolutionChoiceBuff(buff) {
         if (!this.evolutionChoiceBuffs) this.evolutionChoiceBuffs = {};
-        Object.assign(this.evolutionChoiceBuffs, buff);
+        for (const k in buff) {
+            this.evolutionChoiceBuffs[k] = (this.evolutionChoiceBuffs[k] || 0) + buff[k];
+        }
         console.log(`[进化抉择加成] 已应用:`, buff);
     },
     
@@ -2628,7 +2789,9 @@ const game = {
             if (chapterData) {
                 const option = chapterData.options.find(o => o.id === choiceId);
                 if (option && option.buff) {
-                    Object.assign(this.evolutionChoiceBuffs, option.buff);
+                    for (const k in option.buff) {
+                        this.evolutionChoiceBuffs[k] = (this.evolutionChoiceBuffs[k] || 0) + option.buff[k];
+                    }
                 }
             }
         }
@@ -2666,7 +2829,7 @@ const game = {
     processFinalEnding(choiceId) {
         if (choiceId === 'become_void') {
             this.showEndingA();
-        } else if (choiceId === 'eternal_reincarnation') {
+        } else if (choiceId === 'eternal_cycle' || choiceId === 'eternal_reincarnation') {
             this.showEndingB();
         } else {
             // 默认进入无尽深层
@@ -2703,7 +2866,7 @@ const game = {
         this.showPop('游戏通关', html, null, true);
     },
     
-    // 结局B：永恒轮回（解锁新游戏+模式，每次轮回永久属性+3%）
+    // 结局B：永恒轮回（解锁新游戏+模式，每次轮回永久属性+5%）
     showEndingB() {
         // 解锁新游戏+模式
         this.permanent.newGamePlusUnlocked = true;
@@ -2719,7 +2882,7 @@ const game = {
         html += '<p>在永恒的轮回中，你终将超越一切。</p>';
         html += '</div>';
         html += '<div style="color:var(--accent-success);font-size:16px;font-weight:bold;margin-bottom:15px">新游戏+模式已解锁！</div>';
-        html += '<div style="color:var(--accent-warning);font-size:14px;margin-bottom:20px">每次轮回永久属性+3%（永恒轮回加成）</div>';
+        html += '<div style="color:var(--accent-warning);font-size:14px;margin-bottom:20px">每次轮回永久属性+5%（永恒轮回加成）</div>';
         html += '<div style="display:flex;gap:10px;justify-content:center">';
         html += '<button onclick="game.startNewGamePlus()" style="padding:10px 20px;background:var(--accent-warning)">开始新游戏+</button>';
         html += '<button onclick="game.closePop();game.showScreen(\'mainScreen\')" style="padding:10px 20px;background:var(--bg-secondary)">返回主界面</button>';
@@ -2736,8 +2899,8 @@ const game = {
         if (this.permanent.eternalReincarnation) {
             if (!this.permanent.eternalBonusCount) this.permanent.eternalBonusCount = 0;
             this.permanent.eternalBonusCount++;
-            // 每次轮回永久属性+3%
-            const bonusPercent = this.permanent.eternalBonusCount * 3;
+            // 每次轮回永久属性+5%
+            const bonusPercent = this.permanent.eternalBonusCount * 5;
             if (!this.permanent.eternalBonus) this.permanent.eternalBonus = {};
             this.permanent.eternalBonus.strength = bonusPercent;
             this.permanent.eternalBonus.agility = bonusPercent;
@@ -2748,7 +2911,7 @@ const game = {
         }
         // 开始新轮回
         this.startNewRun();
-        this.showGameAlert('新游戏+', `新游戏+模式已开始！\n\n${this.permanent.eternalReincarnation ? '永恒轮回加成：永久属性+' + (this.permanent.eternalBonusCount * 3) + '%\n' : ''}祝你在新的轮回中更加强大！`);
+        this.showGameAlert('新游戏+', `新游戏+模式已开始！\n\n${this.permanent.eternalReincarnation ? '永恒轮回加成：永久属性+' + (this.permanent.eternalBonusCount * 5) + '%\n' : ''}祝你在新的轮回中更加强大！`);
     },
     
     // 进入无尽深层模式
@@ -2824,7 +2987,7 @@ const game = {
             }
         }
         // 当前地图最后一层是Boss层，必定遭遇Boss
-        const isBossFloor = currentMap ? (this.currentLayer >= currentMap.totalLayers) : (this.currentFloor % 5 === 0);
+        const isBossFloor = currentMap ? (currentMap.totalLayers === -1 ? (this.currentLayer % 5 === 0) : (this.currentLayer >= currentMap.totalLayers)) : (this.currentFloor % 5 === 0);
 
         // 非Boss层重置Boss休整标志位
         if (!isBossFloor) this.bossRestShown = false;
@@ -4215,8 +4378,12 @@ const game = {
         const options = map.bossRestOptions;
         let optionsHtml = '';
         options.forEach((opt, idx) => {
-            optionsHtml += `<button onclick="game.chooseBossRest(${idx})" style="display:block;width:100%;margin:8px 0;text-align:left;padding:12px;font-size:14px">${opt.text}</button>`;
+            optionsHtml += `<button onclick="game.chooseBossRest(${idx})" style="display:block;width:100%;margin:8px 0;text-align:left;padding:12px;font-size:14px">${opt.text || opt.name || '休整'}</button>`;
         });
+        // 无限层地图：提供主动离开入口（进入下一张地图）
+        if (map.totalLayers === -1) {
+            optionsHtml += '<button onclick="game.leaveInfiniteMap()" style="display:block;width:100%;margin:8px 0;text-align:left;padding:12px;font-size:14px;color:var(--accent-warning)">离开混沌轮回（进入下一张地图）</button>';
+        }
         document.getElementById('bossRestOptions').innerHTML = optionsHtml;
         document.getElementById('bossRestArea').style.display = 'block';
         document.getElementById('encounterArea').style.display = 'none';
@@ -4228,12 +4395,38 @@ const game = {
         const map = this.getCurrentMap();
         if (!map || !map.bossRestOptions[idx]) return;
         const opt = map.bossRestOptions[idx];
-        const effect = opt.effect || 'none';
 
-        // 应用休整效果
-        if (effect === 'heal_50') {
+        // 应用休整效果（兼容旧字符串与结构化 {type,value} 格式）
+        const raw = opt.effect || 'none';
+        const effect = typeof raw === 'string' ? raw : ((raw && raw.type) || 'none');
+        const effValue = (typeof raw === 'object' && raw && raw.value !== undefined) ? raw.value : null;
+
+        if (effect === 'heal_50' || effect === 'heal_percent') {
+            const pct = effect === 'heal_50' ? 50 : (effValue || 50);
+            this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.floor(this.player.maxHp * pct / 100));
+            this.appendBattleLog(`休整恢复了${pct}%生命。`);
+        } else if (effect === 'full_restore') {
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.floor(this.player.maxHp * 0.5));
-            this.appendBattleLog('休整恢复了50%生命。');
+            if (this.player.maxEnergy) this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + Math.floor(this.player.maxEnergy * 0.5));
+            this.appendBattleLog('圣殿祝福：恢复50%生命和能量。');
+        } else if (effect === 'buff_attack') {
+            const pct = effValue || 20;
+            this.player.attack = Math.floor(this.player.attack * (1 + pct / 100));
+            this.appendBattleLog(`热身训练：攻击力临时+${pct}%（本场战斗生效）。`);
+        } else if (effect === 'buff_all') {
+            const pct = effValue || 10;
+            this.player.attack = Math.floor(this.player.attack * (1 + pct / 100));
+            this.player.defense = Math.floor(this.player.defense * (1 + pct / 100));
+            this.player.maxHp = Math.floor(this.player.maxHp * (1 + pct / 100));
+            this.player.speed = Math.floor(this.player.speed * (1 + pct / 100));
+            this.appendBattleLog(`吸收龙气：全属性+${pct}%（本场战斗生效）。`);
+        } else if (effect === 'reset_cooldown') {
+            this.player.skillCooldowns = {};
+            this.appendBattleLog('热身运动：技能冷却已重置。');
+        } else if (effect === 'immune_env') {
+            const m = this.getCurrentMap();
+            this.envImmunityMap = m ? m.id : null;
+            this.appendBattleLog('分泌溶解液：本场战斗免疫环境法则。');
         } else if (effect === 'reselect_skills') {
             // 显示当前可用技能列表
             const skills = this.getAvailableSkills();
@@ -4273,6 +4466,14 @@ const game = {
             '<div style="color:var(--text-faint);font-size:12px;line-height:1.5">' + edesc + '</div>';
         
         document.getElementById('encounterArea').style.display = 'block';
+    },
+
+    // 离开无限层地图，进入下一张地图
+    leaveInfiniteMap() {
+        document.getElementById('bossRestArea').style.display = 'none';
+        this.bossRestShown = false;
+        this.appendBattleLog('你从混沌轮回中脱离，踏入新的领域。', 'log-info');
+        this.advanceToNextMap();
     },
 
     // 玩家确认进入战斗
@@ -4366,8 +4567,10 @@ const game = {
         enemy.defending = false;
         enemy.enraged = false;
 
-        // 应用环境法则属性加成
-        const envEff = this.getEnvironmentEffect();
+        // 应用环境法则属性加成（bossRest 免疫选项可免疫本图环境）
+        const _envMap = this.getCurrentMap();
+        const _envImmune = this.envImmunityMap && _envMap && this.envImmunityMap === _envMap.id;
+        const envEff = _envImmune ? null : this.getEnvironmentEffect();
         if (envEff) {
             // 玩家
             this.applyEnvironmentStats(this.player);
@@ -4375,6 +4578,7 @@ const game = {
             if (envEff.atkMod) enemy.stats.atk = Math.floor(enemy.stats.atk * envEff.atkMod);
             if (envEff.defMod) enemy.stats.def = Math.floor(enemy.stats.def * envEff.defMod);
             if (envEff.speedMod) enemy.stats.agi = Math.floor(enemy.stats.agi * envEff.speedMod);
+            if (envEff.enemyAtkMod) enemy.stats.atk = Math.floor(enemy.stats.atk * envEff.enemyAtkMod);
         }
 
         // 审计修复：敌方先手值-X%（菌丝网络）
@@ -4658,6 +4862,13 @@ const game = {
         // 进化抉择：受到伤害加成（玩家受到攻击时，负面效果）
         if (!isPlayer && this.player.evoDamageTakenMod) {
             damage = Math.floor(damage * (1 + this.player.evoDamageTakenMod / 100));
+        }
+        // 环境法则：受到伤害修正（玩家受击时，如珊瑚迷踪-15%）
+        if (!isPlayer) {
+            const envDmgMod = this.getEnvironmentEffect();
+            if (envDmgMod && envDmgMod.damageTakenMod) {
+                damage = Math.floor(damage * envDmgMod.damageTakenMod);
+            }
         }
         // 敌人防御姿态：伤害减半
         if (isPlayer && defender.defending) {
@@ -5714,6 +5925,7 @@ const game = {
 
         // 获得70%碎片（敌人标签exclusive，含时代标签过滤；掉落日志由dropEnemyFragments输出）
         const dropInfo = this.dropEnemyFragments(e, 0.7);
+        this.rollCompleteTalentDrop(e, 0.7);
         this.savePermanent();
         // 无限成长天赋（本局永久，带上限）
         const runKillBuffs = this.player.runKillBuffs || (this.player.runKillBuffs = {crit:0, stat:0, devour:0});
@@ -5751,7 +5963,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         const goldMultiplier = e.type === 'boss' ? 5 : (e.type === 'elite' ? 2 : 1);
         const stageMultiplier = this.getGoldMultiplier();
         const goldReward = Math.floor((5 + this.currentFloor*2) * 0.5 * goldMultiplier * stageMultiplier);
-        const expReward = Math.floor((10 + this.currentFloor*3) * 0.5 * (1 + (this.getEquippedTalentBonus().expBonusPct || 0)));
+        const expReward = Math.floor((10 + this.currentFloor*3) * 0.5 * stageMultiplier * (1 + (this.getEquippedTalentBonus().expBonusPct || 0)));
         // Boss掉落Boss核心
         if (e.type === 'boss' && e.id) {
             this.permanent.bossCores[e.id] = (this.permanent.bossCores[e.id] || 0) + 1;
@@ -5817,7 +6029,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             const currentChapter = this.storyData.getCurrentChapter(this.currentMapIndex);
             const chapterTransition = this.storyData.getChapterTransition(this.currentMapIndex);
             // 如果当前地图是章节的最后一张地图（即下一张地图是新章节的开始），则视为章末Boss
-            const nextMapIndex = (this.currentMapIndex + 1) % (this.data.maps.maps.filter(m => m.enemies && m.enemies.length > 0).length);
+            const nextMapIndex = (this.currentMapIndex + 1) % this.getPlayableMaps().length;
             const nextChapter = this.storyData.getCurrentChapter(nextMapIndex);
             const isChapterEndBoss = (nextChapter > currentChapter);
             
@@ -6241,7 +6453,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             const currentChapter = this.storyData.getCurrentChapter(this.currentMapIndex);
             const chapterTransition = this.storyData.getChapterTransition(this.currentMapIndex);
             // 如果当前地图是章节的最后一张地图（即下一张地图是新章节的开始），则视为章末Boss
-            const playableMaps = this.data.maps.maps.filter(m => m.enemies && m.enemies.length > 0);
+            const playableMaps = this.getPlayableMaps();
             const nextMapIndex = (this.currentMapIndex + 1) % playableMaps.length;
             const nextChapter = this.storyData.getCurrentChapter(nextMapIndex);
             const isChapterEndBoss = (nextChapter > currentChapter);
@@ -6326,7 +6538,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             const goldMultiplier = e.type === 'boss' ? 5 : (e.type === 'elite' ? 2 : 1);
             const stageMultiplier = this.getGoldMultiplier();
             const goldReward = Math.floor((5 + this.currentFloor*2 + Math.random()*5) * goldMultiplier * stageMultiplier);
-            const expReward = Math.floor(10 + this.currentFloor*3);
+            const expReward = Math.floor((10 + this.currentFloor*3) * stageMultiplier);
             this.player.gold += goldReward;
             this.player.exp += expReward;
             // 基因精华现为局内货币，不再永久累积（死亡时30%转化为进化精粹）
@@ -6338,6 +6550,8 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
 
             // 掉落敌人标签的专属碎片（含精英/Boss渠道与时代标签过滤）
             const dropInfo = this.dropEnemyFragments(e, 1);
+            // 完整天赋掉落（精英2%/Boss5%）
+            this.rollCompleteTalentDrop(e, 1);
             // 共生体掉落
             const symDrop = this.rollSymbiontDrop(e.type);
             if (symDrop) {
@@ -6364,7 +6578,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             this.currentFloor++;
             // 判断是否打完当前地图，打完则切换到下一张
             const currentMap = this.getCurrentMap();
-            if (currentMap && this.currentLayer > currentMap.totalLayers) {
+            if (currentMap && currentMap.totalLayers !== -1 && this.currentLayer > currentMap.totalLayers) {
                 this.advanceToNextMap();
             }
             
