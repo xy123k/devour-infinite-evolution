@@ -2450,6 +2450,18 @@ const game = {
         return 0;
     },
 
+    // V10-4: 环境治疗惩罚应用到主动治疗（方案a）
+    // 当前图无治疗修正、修正≥1 或玩家带免疫系天赋时返回原值
+    applyHealPenalty(amount) {
+        if (!amount || amount <= 0) return amount;
+        const eff = this.getEnvironmentEffect();
+        if (!eff || !eff.healMod) return amount;
+        const resist = this.getEnvResist(this.player, eff.immuneTag);
+        const scale = eff.healMod < 1 ? 1 - (1 - eff.healMod) * (1 - resist) : eff.healMod;
+        if (scale >= 1) return amount;
+        return Math.max(0, Math.floor(amount * scale + 1e-9));
+    },
+
     // 环境随机效果的属性键（玩家/敌人结构不同）
     _envAttr(unit, type) {
         const pm = { atk: 'attack', def: 'defense', speed: 'speed', dodge: 'dodge' };
@@ -3386,10 +3398,13 @@ const game = {
         if (!eff || !eff.type) return '';
         const p = this.player;
         switch(eff.type) {
-            case 'heal':
-                const healAmt = Math.min(p.maxHp - p.hp, eff.value || 0);
-                p.hp = Math.min(p.maxHp, p.hp + (eff.value || 0));
+            case 'heal': {
+                const rawHeal = eff.value || 0;
+                const actualHeal = this.applyHealPenalty(rawHeal);
+                const healAmt = Math.min(p.maxHp - p.hp, actualHeal);
+                p.hp = Math.min(p.maxHp, p.hp + actualHeal);
                 return healAmt > 0 ? `恢复${healAmt}点生命` : '';
+            }
             case 'damage':
                 p.hp = Math.max(1, p.hp - (eff.value || 0));
                 return `受到${eff.value}点伤害`;
@@ -3458,14 +3473,18 @@ const game = {
             case 'gain_gene_medium':
                 this.permanent.universalFragments[2] = (this.permanent.universalFragments[2] || 0) + 1;
                 return '获得1个稀有碎片';
-            case 'heal_small':
-                const hs = Math.min(p.maxHp - p.hp, 15);
-                p.hp = Math.min(p.maxHp, p.hp + 15);
+            case 'heal_small': {
+                const actual15 = this.applyHealPenalty(15);
+                const hs = Math.min(p.maxHp - p.hp, actual15);
+                p.hp = Math.min(p.maxHp, p.hp + actual15);
                 return hs > 0 ? `恢复${hs}点生命` : '';
-            case 'heal_medium':
-                const hm = Math.min(p.maxHp - p.hp, 30);
-                p.hp = Math.min(p.maxHp, p.hp + 30);
+            }
+            case 'heal_medium': {
+                const actual30 = this.applyHealPenalty(30);
+                const hm = Math.min(p.maxHp - p.hp, actual30);
+                p.hp = Math.min(p.maxHp, p.hp + actual30);
                 return hm > 0 ? `恢复${hm}点生命` : '';
+            }
             case 'gain_exp_small':
                 p.exp += 10;
                 while (p.exp >= p.expToNext) {
@@ -4427,10 +4446,10 @@ const game = {
 
         if (effect === 'heal_50' || effect === 'heal_percent') {
             const pct = effect === 'heal_50' ? 50 : (effValue || 50);
-            this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.floor(this.player.maxHp * pct / 100));
+            this.player.hp = Math.min(this.player.maxHp, this.player.hp + this.applyHealPenalty(Math.floor(this.player.maxHp * pct / 100)));
             this.appendBattleLog(`休整恢复了${pct}%生命。`);
         } else if (effect === 'full_restore') {
-            this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.floor(this.player.maxHp * 0.5));
+            this.player.hp = Math.min(this.player.maxHp, this.player.hp + this.applyHealPenalty(Math.floor(this.player.maxHp * 0.5)));
             if (this.player.maxEnergy) this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + Math.floor(this.player.maxEnergy * 0.5));
             this.appendBattleLog('圣殿祝福：恢复50%生命和能量。');
         } else if (effect === 'buff_attack') {
@@ -5758,6 +5777,8 @@ const game = {
                     let heal = Math.floor(maxHp * (effect.percent||0.2));
                     // 审计修复：回复效果+X%（生命之源/巨兽之血/无限增殖）
                     if (isPlayerCaster && (this.talentBonus || {}).healEffectPct > 0) heal = Math.floor(heal * (1 + this.talentBonus.healEffectPct));
+                    // V10-4: 环境治疗惩罚（先加成后惩罚，仅玩家施法）
+                    if (isPlayerCaster) heal = this.applyHealPenalty(heal);
                     if (isPlayerCaster) caster.hp = Math.min(caster.maxHp, caster.hp+heal);
                     else caster.stats.hp = Math.min(caster.stats.maxHp, caster.stats.hp+heal);
                     this.appendBattleLog(`${cName}使用【${skill.name}】，恢复 ${heal} 点生命！`,'log-heal');
@@ -6510,9 +6531,10 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         const killBonus = this.getEquippedTalentBonus();
         if (killBonus.healOnKillPct > 0) {
             const killHeal = Math.floor(this.player.maxHp * killBonus.healOnKillPct / 100 * (1 + (killBonus.healEffectPct || 0)));
-            if (killHeal > 0) {
-                this.player.hp = Math.min(this.player.maxHp, this.player.hp + killHeal);
-                this.appendBattleLog('击杀回血 ' + killHeal + ' 点生命！', 'log-heal');
+            const actualKillHeal = this.applyHealPenalty(killHeal);
+            if (actualKillHeal > 0) {
+                this.player.hp = Math.min(this.player.maxHp, this.player.hp + actualKillHeal);
+                this.appendBattleLog('击杀回血 ' + actualKillHeal + ' 点生命！', 'log-heal');
             }
         }
         // 审计修复：击杀叠加攻击/暴击（百兽之祖/终焉之牙）
@@ -6727,8 +6749,9 @@ ${transition.buff.desc}`);
         // 升级回复50%最大生命（不回满）
         this.calcDerivedStats();
         const levelHeal = Math.floor(this.player.maxHp * 0.5);
-        this.player.hp = Math.min(this.player.maxHp, this.player.hp + levelHeal);
-        this.appendBattleLog(`升级恢复 ${levelHeal} 点生命！`, 'log-heal');
+        const actualLevelHeal = this.applyHealPenalty(levelHeal);
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + actualLevelHeal);
+        this.appendBattleLog(`升级恢复 ${actualLevelHeal} 点生命！`, 'log-heal');
     },
 
     // 显示击杀掉落弹窗
