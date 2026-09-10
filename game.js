@@ -2491,7 +2491,8 @@ const game = {
             if (this._envRandApplied && this._envRandApplied.target) {
                 const pr = this._envRandApplied;
                 // V10审计修复：目标已死亡则跳过还原，避免引用失效（P1-1）
-                if (pr.target && pr.target.hp > 0) {
+                // V10-3：敌人血量在 stats 内，统一兜底
+                if (pr.target && (pr.target.stats ? pr.target.stats.hp : pr.target.hp) > 0) {
                     if (pr.target === this.player) pr.target[pr.statKey] = pr.origVal;
                     else if (pr.target.stats && pr.target.stats[pr.statKey] !== undefined) pr.target.stats[pr.statKey] = pr.origVal;
                 }
@@ -2502,7 +2503,7 @@ const game = {
             let target = this.player;
             if (r.target === 'enemy') target = this.currentEnemy;
             else if (r.target === 'random') target = Math.random() < 0.5 ? this.player : this.currentEnemy;
-            if (target && target.hp > 0) {
+            if (target && (target.stats ? target.stats.hp : target.hp) > 0) {
                 const attr = this._envAttr(target, r.type);
                 if (attr) {
                     const orig = target === this.player ? target[attr] : target.stats[attr];
@@ -2517,26 +2518,30 @@ const game = {
                 }
             }
         }
+        // V10-3 修复：敌人血量在 stats 内，统一字段口径
+        const uMaxHp = () => unit.stats ? unit.stats.maxHp : unit.maxHp;
+        const uHp = () => unit.stats ? unit.stats.hp : unit.hp;
+        const setUhp = (v) => { if (unit.stats) unit.stats.hp = v; else unit.hp = v; };
         // 每回合回复（受环境治疗修正影响；V10-2 治疗惩罚也按免疫程度缩放）
         const healMod = eff.healMod || 1;
         const healScale = healMod < 1 ? 1 - (1 - healMod) * (1 - resist) : healMod;
         if (eff.perTurnHealPct) {
-            const heal = Math.floor(unit.maxHp * eff.perTurnHealPct * healScale);
-            unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+            const heal = Math.floor(uMaxHp() * eff.perTurnHealPct * healScale);
+            setUhp(Math.min(uMaxHp(), uHp() + heal));
         }
         // 低血量回复
-        if (eff.lowHpHealPct && unit.hp / unit.maxHp < eff.lowHpThreshold) {
-            const heal = Math.floor(unit.maxHp * eff.lowHpHealPct * healScale);
-            unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+        if (eff.lowHpHealPct && uHp() / uMaxHp() < eff.lowHpThreshold) {
+            const heal = Math.floor(uMaxHp() * eff.lowHpHealPct * healScale);
+            setUhp(Math.min(uMaxHp(), uHp() + heal));
         }
         // 每回合伤害（固定值；V10-2 按免疫程度缩放，完全免疫跳过）
         if (eff.perTurnDamage && resist < 1) {
-            unit.hp = Math.max(1, unit.hp - Math.max(1, Math.floor(eff.perTurnDamage * (1 - resist))));
+            setUhp(Math.max(1, uHp() - Math.max(1, Math.floor(eff.perTurnDamage * (1 - resist)))));
         }
         // 每回合伤害（百分比；V10-2 按免疫程度缩放，完全免疫跳过）
         if (eff.perTurnDamagePct && resist < 1) {
-            const dmg = Math.max(1, Math.floor(unit.maxHp * eff.perTurnDamagePct * (1 - resist)));
-            unit.hp = Math.max(1, unit.hp - dmg);
+            const dmg = Math.max(1, Math.floor(uMaxHp() * eff.perTurnDamagePct * (1 - resist)));
+            setUhp(Math.max(1, uHp() - dmg));
         }
     },
 
