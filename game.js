@@ -504,7 +504,6 @@ const game = {
             'tidal_flat': '潮间带',
             'coral_rubble': '珊瑚碎石',
             'temperate_forest_floor': '温带森林地表',
-            'rainforest_floor': '雨林地表',
             'east_african_savanna': '东非草原',
             'intertidal_rocks': '潮间带岩石',
             'fern_swamp': '蕨类沼泽'
@@ -2438,6 +2437,19 @@ const game = {
         return this.getUnitTags(unit).has(immuneTag);
     },
 
+    // V10-2 环境免疫程度：玩家带对应系天赋=完全免疫(1)；敌人按类型 boss 1 / elite 0.5 / normal 0
+    getEnvResist(unit, immuneTag) {
+        if (!immuneTag) return 0;
+        const has = unit === this.player
+            ? this.getUnitTags(unit).has(immuneTag)
+            : !!(unit && unit.tags && unit.tags.includes(immuneTag));
+        if (!has) return 0;
+        if (unit === this.player) return 1;
+        if (unit.type === 'boss') return 1;
+        if (unit.type === 'elite') return 0.5;
+        return 0;
+    },
+
     // 环境随机效果的属性键（玩家/敌人结构不同）
     _envAttr(unit, type) {
         const pm = { atk: 'attack', def: 'defense', speed: 'speed', dodge: 'dodge' };
@@ -2450,15 +2462,15 @@ const game = {
     applyEnvironmentStats(unit) {
         const eff = this.getEnvironmentEffect();
         if (!eff) return;
-        // 免疫单位跳过负面修正（正面加成照常生效）
-        const imm = this.isImmuneToEnv(unit, eff.immuneTag);
-        const isNeg = (v) => v !== undefined && v < 1;
-        if (eff.atkMod && !(imm && isNeg(eff.atkMod))) unit.attack = Math.floor(unit.attack * eff.atkMod);
-        if (eff.defMod && !(imm && isNeg(eff.defMod))) unit.defense = Math.floor(unit.defense * eff.defMod);
-        if (eff.speedMod && !(imm && isNeg(eff.speedMod))) unit.speed = Math.floor(unit.speed * eff.speedMod);
-        if (eff.hitMod && !(imm && eff.hitMod < 0)) unit.hit = Math.max(10, Math.min(100, unit.hit + eff.hitMod));
-        if (eff.dodgeMod && !(imm && isNeg(eff.dodgeMod))) unit.dodge = Math.floor((unit.dodge || 0) * eff.dodgeMod);
-        if (eff.maxHpMod && !(imm && isNeg(eff.maxHpMod))) unit.maxHp = Math.floor(unit.maxHp * eff.maxHpMod);
+        // V10-2 免疫程度分级：负面按(1-resist)缩放，正面照常
+        const resist = this.getEnvResist(unit, eff.immuneTag);
+        const negScale = (mod) => mod !== undefined && mod < 1 ? 1 - (1 - mod) * (1 - resist) : mod;
+        if (eff.atkMod) unit.attack = Math.floor(unit.attack * negScale(eff.atkMod) + 1e-9);
+        if (eff.defMod) unit.defense = Math.floor(unit.defense * negScale(eff.defMod) + 1e-9);
+        if (eff.speedMod) unit.speed = Math.floor(unit.speed * negScale(eff.speedMod) + 1e-9);
+        if (eff.hitMod && eff.hitMod < 0) unit.hit = Math.max(10, Math.min(100, unit.hit + eff.hitMod * (1 - resist)));
+        if (eff.dodgeMod) unit.dodge = Math.floor((unit.dodge || 0) * negScale(eff.dodgeMod) + 1e-9);
+        if (eff.maxHpMod) unit.maxHp = Math.floor(unit.maxHp * negScale(eff.maxHpMod) + 1e-9);
     },
 
     // 每回合结算环境法则效果（回复/伤害）
@@ -2467,7 +2479,7 @@ const game = {
         if (this.envImmunityMap && _envMap && this.envImmunityMap === _envMap.id) return;
         const eff = this.getEnvironmentEffect();
         if (!eff) return;
-        const imm = this.isImmuneToEnv(unit, eff.immuneTag);
+        const resist = this.getEnvResist(unit, eff.immuneTag);
         // 间隔触发：以玩家回合为基准计数（如每3回合一次龙息）
         if (eff.interval) {
             if (unit === this.player) this._envTick = (this._envTick || 0) + 1;
@@ -2478,8 +2490,11 @@ const game = {
             // 还原上一回合的随机效果
             if (this._envRandApplied && this._envRandApplied.target) {
                 const pr = this._envRandApplied;
-                if (pr.target === this.player) pr.target[pr.statKey] = pr.origVal;
-                else if (pr.target.stats && pr.target.stats[pr.statKey] !== undefined) pr.target.stats[pr.statKey] = pr.origVal;
+                // V10审计修复：目标已死亡则跳过还原，避免引用失效（P1-1）
+                if (pr.target && pr.target.hp > 0) {
+                    if (pr.target === this.player) pr.target[pr.statKey] = pr.origVal;
+                    else if (pr.target.stats && pr.target.stats[pr.statKey] !== undefined) pr.target.stats[pr.statKey] = pr.origVal;
+                }
                 this._envRandApplied = null;
             }
             // 随机选择效果与目标
@@ -2492,7 +2507,9 @@ const game = {
                 if (attr) {
                     const orig = target === this.player ? target[attr] : target.stats[attr];
                     if (orig !== undefined) {
-                        const val = r.value >= 0 ? Math.floor(orig * (1 + r.value / 100)) : Math.max(1, Math.floor(orig * (1 + r.value / 100)));
+                        // V10浮点修复：100*1.15=114.999.. 加epsilon避免floor尾差-1
+                        const raw = orig * (1 + r.value / 100) + 1e-9;
+                        const val = r.value >= 0 ? Math.floor(raw) : Math.max(1, Math.floor(raw));
                         if (target === this.player) target[attr] = val;
                         else target.stats[attr] = val;
                         this._envRandApplied = { target: target, statKey: attr, origVal: orig };
@@ -2500,23 +2517,25 @@ const game = {
                 }
             }
         }
-        // 每回合回复（受环境治疗修正影响；免疫不阻断正面回复）
+        // 每回合回复（受环境治疗修正影响；V10-2 治疗惩罚也按免疫程度缩放）
+        const healMod = eff.healMod || 1;
+        const healScale = healMod < 1 ? 1 - (1 - healMod) * (1 - resist) : healMod;
         if (eff.perTurnHealPct) {
-            const heal = Math.floor(unit.maxHp * eff.perTurnHealPct * (eff.healMod || 1));
+            const heal = Math.floor(unit.maxHp * eff.perTurnHealPct * healScale);
             unit.hp = Math.min(unit.maxHp, unit.hp + heal);
         }
         // 低血量回复
         if (eff.lowHpHealPct && unit.hp / unit.maxHp < eff.lowHpThreshold) {
-            const heal = Math.floor(unit.maxHp * eff.lowHpHealPct * (eff.healMod || 1));
+            const heal = Math.floor(unit.maxHp * eff.lowHpHealPct * healScale);
             unit.hp = Math.min(unit.maxHp, unit.hp + heal);
         }
-        // 每回合伤害（固定值；免疫跳过）
-        if (eff.perTurnDamage && !imm) {
-            unit.hp = Math.max(1, unit.hp - eff.perTurnDamage);
+        // 每回合伤害（固定值；V10-2 按免疫程度缩放，完全免疫跳过）
+        if (eff.perTurnDamage && resist < 1) {
+            unit.hp = Math.max(1, unit.hp - Math.max(1, Math.floor(eff.perTurnDamage * (1 - resist))));
         }
-        // 每回合伤害（百分比；免疫跳过）
-        if (eff.perTurnDamagePct && !imm) {
-            const dmg = Math.max(1, Math.floor(unit.maxHp * eff.perTurnDamagePct));
+        // 每回合伤害（百分比；V10-2 按免疫程度缩放，完全免疫跳过）
+        if (eff.perTurnDamagePct && resist < 1) {
+            const dmg = Math.max(1, Math.floor(unit.maxHp * eff.perTurnDamagePct * (1 - resist)));
             unit.hp = Math.max(1, unit.hp - dmg);
         }
     },
@@ -2524,7 +2543,7 @@ const game = {
     // ============================================================
     //  地图系统
     // ============================================================
-    // 获取有敌人数据的地图列表（当前只有6张地图有敌人，后续扩展）
+    // 获取有敌人数据的地图列表（V10：54张地图全部有敌人）
     getPlayableMaps() {
         const maps = this.data.maps ? this.data.maps.maps : [];
         const enemies = this.data.enemies ? this.data.enemies.enemies : [];
@@ -4552,6 +4571,9 @@ const game = {
     //  战斗系统（完整公式）
     // ============================================================
     startBattle(enemy) {
+        // V10审计修复：环境状态战斗级重置，防止跨战斗残留覆盖属性/周期错位（P1-1）
+        this._envTick = 0;
+        this._envRandApplied = null;
         this.inBattle = true;
         this.battleEnding = false;
         this.currentEnemy = enemy;
@@ -4574,11 +4596,13 @@ const game = {
         if (envEff) {
             // 玩家
             this.applyEnvironmentStats(this.player);
-            // 敌人（属性在stats中）
-            if (envEff.atkMod) enemy.stats.atk = Math.floor(enemy.stats.atk * envEff.atkMod);
-            if (envEff.defMod) enemy.stats.def = Math.floor(enemy.stats.def * envEff.defMod);
-            if (envEff.speedMod) enemy.stats.agi = Math.floor(enemy.stats.agi * envEff.speedMod);
-            if (envEff.enemyAtkMod) enemy.stats.atk = Math.floor(enemy.stats.atk * envEff.enemyAtkMod);
+            // 敌人（属性在stats中；V10-2 负面按免疫程度分级，enemyAtkMod为敌人增益不缩放）
+            const eResist = this.getEnvResist(enemy, envEff.immuneTag);
+            const eScale = (mod) => mod !== undefined && mod < 1 ? 1 - (1 - mod) * (1 - eResist) : mod;
+            if (envEff.atkMod) enemy.stats.atk = Math.floor(enemy.stats.atk * eScale(envEff.atkMod) + 1e-9);
+            if (envEff.defMod) enemy.stats.def = Math.floor(enemy.stats.def * eScale(envEff.defMod) + 1e-9);
+            if (envEff.speedMod) enemy.stats.agi = Math.floor(enemy.stats.agi * eScale(envEff.speedMod) + 1e-9);
+            if (envEff.enemyAtkMod) enemy.stats.atk = Math.floor(enemy.stats.atk * envEff.enemyAtkMod + 1e-9);
         }
 
         // 审计修复：敌方先手值-X%（菌丝网络）
@@ -6439,6 +6463,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
     victory() {
         if (this.battleEnding) return;
         this.battleEnding = true;
+        this.envImmunityMap = null; // V10审计修复：bossRest免疫为"本场战斗"，战后清除（P2-3）
         const e = this.currentEnemy;
         // 先更新敌人血条为0，让玩家看到击杀效果
         this.refreshBattleUI();
@@ -6794,6 +6819,7 @@ ${transition.buff.desc}`);
     defeat() {
         if (this.battleEnding) return;
         this.battleEnding = true;
+        this.envImmunityMap = null; // V10审计修复：战败同样清除bossRest免疫（P2-3）
         this.appendBattleLog("你被击败了……", 'log-damage');
         this.clearStatuses(this.player);
         this.clearStatuses(this.currentEnemy);

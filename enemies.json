@@ -17,7 +17,6 @@
         15
       ],
       "lootableTalentId": "tal_pseudopod",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -54,7 +53,6 @@
         17
       ],
       "lootableTalentId": "tal_flagellum",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -91,7 +89,6 @@
         18
       ],
       "lootableTalentId": "tal_cilia",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -128,7 +125,6 @@
         17
       ],
       "lootableTalentId": "tal_inject",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -165,7 +161,6 @@
         11
       ],
       "lootableTalentId": "tal_phagocytosis",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -208,7 +203,6 @@
         28
       ],
       "lootableTalentId": "tal_viral_swarm",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -251,7 +245,6 @@
         10
       ],
       "lootableTalentId": "tal_cnidocyte",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -295,7 +288,6 @@
         24
       ],
       "lootableTalentId": "tal_photosynthesis",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "8-12",
         "fragments_2": "100%_3-5",
@@ -346,7 +338,6 @@
         17
       ],
       "lootableTalentId": "tal_bristle",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -383,7 +374,6 @@
         15
       ],
       "lootableTalentId": "tal_carapace",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -420,7 +410,6 @@
         9
       ],
       "lootableTalentId": "tal_spiral_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -458,7 +447,6 @@
         15
       ],
       "lootableTalentId": "tal_big_claw",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -496,7 +484,6 @@
         10
       ],
       "lootableTalentId": "tal_toxic_mucus",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -539,7 +526,6 @@
         18
       ],
       "lootableTalentId": "tal_mud_jump",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -583,7 +569,6 @@
         17
       ],
       "lootableTalentId": "tal_venom_tentacle",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -627,7 +612,6 @@
         24
       ],
       "lootableTalentId": "tal_slime",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "8-12",
         "fragments_2": "100%_3-5",
@@ -678,7 +662,6 @@
         28
       ],
       "lootableTalentId": "tal_calcium_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -715,7 +698,6 @@
         4
       ],
       "lootableTalentId": "tal_hammer_punch",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -752,7 +734,6 @@
         8
       ],
       "lootableTalentId": "tal_spine_armor",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -790,7 +771,6 @@
         18
       ],
       "lootableTalentId": "tal_agile_swim",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -828,7 +808,6 @@
         14
       ],
       "lootableTalentId": "tal_venom_spine",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -871,7 +850,6 @@
         17
       ],
       "lootableTalentId": "tal_camouflage",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -916,7 +894,6 @@
         17
       ],
       "lootableTalentId": "tal_serpent_bite",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -960,7 +937,6 @@
         27
       ],
       "lootableTalentId": "tal_predator_web",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "8-12",
         "fragments_2": "100%_3-5",
@@ -1011,7 +987,6 @@
         10
       ],
       "lootableTalentId": "tal_snail_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1049,7 +1024,6 @@
         15
       ],
       "lootableTalentId": "tal_venom_fang",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1087,7 +1061,6 @@
         12
       ],
       "lootableTalentId": "tal_roll_defense",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1124,7 +1097,6 @@
         15
       ],
       "lootableTalentId": "tal_spring_tail",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1162,7 +1134,6 @@
         22
       ],
       "lootableTalentId": "tal_sonar_sense",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1206,7 +1177,6 @@
         17
       ],
       "lootableTalentId": "tal_phantom_mimic",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1250,7 +1220,6 @@
         10
       ],
       "lootableTalentId": "tal_toxic_skin",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1294,7 +1263,6 @@
         28
       ],
       "lootableTalentId": "tal_venom_tentacle",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "8-12",
         "fragments_2": "100%_3-5",
@@ -1345,7 +1313,6 @@
         8
       ],
       "lootableTalentId": "tal_tusk_charge",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1383,7 +1350,6 @@
         28
       ],
       "lootableTalentId": "tal_group_hunt",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1421,7 +1387,6 @@
         21
       ],
       "lootableTalentId": "tal_scavenger_sense",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1459,7 +1424,6 @@
         28
       ],
       "lootableTalentId": "tal_herd_kick",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1497,7 +1461,6 @@
         28
       ],
       "lootableTalentId": "tal_crushing_jaw",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1541,7 +1504,6 @@
         15
       ],
       "lootableTalentId": "tal_sprint_claw",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1585,7 +1547,6 @@
         28
       ],
       "lootableTalentId": "tal_coordinated_hunt",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1629,7 +1590,6 @@
         27
       ],
       "lootableTalentId": "tal_blade_tail",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "8-12",
         "fragments_2": "100%_3-5",
@@ -1680,7 +1640,6 @@
         18
       ],
       "lootableTalentId": "tal_bite",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1717,7 +1676,6 @@
         9
       ],
       "lootableTalentId": "tal_claw",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1754,7 +1712,6 @@
         8
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -1791,7 +1748,6 @@
         5
       ],
       "lootableTalentId": "tal_poison_gland",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1834,7 +1790,6 @@
         28
       ],
       "lootableTalentId": "tal_thick_skin",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1877,7 +1832,6 @@
         9
       ],
       "lootableTalentId": "tal_regeneration",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -1921,7 +1875,6 @@
         1
       ],
       "lootableTalentId": "tal_venom_fang",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "8-12",
         "fragments_2": "100%_3-5",
@@ -1972,7 +1925,6 @@
         8
       ],
       "lootableTalentId": "tal_thick_skin",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -2009,7 +1961,6 @@
         21
       ],
       "lootableTalentId": "tal_flight",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -2046,7 +1997,6 @@
         8
       ],
       "lootableTalentId": "tal_regeneration",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -2083,7 +2033,6 @@
         1
       ],
       "lootableTalentId": "tal_flight",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -2127,7 +2076,6 @@
         15
       ],
       "lootableTalentId": "tal_lightning_reflex",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -2172,7 +2120,6 @@
         9
       ],
       "lootableTalentId": "tal_mimicry",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "60%_1-2",
@@ -2218,7 +2165,6 @@
         9
       ],
       "lootableTalentId": "tal_poison_gland",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "8-12",
         "fragments_2": "100%_3-5",
@@ -2269,7 +2215,6 @@
         10
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -2306,7 +2251,6 @@
         3
       ],
       "lootableTalentId": "tal_bite",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -2343,7 +2287,6 @@
         27
       ],
       "lootableTalentId": "tal_ice_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "10%_1"
@@ -2395,7 +2338,6 @@
         27
       ],
       "lootableTalentId": "tal_frost_armor",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -2447,7 +2389,6 @@
         27
       ],
       "lootableTalentId": "tal_glacial_thick_skin",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -2499,7 +2440,6 @@
         27
       ],
       "lootableTalentId": "tal_tundra_hunter",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "10%_1"
@@ -2551,7 +2491,6 @@
         27
       ],
       "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "40%_1",
@@ -2604,7 +2543,6 @@
         27
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "50%_1",
@@ -2657,7 +2595,6 @@
         27
       ],
       "lootableTalentId": "tal_myriad_beast_divinity",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -2710,7 +2647,6 @@
         8
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_2",
@@ -2764,7 +2700,6 @@
         27
       ],
       "lootableTalentId": "tal_ice_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -2816,7 +2751,6 @@
         27
       ],
       "lootableTalentId": "tal_glacial_thick_skin",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -2868,7 +2802,6 @@
         27
       ],
       "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "10%_1"
@@ -2920,7 +2853,6 @@
         27
       ],
       "lootableTalentId": "tal_ice_shell",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -2972,7 +2904,6 @@
         27
       ],
       "lootableTalentId": "tal_tundra_hunter",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "45%_1",
@@ -3025,7 +2956,6 @@
         27
       ],
       "lootableTalentId": "tal_frost_armor",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "55%_1",
@@ -3078,7 +3008,6 @@
         27
       ],
       "lootableTalentId": "tal_myriad_beast_divinity",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -3131,7 +3060,6 @@
         27
       ],
       "lootableTalentId": "tal_ice_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_2",
@@ -3185,7 +3113,6 @@
         27
       ],
       "lootableTalentId": "tal_frost_armor",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "10%_1"
@@ -3237,7 +3164,6 @@
         27
       ],
       "lootableTalentId": "tal_glacial_thick_skin",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -3289,7 +3215,6 @@
         27
       ],
       "lootableTalentId": "tal_tundra_hunter",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "8%_1"
@@ -3341,7 +3266,6 @@
         27
       ],
       "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -3393,7 +3317,6 @@
         27
       ],
       "lootableTalentId": "tal_tusk_charge",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "50%_1",
@@ -3446,7 +3369,6 @@
         27
       ],
       "lootableTalentId": "tal_ice_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -3499,7 +3421,6 @@
         27
       ],
       "lootableTalentId": "tal_beast_intimidation",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "55%_1",
@@ -3552,7 +3473,6 @@
         8
       ],
       "lootableTalentId": "tal_frost_armor",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -3608,7 +3528,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -3662,7 +3581,6 @@
         27
       ],
       "lootableTalentId": "tal_burn_penetration",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -3716,7 +3634,6 @@
         27
       ],
       "lootableTalentId": "tal_thermal_absorb",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -3770,7 +3687,6 @@
         27
       ],
       "lootableTalentId": "tal_nirvana_flame",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -3824,7 +3740,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath_2",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "50%_1",
@@ -3879,7 +3794,6 @@
         27
       ],
       "lootableTalentId": "tal_heat_storage",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -3934,7 +3848,6 @@
         27
       ],
       "lootableTalentId": "tal_calcium_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "55%_1",
@@ -3987,7 +3900,6 @@
         6
       ],
       "lootableTalentId": "tal_king_roar",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -4043,7 +3955,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath_2",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -4097,7 +4008,6 @@
         27
       ],
       "lootableTalentId": "tal_burn_penetration",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -4151,7 +4061,6 @@
         27
       ],
       "lootableTalentId": "tal_thermal_absorb",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -4205,7 +4114,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -4259,7 +4167,6 @@
         27
       ],
       "lootableTalentId": "tal_heat_storage",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "50%_1",
@@ -4314,7 +4221,6 @@
         27
       ],
       "lootableTalentId": "tal_nirvana_flame",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -4369,7 +4275,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "65%_1",
@@ -4422,7 +4327,6 @@
         25
       ],
       "lootableTalentId": "tal_burn_penetration",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -4478,7 +4382,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath_2",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -4532,7 +4435,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -4586,7 +4488,6 @@
         27
       ],
       "lootableTalentId": "tal_thermal_absorb",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -4640,7 +4541,6 @@
         27
       ],
       "lootableTalentId": "tal_nirvana_flame",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -4694,7 +4594,6 @@
         27
       ],
       "lootableTalentId": "tal_burn_penetration",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -4749,7 +4648,6 @@
         27
       ],
       "lootableTalentId": "tal_heat_storage",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "65%_1",
@@ -4804,7 +4702,6 @@
         27
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "70%_1",
@@ -4857,7 +4754,6 @@
         23
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -4913,7 +4809,6 @@
         15
       ],
       "lootableTalentId": "tal_scale_armor",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -4967,7 +4862,6 @@
         15
       ],
       "lootableTalentId": "tal_heat_resistant_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -5021,7 +4915,6 @@
         15
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -5075,7 +4968,6 @@
         15
       ],
       "lootableTalentId": "tal_desert_tenacity",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -5129,7 +5021,6 @@
         15
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "55%_1",
@@ -5184,7 +5075,6 @@
         15
       ],
       "lootableTalentId": "tal_snail_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -5239,7 +5129,6 @@
         15
       ],
       "lootableTalentId": "tal_calcium_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "65%_1",
@@ -5292,7 +5181,6 @@
         3
       ],
       "lootableTalentId": "tal_coordinated_hunt",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -5348,7 +5236,6 @@
         15
       ],
       "lootableTalentId": "tal_heat_resistant_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "10%_1"
@@ -5402,7 +5289,6 @@
         15
       ],
       "lootableTalentId": "tal_spiral_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -5456,7 +5342,6 @@
         15
       ],
       "lootableTalentId": "tal_hard_bone",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -5510,7 +5395,6 @@
         15
       ],
       "lootableTalentId": "tal_ambush",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -5564,7 +5448,6 @@
         15
       ],
       "lootableTalentId": "tal_carapace",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -5619,7 +5502,6 @@
         15
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "65%_1",
@@ -5674,7 +5556,6 @@
         15
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "70%_1",
@@ -5727,7 +5608,6 @@
         5
       ],
       "lootableTalentId": "tal_poison_gland",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -5783,7 +5663,6 @@
         15
       ],
       "lootableTalentId": "tal_heat_resistant_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "10%_1"
@@ -5837,7 +5716,6 @@
         15
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -5891,7 +5769,6 @@
         15
       ],
       "lootableTalentId": "tal_spiral_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1"
@@ -5945,7 +5822,6 @@
         15
       ],
       "lootableTalentId": "tal_carapace",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "12%_1"
@@ -5999,7 +5875,6 @@
         15
       ],
       "lootableTalentId": "tal_snail_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "60%_1",
@@ -6054,7 +5929,6 @@
         15
       ],
       "lootableTalentId": "tal_diamond_shell",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "65%_1",
@@ -6109,7 +5983,6 @@
         15
       ],
       "lootableTalentId": "tal_desert_tenacity",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "70%_1",
@@ -6162,7 +6035,6 @@
         3
       ],
       "lootableTalentId": "tal_viral_swarm",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -6217,7 +6089,6 @@
         26
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "20%_1"
@@ -6270,7 +6141,6 @@
         26
       ],
       "lootableTalentId": "tal_mind_stun",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "20%_1"
@@ -6323,7 +6193,6 @@
         26
       ],
       "lootableTalentId": "tal_holy_light_protection",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "15%_1"
@@ -6376,7 +6245,6 @@
         26
       ],
       "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "18%_1"
@@ -6428,8 +6296,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_eternal_skeleton",
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "70%_1",
@@ -6483,7 +6350,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "75%_1",
@@ -6537,7 +6403,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "80%_1",
@@ -6589,8 +6454,7 @@
         1,
         25
       ],
-      "lootableTalentId": "tal_herd_kick",
-      "lootableTalentQuality": 1,
+      "lootableTalentId": "tal_unquenchable_flame",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -6645,7 +6509,6 @@
         26
       ],
       "lootableTalentId": "tal_mind_stun",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "18%_1"
@@ -6698,7 +6561,6 @@
         26
       ],
       "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "20%_1"
@@ -6751,7 +6613,6 @@
         26
       ],
       "lootableTalentId": "tal_holy_light_protection",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "22%_1"
@@ -6804,7 +6665,6 @@
         26
       ],
       "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "15%_1"
@@ -6856,8 +6716,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_thorn_body",
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "75%_1",
@@ -6911,7 +6770,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "80%_1",
@@ -6965,7 +6823,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "85%_1",
@@ -7017,8 +6874,7 @@
         25,
         23
       ],
-      "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_fusion_immortal",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -7072,7 +6928,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "18%_1"
@@ -7124,7 +6979,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "20%_1"
@@ -7176,7 +7030,6 @@
         26
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "15%_1"
@@ -7228,7 +7081,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "2-3",
         "fragments_2": "18%_1"
@@ -7279,8 +7131,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_medusa_eye",
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "75%_1",
@@ -7333,7 +7184,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "80%_1",
@@ -7386,7 +7236,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "85%_1",
@@ -7438,8 +7287,7 @@
         25,
         23
       ],
-      "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_energy_devourer",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -7493,7 +7341,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "25%_1"
@@ -7545,7 +7392,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "25%_1"
@@ -7597,7 +7443,6 @@
         26
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "20%_1"
@@ -7649,7 +7494,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "22%_1"
@@ -7700,8 +7544,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_chaos_origin",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "80%_1",
@@ -7754,7 +7597,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "85%_1",
@@ -7807,7 +7649,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "90%_1",
@@ -7859,8 +7700,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_all_dot_penetration",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -7914,7 +7754,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "22%_1"
@@ -7966,7 +7805,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "25%_1"
@@ -8018,7 +7856,6 @@
         26
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "28%_1"
@@ -8070,7 +7907,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "18%_1"
@@ -8121,8 +7957,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_werewolf_bloodline",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "85%_1",
@@ -8175,7 +8010,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "90%_1",
@@ -8228,7 +8062,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "95%_1",
@@ -8280,8 +8113,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_final_singularity_fusion",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -8335,7 +8167,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "22%_1"
@@ -8387,7 +8218,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "25%_1"
@@ -8439,7 +8269,6 @@
         26
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "18%_1"
@@ -8491,7 +8320,6 @@
         26
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "22%_1"
@@ -8542,8 +8370,7 @@
         25,
         26
       ],
-      "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_fusion_neuro_poison",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "85%_1",
@@ -8596,7 +8423,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "90%_1",
@@ -8649,7 +8475,6 @@
         26
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "95%_1",
@@ -8702,8 +8527,7 @@
         26,
         24
       ],
-      "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_spacetime_warp",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -8758,7 +8582,6 @@
         25
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "25%_1"
@@ -8811,7 +8634,6 @@
         25
       ],
       "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "22%_1"
@@ -8864,7 +8686,6 @@
         25
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "28%_1"
@@ -8917,7 +8738,6 @@
         25
       ],
       "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "18%_1"
@@ -8969,8 +8789,7 @@
         23,
         25
       ],
-      "lootableTalentId": "tal_holy_light_protection",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_dragon_breath",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "85%_1",
@@ -9024,7 +8843,6 @@
         25
       ],
       "lootableTalentId": "tal_mind_stun",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "90%_1",
@@ -9078,7 +8896,6 @@
         25
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "95%_1",
@@ -9130,8 +8947,7 @@
         26,
         25
       ],
-      "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_omnipotence_unity",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -9186,7 +9002,6 @@
         25
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "25%_1"
@@ -9239,7 +9054,6 @@
         25
       ],
       "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "20%_1"
@@ -9292,7 +9106,6 @@
         25
       ],
       "lootableTalentId": "tal_holy_light_protection",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "28%_1"
@@ -9345,7 +9158,6 @@
         25
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "22%_1"
@@ -9397,8 +9209,7 @@
         23,
         25
       ],
-      "lootableTalentId": "tal_mind_stun",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_all_dot_penetration",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "85%_1",
@@ -9452,7 +9263,6 @@
         25
       ],
       "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "90%_1",
@@ -9506,7 +9316,6 @@
         25
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "95%_1",
@@ -9558,8 +9367,7 @@
         26,
         24
       ],
-      "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_singularity",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -9614,7 +9422,6 @@
         25
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "25%_1"
@@ -9667,7 +9474,6 @@
         25
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "22%_1"
@@ -9720,7 +9526,6 @@
         25
       ],
       "lootableTalentId": "tal_mind_stun",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "28%_1"
@@ -9773,7 +9578,6 @@
         25
       ],
       "lootableTalentId": "tal_holy_light_protection",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-4",
         "fragments_2": "18%_1"
@@ -9825,8 +9629,7 @@
         23,
         25
       ],
-      "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_final_singularity_fusion",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "85%_1",
@@ -9880,7 +9683,6 @@
         25
       ],
       "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "90%_1",
@@ -9934,7 +9736,6 @@
         25
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "95%_1",
@@ -9986,8 +9787,7 @@
         26,
         23
       ],
-      "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_transcend_dimension",
       "drops": {
         "fragments_1": "3-5",
         "fragments_2": "100%_3",
@@ -10041,7 +9841,6 @@
         10
       ],
       "lootableTalentId": "tal_stench",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10078,7 +9877,6 @@
         20
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10115,7 +9913,6 @@
         10
       ],
       "lootableTalentId": "tal_flagellum",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10152,7 +9949,6 @@
         15
       ],
       "lootableTalentId": "tal_venom_spine",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10189,7 +9985,6 @@
         28
       ],
       "lootableTalentId": "tal_multi_head_regen",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10226,7 +10021,6 @@
         15
       ],
       "lootableTalentId": "tal_infrared_vision",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10263,7 +10057,6 @@
         11
       ],
       "lootableTalentId": "tal_inject",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10300,7 +10093,6 @@
         24
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -10343,7 +10135,6 @@
         15
       ],
       "lootableTalentId": "tal_paralyze_stinger",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10380,7 +10171,6 @@
         3
       ],
       "lootableTalentId": "tal_swarm_bite",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10417,7 +10207,6 @@
         5
       ],
       "lootableTalentId": "tal_mirror_mimicry",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10454,7 +10243,6 @@
         15
       ],
       "lootableTalentId": "tal_tidal_adaptation",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10491,7 +10279,6 @@
         10
       ],
       "lootableTalentId": "tal_world_entangle",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10528,7 +10315,6 @@
         10
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10565,7 +10351,6 @@
         21
       ],
       "lootableTalentId": "tal_phantom_mimic",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10602,7 +10387,6 @@
         24
       ],
       "lootableTalentId": "tal_myriad_beast_divinity",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -10645,7 +10429,6 @@
         28
       ],
       "lootableTalentId": "tal_roll_defense",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10682,7 +10465,6 @@
         17
       ],
       "lootableTalentId": "tal_spring_tail",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10719,7 +10501,6 @@
         15
       ],
       "lootableTalentId": "tal_viral_swarm",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10756,7 +10537,6 @@
         20
       ],
       "lootableTalentId": "tal_venom_fang",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10793,7 +10573,6 @@
         15
       ],
       "lootableTalentId": "tal_ambush",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10830,7 +10609,6 @@
         27
       ],
       "lootableTalentId": "tal_iron_wall",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10867,7 +10645,6 @@
         21
       ],
       "lootableTalentId": "tal_high_altitude",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -10904,7 +10681,6 @@
         8
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -10947,7 +10723,6 @@
         8
       ],
       "lootableTalentId": "tal_swift_nerve",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -10984,7 +10759,6 @@
         15
       ],
       "lootableTalentId": "tal_storm_lord",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11021,7 +10795,6 @@
         20
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11058,7 +10831,6 @@
         10
       ],
       "lootableTalentId": "tal_high_altitude_predator",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11095,7 +10867,6 @@
         15
       ],
       "lootableTalentId": "tal_tundra_hunter",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11132,7 +10903,6 @@
         4
       ],
       "lootableTalentId": "tal_high_altitude",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11169,7 +10939,6 @@
         9
       ],
       "lootableTalentId": "tal_pseudopod",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11206,7 +10975,6 @@
         27
       ],
       "lootableTalentId": "tal_sky_lord",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -11249,7 +11017,6 @@
         21
       ],
       "lootableTalentId": "tal_high_altitude",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11286,7 +11053,6 @@
         17
       ],
       "lootableTalentId": "tal_flagellum",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11323,7 +11089,6 @@
         21
       ],
       "lootableTalentId": "tal_leap",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11360,7 +11125,6 @@
         15
       ],
       "lootableTalentId": "tal_shadow_stalk",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11397,7 +11161,6 @@
         7
       ],
       "lootableTalentId": "tal_elemental_resist",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11434,7 +11197,6 @@
         15
       ],
       "lootableTalentId": "tal_ambush",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11471,7 +11233,6 @@
         4
       ],
       "lootableTalentId": "tal_sky_dominator",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11508,7 +11269,6 @@
         8
       ],
       "lootableTalentId": "tal_wild_lord",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -11551,7 +11311,6 @@
         9
       ],
       "lootableTalentId": "tal_super_regeneration",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11588,7 +11347,6 @@
         3
       ],
       "lootableTalentId": "tal_hard_bone",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11625,7 +11383,6 @@
         15
       ],
       "lootableTalentId": "tal_snail_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11662,7 +11419,6 @@
         18
       ],
       "lootableTalentId": "tal_camouflage",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11699,7 +11455,6 @@
         18
       ],
       "lootableTalentId": "tal_predator_web",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11736,7 +11491,6 @@
         18
       ],
       "lootableTalentId": "tal_poison_sac",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11773,7 +11527,6 @@
         2
       ],
       "lootableTalentId": "tal_lightning_reflex",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -11810,7 +11563,6 @@
         18
       ],
       "lootableTalentId": "tal_king_roar",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -11853,7 +11605,6 @@
         17
       ],
       "lootableTalentId": "tal_infrared_lock",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11890,7 +11641,6 @@
         3
       ],
       "lootableTalentId": "tal_nirvana_flame",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11927,7 +11677,6 @@
         28
       ],
       "lootableTalentId": "tal_geomagnetic_sense",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -11964,7 +11713,6 @@
         18
       ],
       "lootableTalentId": "tal_camouflage",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12001,7 +11749,6 @@
         27
       ],
       "lootableTalentId": "tal_mycelial_web",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12038,7 +11785,6 @@
         3
       ],
       "lootableTalentId": "tal_night_hunter",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12075,7 +11821,6 @@
         10
       ],
       "lootableTalentId": "tal_hard_bone",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12112,7 +11857,6 @@
         18
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -12155,7 +11899,6 @@
         20
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12192,7 +11935,6 @@
         11
       ],
       "lootableTalentId": "tal_corrosive_slime",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12229,7 +11971,6 @@
         10
       ],
       "lootableTalentId": "tal_toxic_mucus",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12266,7 +12007,6 @@
         2
       ],
       "lootableTalentId": "tal_calcium_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12303,7 +12043,6 @@
         27
       ],
       "lootableTalentId": "tal_venom_tentacle",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12340,7 +12079,6 @@
         11
       ],
       "lootableTalentId": "tal_hard_bone",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12377,7 +12115,6 @@
         15
       ],
       "lootableTalentId": "tal_viral_swarm",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12414,7 +12151,6 @@
         3
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -12457,7 +12193,6 @@
         20
       ],
       "lootableTalentId": "tal_scale_armor",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12494,7 +12229,6 @@
         15
       ],
       "lootableTalentId": "tal_urticating_hair",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12531,7 +12265,6 @@
         10
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12568,7 +12301,6 @@
         9
       ],
       "lootableTalentId": "tal_dissolving_fluid",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12605,7 +12337,6 @@
         6
       ],
       "lootableTalentId": "tal_desert_tenacity",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12642,7 +12373,6 @@
         20
       ],
       "lootableTalentId": "tal_viral_swarm",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12679,7 +12409,6 @@
         17
       ],
       "lootableTalentId": "tal_sky_lord",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12716,7 +12445,6 @@
         6
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -12759,7 +12487,6 @@
         15
       ],
       "lootableTalentId": "tal_water_sac",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12796,7 +12523,6 @@
         15
       ],
       "lootableTalentId": "tal_heat_resistant_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12833,7 +12559,6 @@
         28
       ],
       "lootableTalentId": "tal_sky_dominator",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12870,7 +12595,6 @@
         18
       ],
       "lootableTalentId": "tal_deep_sea_blubber",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -12907,7 +12631,6 @@
         28
       ],
       "lootableTalentId": "tal_beast_intimidation",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12944,7 +12667,6 @@
         27
       ],
       "lootableTalentId": "tal_deadly_fang",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -12981,7 +12703,6 @@
         18
       ],
       "lootableTalentId": "tal_venom_spine",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13018,7 +12739,6 @@
         18
       ],
       "lootableTalentId": "tal_king_roar",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -13061,7 +12781,6 @@
         10
       ],
       "lootableTalentId": "tal_thermal_absorb",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13098,7 +12817,6 @@
         6
       ],
       "lootableTalentId": "tal_spiral_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13135,7 +12853,6 @@
         20
       ],
       "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13172,7 +12889,6 @@
         20
       ],
       "lootableTalentId": "tal_leap",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13209,7 +12925,6 @@
         10
       ],
       "lootableTalentId": "tal_heat_storage",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13246,7 +12961,6 @@
         3
       ],
       "lootableTalentId": "tal_fire_breath_2",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13283,7 +12997,6 @@
         6
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13320,7 +13033,6 @@
         6
       ],
       "lootableTalentId": "tal_beast_intimidation",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -13363,7 +13075,6 @@
         8
       ],
       "lootableTalentId": "tal_beast_intimidation",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13400,7 +13111,6 @@
         9
       ],
       "lootableTalentId": "tal_deep_sea_blubber",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13437,7 +13147,6 @@
         28
       ],
       "lootableTalentId": "tal_agile_swim",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13474,7 +13183,6 @@
         15
       ],
       "lootableTalentId": "tal_benevolent_beast",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13511,7 +13219,6 @@
         15
       ],
       "lootableTalentId": "tal_shadow_stalk",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13548,7 +13255,6 @@
         27
       ],
       "lootableTalentId": "tal_tenacity",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13585,7 +13291,6 @@
         2
       ],
       "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13622,7 +13327,6 @@
         8
       ],
       "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -13665,7 +13369,6 @@
         8
       ],
       "lootableTalentId": "tal_leap",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13702,7 +13405,6 @@
         21
       ],
       "lootableTalentId": "tal_mud_burrow",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13739,7 +13441,6 @@
         17
       ],
       "lootableTalentId": "tal_swift_nerve",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13776,7 +13477,6 @@
         28
       ],
       "lootableTalentId": "tal_mud_jump",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -13813,7 +13513,6 @@
         7
       ],
       "lootableTalentId": "tal_iron_wall",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13850,7 +13549,6 @@
         21
       ],
       "lootableTalentId": "tal_flight",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13887,7 +13585,6 @@
         27
       ],
       "lootableTalentId": "tal_elemental_resist",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -13924,7 +13621,6 @@
         7
       ],
       "lootableTalentId": "tal_beast_intimidation",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -13967,7 +13663,6 @@
         8
       ],
       "lootableTalentId": "tal_deep_sea_lung",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14004,7 +13699,6 @@
         15
       ],
       "lootableTalentId": "tal_ocean_sovereign",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14041,7 +13735,6 @@
         15
       ],
       "lootableTalentId": "tal_flight",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14078,7 +13771,6 @@
         7
       ],
       "lootableTalentId": "tal_ink_spray",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14115,7 +13807,6 @@
         2
       ],
       "lootableTalentId": "tal_frost_armor",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14152,7 +13843,6 @@
         18
       ],
       "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14189,7 +13879,6 @@
         7
       ],
       "lootableTalentId": "tal_elemental_resist",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14226,7 +13915,6 @@
         7
       ],
       "lootableTalentId": "tal_dragon_might",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -14269,7 +13957,6 @@
         18
       ],
       "lootableTalentId": "tal_sky_dominator",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14306,7 +13993,6 @@
         18
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14343,7 +14029,6 @@
         21
       ],
       "lootableTalentId": "tal_high_altitude",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14380,7 +14065,6 @@
         17
       ],
       "lootableTalentId": "tal_lightning_reflex",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14417,7 +14101,6 @@
         7
       ],
       "lootableTalentId": "tal_ink_spray",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14454,7 +14137,6 @@
         7
       ],
       "lootableTalentId": "tal_roll_defense",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14491,7 +14173,6 @@
         28
       ],
       "lootableTalentId": "tal_cilia_movement",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14528,7 +14209,6 @@
         7
       ],
       "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -14571,7 +14251,6 @@
         10
       ],
       "lootableTalentId": "tal_plague_cloud",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14608,7 +14287,6 @@
         21
       ],
       "lootableTalentId": "tal_agile_swim",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14645,7 +14323,6 @@
         11
       ],
       "lootableTalentId": "tal_high_altitude",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14682,7 +14359,6 @@
         18
       ],
       "lootableTalentId": "tal_dissolving_fluid",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14718,8 +14394,7 @@
         8,
         23
       ],
-      "lootableTalentId": "tal_thick_fur",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_shadow_predator",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14756,7 +14431,6 @@
         11
       ],
       "lootableTalentId": "tal_shadow_stalk",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14793,7 +14467,6 @@
         3
       ],
       "lootableTalentId": "tal_mind_stun",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -14829,8 +14502,7 @@
         27,
         23
       ],
-      "lootableTalentId": "tal_dragon_might",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_ancestor_of_beasts",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -14873,7 +14545,6 @@
         28
       ],
       "lootableTalentId": "tal_ink_spray",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14910,7 +14581,6 @@
         4
       ],
       "lootableTalentId": "tal_neurotoxin",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14947,7 +14617,6 @@
         18
       ],
       "lootableTalentId": "tal_spiral_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -14984,7 +14653,6 @@
         18
       ],
       "lootableTalentId": "tal_neurotoxin_king",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15020,8 +14688,7 @@
         18,
         14
       ],
-      "lootableTalentId": "tal_agile_swim",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_blood_venom",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15058,7 +14725,6 @@
         18
       ],
       "lootableTalentId": "tal_scale_armor",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15095,7 +14761,6 @@
         18
       ],
       "lootableTalentId": "tal_king_roar",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15131,8 +14796,7 @@
         27,
         18
       ],
-      "lootableTalentId": "tal_dragon_might",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_siren_song",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -15175,7 +14839,6 @@
         17
       ],
       "lootableTalentId": "tal_tundra_hunter",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15212,7 +14875,6 @@
         3
       ],
       "lootableTalentId": "tal_frost_armor",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15249,7 +14911,6 @@
         7
       ],
       "lootableTalentId": "tal_carapace",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15286,7 +14947,6 @@
         3
       ],
       "lootableTalentId": "tal_glacial_thick_skin",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15322,8 +14982,7 @@
         7,
         27
       ],
-      "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_temporal_nerve",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15360,7 +15019,6 @@
         3
       ],
       "lootableTalentId": "tal_ice_shell",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15397,7 +15055,6 @@
         2
       ],
       "lootableTalentId": "tal_bloodthirst",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15433,8 +15090,7 @@
         27,
         7
       ],
-      "lootableTalentId": "tal_wild_lord",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_ice_flame_body",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -15477,7 +15133,6 @@
         10
       ],
       "lootableTalentId": "tal_burn_penetration",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15514,7 +15169,6 @@
         3
       ],
       "lootableTalentId": "tal_thermal_absorb",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15551,7 +15205,6 @@
         6
       ],
       "lootableTalentId": "tal_carapace",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15588,7 +15241,6 @@
         3
       ],
       "lootableTalentId": "tal_fire_breath_2",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15624,8 +15276,7 @@
         6,
         10
       ],
-      "lootableTalentId": "tal_heat_storage",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_unquenchable_flame",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15662,7 +15313,6 @@
         6
       ],
       "lootableTalentId": "tal_spiral_shell",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15699,7 +15349,6 @@
         23
       ],
       "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15735,8 +15384,7 @@
         27,
         6
       ],
-      "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_nirvana_flame_legend",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -15779,7 +15427,6 @@
         25
       ],
       "lootableTalentId": "tal_sky_lord",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15816,7 +15463,6 @@
         18
       ],
       "lootableTalentId": "tal_sky_dominator",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15853,7 +15499,6 @@
         23
       ],
       "lootableTalentId": "tal_storm_lord",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15890,7 +15535,6 @@
         4
       ],
       "lootableTalentId": "tal_flight",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -15926,8 +15570,7 @@
         14,
         4
       ],
-      "lootableTalentId": "tal_storm_wing",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_fusion_storm_sky",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -15964,7 +15607,6 @@
         27
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16001,7 +15643,6 @@
         4
       ],
       "lootableTalentId": "tal_high_altitude",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16037,8 +15678,7 @@
         27,
         14
       ],
-      "lootableTalentId": "tal_dragon_might",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_all_seeing_eye",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -16081,7 +15721,6 @@
         9
       ],
       "lootableTalentId": "tal_heat_storage",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16118,7 +15757,6 @@
         6
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16155,7 +15793,6 @@
         9
       ],
       "lootableTalentId": "tal_storm_lord",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16192,7 +15829,6 @@
         9
       ],
       "lootableTalentId": "tal_toxic_mucus",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16229,7 +15865,6 @@
         27
       ],
       "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16266,7 +15901,6 @@
         27
       ],
       "lootableTalentId": "tal_tundra_hunter",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16303,7 +15937,6 @@
         27
       ],
       "lootableTalentId": "tal_electric",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16340,7 +15973,6 @@
         6
       ],
       "lootableTalentId": "tal_myriad_beast_divinity",
-      "lootableTalentQuality": 3,
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -16383,7 +16015,6 @@
         15
       ],
       "lootableTalentId": "tal_holy_light_protection",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16420,7 +16051,6 @@
         6
       ],
       "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16457,7 +16087,6 @@
         10
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16494,7 +16123,6 @@
         17
       ],
       "lootableTalentId": "tal_mind_stun",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16530,8 +16158,7 @@
         23,
         8
       ],
-      "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_infinite_proliferation",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16568,7 +16195,6 @@
         5
       ],
       "lootableTalentId": "tal_mycelial_web",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16605,7 +16231,6 @@
         27
       ],
       "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16641,8 +16266,7 @@
         23,
         27
       ],
-      "lootableTalentId": "tal_king_roar",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_chimera_soul",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -16685,7 +16309,6 @@
         8
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16722,7 +16345,6 @@
         15
       ],
       "lootableTalentId": "tal_glacial_thick_skin",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16759,7 +16381,6 @@
         15
       ],
       "lootableTalentId": "tal_ambush",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16796,7 +16417,6 @@
         28
       ],
       "lootableTalentId": "tal_tenacity",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -16832,8 +16452,7 @@
         23,
         27
       ],
-      "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_giant_blood",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16870,7 +16489,6 @@
         27
       ],
       "lootableTalentId": "tal_shadow_stalk",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16907,7 +16525,6 @@
         27
       ],
       "lootableTalentId": "tal_deep_sea_blubber",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -16943,8 +16560,7 @@
         27,
         24
       ],
-      "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_fusion_beast_dragon",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -16987,7 +16603,6 @@
         10
       ],
       "lootableTalentId": "tal_indestructible_body",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17024,7 +16639,6 @@
         3
       ],
       "lootableTalentId": "tal_ambush",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17061,7 +16675,6 @@
         10
       ],
       "lootableTalentId": "tal_coordinated_hunt",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17098,7 +16711,6 @@
         21
       ],
       "lootableTalentId": "tal_geomagnetic_sense",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17134,8 +16746,7 @@
         23,
         9
       ],
-      "lootableTalentId": "tal_wither_penetration",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_fusion_thorn_bind",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17172,7 +16783,6 @@
         10
       ],
       "lootableTalentId": "tal_group_hunt",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17209,7 +16819,6 @@
         15
       ],
       "lootableTalentId": "tal_tundra_hunter",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17245,8 +16854,7 @@
         27,
         23
       ],
-      "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_void_venom",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -17289,7 +16897,6 @@
         15
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17326,7 +16933,6 @@
         14
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17363,7 +16969,6 @@
         8
       ],
       "lootableTalentId": "tal_tenacity",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17400,7 +17005,6 @@
         17
       ],
       "lootableTalentId": "tal_swamp_ambush",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17436,8 +17040,7 @@
         25,
         6
       ],
-      "lootableTalentId": "tal_fire_breath",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_fusion_ancient_hunt",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17474,7 +17077,6 @@
         23
       ],
       "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17511,7 +17113,6 @@
         4
       ],
       "lootableTalentId": "tal_electric",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17547,8 +17148,7 @@
         25,
         27
       ],
-      "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_psi_burst",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -17591,7 +17191,6 @@
         15
       ],
       "lootableTalentId": "tal_benevolent_beast",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17628,7 +17227,6 @@
         10
       ],
       "lootableTalentId": "tal_group_hunt",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17665,7 +17263,6 @@
         2
       ],
       "lootableTalentId": "tal_roll_defense",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17702,7 +17299,6 @@
         28
       ],
       "lootableTalentId": "tal_poison_sac",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17738,8 +17334,7 @@
         28,
         17
       ],
-      "lootableTalentId": "tal_viral_swarm",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_plague_source",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17776,7 +17371,6 @@
         15
       ],
       "lootableTalentId": "tal_night_hunter",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17813,7 +17407,6 @@
         27
       ],
       "lootableTalentId": "tal_elemental_resist",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -17849,8 +17442,7 @@
         28,
         27
       ],
-      "lootableTalentId": "tal_sacred_forest_guardian",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_prehistoric_gene_pool",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -17893,7 +17485,6 @@
         2
       ],
       "lootableTalentId": "tal_sprint_claw",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17930,7 +17521,6 @@
         28
       ],
       "lootableTalentId": "tal_shell",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -17967,7 +17557,6 @@
         15
       ],
       "lootableTalentId": "tal_bite",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18004,7 +17593,6 @@
         9
       ],
       "lootableTalentId": "tal_poison_penetration",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18040,8 +17628,7 @@
         27,
         2
       ],
-      "lootableTalentId": "tal_primal_devour",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_fusion_blood_bone",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18078,7 +17665,6 @@
         18
       ],
       "lootableTalentId": "tal_king_roar",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18115,7 +17701,6 @@
         27
       ],
       "lootableTalentId": "tal_deadly_fang",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18151,8 +17736,7 @@
         27,
         2
       ],
-      "lootableTalentId": "tal_wild_lord",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_werewolf_bloodline",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -18195,7 +17779,6 @@
         25
       ],
       "lootableTalentId": "tal_hard_bone",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18232,7 +17815,6 @@
         15
       ],
       "lootableTalentId": "tal_god_devouring_fang",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18269,7 +17851,6 @@
         25
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18306,7 +17887,6 @@
         3
       ],
       "lootableTalentId": "tal_abyssal_devour",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18342,8 +17922,7 @@
         25,
         9
       ],
-      "lootableTalentId": "tal_scale_armor",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_fusion_infinite_devour",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18380,7 +17959,6 @@
         25
       ],
       "lootableTalentId": "tal_frost_giant_king",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18417,7 +17995,6 @@
         23
       ],
       "lootableTalentId": "tal_psi_shield",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18453,8 +18030,7 @@
         26,
         27
       ],
-      "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_storm_wing_fusion",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",
@@ -18497,7 +18073,6 @@
         10
       ],
       "lootableTalentId": "tal_coordinated_hunt",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18534,7 +18109,6 @@
         15
       ],
       "lootableTalentId": "tal_inject",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18571,7 +18145,6 @@
         28
       ],
       "lootableTalentId": "tal_perfect_camouflage",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18608,7 +18181,6 @@
         17
       ],
       "lootableTalentId": "tal_neurotoxin_king",
-      "lootableTalentQuality": 1,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "15%_1",
@@ -18644,8 +18216,7 @@
         28,
         23
       ],
-      "lootableTalentId": "tal_group_hunt",
-      "lootableTalentQuality": 2,
+      "lootableTalentId": "tal_causal_chain",
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18682,7 +18253,6 @@
         9
       ],
       "lootableTalentId": "tal_spirit_guardian",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18719,7 +18289,6 @@
         15
       ],
       "lootableTalentId": "tal_mud_burrow",
-      "lootableTalentQuality": 2,
       "drops": {
         "fragments_1": "1-2",
         "fragments_2": "40%_1",
@@ -18755,8 +18324,7 @@
         26,
         27
       ],
-      "lootableTalentId": "tal_secret_realm_mother",
-      "lootableTalentQuality": 3,
+      "lootableTalentId": "tal_god_eater",
       "drops": {
         "fragments_1": "",
         "fragments_2": "",

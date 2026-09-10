@@ -873,7 +873,7 @@
               "effects": [
                 {
                   "type": "gain_fragment",
-                  "quality": 3,
+                  "quality": 2,
                   "count": 2
                 },
                 {
@@ -1472,7 +1472,7 @@
               "effects": [
                 {
                   "type": "gain_fragment",
-                  "quality": 3,
+                  "quality": 2,
                   "count": 1,
                   "tag": 9
                 },
@@ -2220,7 +2220,7 @@
               "effects": [
                 {
                   "type": "gain_fragment",
-                  "quality": 3,
+                  "quality": 2,
                   "count": 1,
                   "tag": 17
                 },
@@ -2763,11 +2763,10 @@
       ],
       "environmentLaw": {
         "name": "风暴前夕",
-        "effect": "狂风在平原上呼啸，预示着一场风暴即将来临。每3回合触发一次强风，所有单位速度提升20%，但远程攻击命中率下降10%。",
+        "effect": "狂风在平原上呼啸，预示着一场风暴即将来临。所有单位速度提升20%，但远程攻击命中率下降10%。",
         "immuneTag": null,
         "speedBonus": 20,
-        "hitPenalty": 10,
-        "interval": 3
+        "hitPenalty": 10
       },
       "events": [
         {
@@ -5258,8 +5257,8 @@
       "totalLayers": 5,
       "environmentLaw": {
         "name": "粘稠蛛丝",
-        "effect": "粘稠的蛛丝遍布迷宫，所有生物都被粘住，无法逃跑。所有单位先手值-30%，无法逃跑，蜘蛛类天赋免疫。",
-        "immuneTag": "spider",
+        "effect": "粘稠的蛛丝遍布迷宫，所有生物都被粘住，无法逃跑。所有单位先手值-30%，无法逃跑，体格强壮者挣脱蛛丝束缚。",
+        "immuneTagNum": 8,
         "mechanic": "speed_penalty_no_flee",
         "speedPenalty": 30
       },
@@ -5779,8 +5778,8 @@
       "totalLayers": 5,
       "environmentLaw": {
         "name": "信息素干扰",
-        "effect": "信息素在虫巢中干扰着所有生物的感知，敌人变得更加凶猛，而玩家的感知则被削弱。敌人攻击力+15%，玩家感知-10%，虫类天赋免疫负面效果。",
-        "immuneTag": "insect",
+        "effect": "信息素在虫巢中干扰着所有生物的感知，敌人变得更加凶猛，而玩家的感知则被削弱。敌人攻击力+15%，玩家感知-10%，感知敏锐者免疫信息素干扰。",
+        "immuneTagNum": 21,
         "mechanic": "enemy_attack_buff_player_perception_penalty",
         "enemyAttackBonus": 15,
         "playerPerceptionPenalty": 10
@@ -12486,8 +12485,7 @@
       "environmentLaw": {
         "name": "神力残留",
         "effect": "神力的残留在战场上激荡，所有生物的攻击力都被提升，但防御力则被削弱。所有单位攻击力+25%，防御力-15%，战斗更加激烈。",
-        "immuneTag": "none",
-        "mechanic": "attack_buff_defense_penalty",
+                "mechanic": "attack_buff_defense_penalty",
         "attackBonus": 25,
         "defensePenalty": 15
       },
@@ -13914,8 +13912,7 @@
       "environmentLaw": {
         "name": "神圣试炼",
         "effect": "神圣的试炼在圣殿中进行，玩家获得神的祝福，但敌人也变得更加强大。玩家全属性+10%，但敌人强度+25%，这是对强者的试炼。",
-        "immuneTag": "none",
-        "mechanic": "player_buff_enemy_stronger",
+                "mechanic": "player_buff_enemy_stronger",
         "playerBonus": 10,
         "enemyBonus": 25,
         "attackBonus": 10,
@@ -15904,8 +15901,7 @@
       "environmentLaw": {
         "name": "神力激荡",
         "effect": "神力在战场上激荡，每回合都有随机的增益或减益降临到所有生物身上。每回合开始随机获得增益或减益（全属性±15%）。",
-        "immuneTag": "none",
-        "mechanic": "random_buff_debuff",
+                "mechanic": "random_buff_debuff",
         "value": 15,
         "randomEffects": [
           {
@@ -16496,8 +16492,7 @@
       "environmentLaw": {
         "name": "创世之力",
         "effect": "创世的力量在神殿中流淌，所有生物的生命力和攻击力都被提升。所有单位最大生命+25%，攻击力+20%，战斗更加激烈。",
-        "immuneTag": "none",
-        "mechanic": "hp_attack_buff",
+                "mechanic": "hp_attack_buff",
         "hpBonus": 25,
         "attackBonus": 20
       },
@@ -18080,8 +18075,7 @@
       "environmentLaw": {
         "name": "轮回之力",
         "effect": "轮回的力量在门后涌动，每3回合所有生物的状态都被重置，生命得到部分恢复。每3回合所有单位重置所有状态，生命恢复30%，战斗充满变数。",
-        "immuneTag": "none",
-        "mechanic": "periodic_reset",
+                "mechanic": "periodic_reset",
         "resetInterval": 3,
         "healPercent": 30,
         "interval": 3,
