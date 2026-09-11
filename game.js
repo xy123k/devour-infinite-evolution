@@ -44,7 +44,71 @@ const game = {
             }
         },
 
+        // ================= 广告频控 =================
+        // 局内计数（runLimit）：存 game._adRunCounts，新局/轮回由 startNewRun 重置
+        // 每日计数（dailyLimit）：存 game.permanent.adCounts = {sceneId: {date, count}}，跨日自动重置
+        // 场次标记（perBattle，elite_double）：存 game._killDropDoubled，每次击杀弹窗重建时重置
+        todayStr() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        },
+        getDailyCount(sceneId) {
+            const g = game;
+            if (!g.permanent.adCounts) g.permanent.adCounts = {};
+            const rec = g.permanent.adCounts[sceneId];
+            if (!rec || rec.date !== this.todayStr()) return 0;
+            return rec.count || 0;
+        },
+        // 检查广告场景是否可用，返回 {available, remaining, reason}
+        checkAdAvailable(sceneId) {
+            const scene = (game.adScenes || {})[sceneId];
+            if (!scene) return { available: false, remaining: 0, reason: '未知广告场景' };
+            const runUsed = (game._adRunCounts || {})[sceneId] || 0;
+            const dailyUsed = this.getDailyCount(sceneId);
+            const battleUsed = game._killDropDoubled ? 1 : 0;
+            let remaining = null;
+            if (scene.runLimit) {
+                const r = Math.max(0, scene.runLimit - runUsed);
+                remaining = remaining === null ? r : Math.min(remaining, r);
+            }
+            if (scene.dailyLimit) {
+                const r = Math.max(0, scene.dailyLimit - dailyUsed);
+                remaining = remaining === null ? r : Math.min(remaining, r);
+            }
+            if (scene.perBattle) {
+                const r = battleUsed ? 0 : 1;
+                remaining = remaining === null ? r : Math.min(remaining, r);
+            }
+            if (remaining === null) remaining = 1;
+            const reasons = [];
+            if (scene.runLimit && runUsed >= scene.runLimit) reasons.push('本局次数已用完');
+            if (scene.dailyLimit && dailyUsed >= scene.dailyLimit) reasons.push('今日次数已用完');
+            if (scene.perBattle && battleUsed) reasons.push('本场已使用');
+            return { available: remaining > 0, remaining: remaining, reason: reasons.join('；') };
+        },
+        // 记录一次广告消耗
+        consumeAd(sceneId) {
+            const scene = (game.adScenes || {})[sceneId];
+            if (!scene) return;
+            if (scene.runLimit) {
+                if (!game._adRunCounts) game._adRunCounts = {};
+                game._adRunCounts[sceneId] = (game._adRunCounts[sceneId] || 0) + 1;
+            }
+            if (scene.dailyLimit) {
+                if (!game.permanent.adCounts) game.permanent.adCounts = {};
+                game.permanent.adCounts[sceneId] = { date: this.todayStr(), count: this.getDailyCount(sceneId) + 1 };
+            }
+            if (scene.perBattle) {
+                game._killDropDoubled = true;
+            }
+        },
+
         showRewardedVideo(adType, callback) {
+            // 防连点：已有广告在播（含模拟广告1.5s内）时忽略重复请求，避免重复发奖
+            if (this._pendingCallback) {
+                console.log('[AdManager] 广告播放中，忽略重复请求:', adType);
+                return;
+            }
             this._pendingCallback = callback;
             this._pendingType = adType;
             if (this._rewardedVideoAd) {
@@ -85,13 +149,18 @@ const game = {
         },
     },
 
-    // 广告场景定义
+    // 广告场景定义（最终4个）
     adScenes: {
-        fragment_upgrade: { name: '基因升阶', description: '观看广告，碎片必升阶并指定标签' },
-        boss_core_double: { name: '核心翻倍', description: '观看广告，本次首领核心掉落×2' },
-        essence_daily: { name: '精华领取', description: '观看广告，领取进化精粹（每日3次）', dailyLimit: 3 },
         death_revive: { name: '死亡复活', description: '观看广告，以30%生命复活（每局限1次）', runLimit: 1 },
+        essence_daily: { name: '精华领取', description: '观看广告，领取30进化精粹（每日3次）', dailyLimit: 3 },
+        elite_double: { name: '击杀双倍', description: '观看广告，本次击杀掉落×2（每场1次）', perBattle: true },
+        death_convert: { name: '转化率翻倍', description: '观看广告，死亡转化率翻倍（每局限1次）', runLimit: 1 },
     },
+
+    // 广告频控便捷入口（委托给 adManager）
+    checkAdAvailable(sceneId) { return this.adManager.checkAdAvailable(sceneId); },
+    consumeAd(sceneId) { this.adManager.consumeAd(sceneId); },
+    showRewardedVideo(adType, callback) { this.adManager.showRewardedVideo(adType, callback); },
 
     // ========== 剧情系统 ==========
     storyData: {
@@ -399,7 +468,7 @@ const game = {
     },
 
     // ========== JSON数据 ==========
-    data: {enemies:null, maps:null, narratives:null, shop:null, talents:null},
+    data: {enemies:null, maps:null, shop:null, talents:null},
 
     qualityNames: ["", "普通", "稀有", "史诗", "传说", "神话"],
     qualityColors: ["", "var(--text-primary)", "var(--accent-info)", "var(--accent-purple)", "var(--accent-warning)", "var(--accent-danger)"],
@@ -510,6 +579,70 @@ const game = {
         };
         if (baseNames[baseId]) return baseNames[baseId] + '首领';
         return bossId;
+    },
+
+    // 统一入口：Boss核心入库。该bossId已有≥1个核心时，新增核心每个自动转为30进化精粹（保留首个核心稀缺性）
+    addBossCore(bossId, count) {
+        const n = count || 1;
+        if (!this.permanent.bossCores) this.permanent.bossCores = {};
+        const existing = this.permanent.bossCores[bossId] || 0;
+        let result;
+        if (existing >= 1) {
+            const gained = 30 * n;
+            this.permanent.essence = (this.permanent.essence || 0) + gained;
+            this.appendBattleLog(`重复的【${this.getBossCoreName(bossId)}】已自动转化为${gained}进化精粹`, 'log-info');
+            result = { type: 'essence', amount: gained };
+        } else {
+            this.permanent.bossCores[bossId] = existing + n;
+            result = { type: 'core', count: n };
+        }
+        // ============================================================
+        // 审计修复（任务3）：敌人id → 神话天赋门控键统一
+        // 掉落系统原本只写敌人id键（如 e.id），而19个天赋门控读 boss_core_* 独立键，
+        // 两套键永不匹配。任何一次击杀/重复转化时，按映射补发缺失的门控键
+        // （仅当该门控键不存在时写入一次，不重复发放；重复击杀仍按原逻辑转精粹，经济不变）。
+        // ============================================================
+        const gateKeyMap = {
+            primordial_pool_boss: ['boss_core_primal'],
+            fern_swamp_boss_01: ['boss_core_venom'],
+            abyssal_deep_boss: ['boss_core_deep'],
+            continental_shelf_boss: ['boss_core_ocean'],
+            prehistoric_colosseum_boss: ['boss_core_tyrant'],
+            rainforest_understory_boss: ['boss_core_world'],
+            gods_bf_king: ['boss_core_god'],
+            volcano_emperor: ['boss_core_phoenix'],
+            chaos_cycle_boss: ['boss_chaos_3'],
+            final_trial_boss: ['boss_myth_3'],
+            jungle_monitor_boss: ['boss_legend_3'],
+            chaos_abyss_king: ['boss_insect_3', 'boss_chaos_2'],
+            abyss_dragon_emperor: ['boss_dragon_3'],
+            glacier_rift_dragon: ['boss_ice_3'],
+            void_king: ['boss_land_3'],
+            temperate_forest_floor_boss_01: ['boss_modern_6'],
+            reincarnation_king: ['boss_chaos_1']
+        };
+        const gateKeys = gateKeyMap[bossId] || [];
+        if (gateKeys.length > 0) {
+            const gateNames = {
+                boss_core_primal: '原始核心', boss_core_venom: '剧毒核心', boss_core_deep: '深渊核心',
+                boss_core_ocean: '海洋核心', boss_core_tyrant: '暴君核心', boss_core_world: '世界核心',
+                boss_core_god: '神性核心', boss_core_phoenix: '涅槃核心', boss_chaos_3: '混沌之核·叁',
+                boss_myth_3: '神话之核·叁', boss_legend_3: '传说之核·叁', boss_insect_3: '虫群之核·叁',
+                boss_dragon_3: '龙魂之核·叁', boss_ice_3: '寒冰之核·叁', boss_land_3: '大地之核·叁',
+                boss_modern_6: '现代之核·陆', boss_chaos_2: '混沌之核·贰', boss_chaos_1: '混沌之核·壹'
+            };
+            const gainedNames = [];
+            gateKeys.forEach(gk => {
+                if (!this.permanent.bossCores[gk]) {
+                    this.permanent.bossCores[gk] = n;
+                    gainedNames.push(gateNames[gk] || gk);
+                }
+            });
+            if (gainedNames.length > 0) {
+                this.appendBattleLog(`首领核心共鸣！获得神话天赋门控核心：${gainedNames.join('、')}`, 'log-info');
+            }
+        }
+        return result;
     },
     // 天赋筛选状态
     talentFilter: { quality: 0, tag: 0, showOnlyUnlockable: false },
@@ -629,6 +762,8 @@ const game = {
         this.loadAllJson();
         // 初始化主题
         this.initTheme();
+        // 审计修复（任务10）：设置持久化——启动时加载已保存的设置（此前只存不读，刷新即重置）
+        this.loadSettings();
         
         // 全局覆盖原生alert/confirm为游戏内弹窗（防止阻塞浏览器）
         const self = this;
@@ -716,17 +851,39 @@ const game = {
             const r = Math.random();
             fragQuality = r < 0.1 ? 3 : (r < 0.5 ? 2 : 1);
         }
+        // 商店永久强化：全局碎片掉落数量+X%（跨轮回生效；整数粒度余数累加到本局后续掉落，避免被floor吞掉）
+        const fragDropBonus = this.permanent.fragmentDropBonusPercent || 0;
+        if (fragDropBonus > 0) {
+            const boosted = fragCount * (1 + fragDropBonus / 100);
+            const floored = Math.floor(boosted);
+            this._fragDropRemainder = (this._fragDropRemainder || 0) + (boosted - floored);
+            let extra = 0;
+            if (this._fragDropRemainder >= 1) {
+                extra = Math.floor(this._fragDropRemainder);
+                this._fragDropRemainder -= extra;
+            }
+            fragCount = Math.max(1, floored + extra);
+        }
+        // 商店永久强化：掉落品质+1（跨轮回生效，上限神话）
+        const qualityBonus = this.permanent.dropQualityBonus || 0;
+        if (qualityBonus > 0 && fragQuality < 5) {
+            fragQuality = Math.min(5, fragQuality + qualityBonus);
+        }
         // 只从数字体系标签掉落，避免时代标签废料；无数字标签时掉万能碎片
         const numericTags = (e.tags || []).filter(t => typeof t === 'number');
+        let dropTagId = null;      // 主掉落命中的体系标签id（万能掉落为null），供广告双倍掉落补发
+        let mainDropRecorded = false;
         const doAdd = (q, c) => {
             this.permanent.achievementStats.totalFragments += c;
             if (numericTags.length > 0) {
                 const tag = numericTags[Math.floor(Math.random() * numericTags.length)];
                 if (!dropTagName) dropTagName = this.tagNames[tag] || ('标签'+tag);
+                if (!mainDropRecorded) { mainDropRecorded = true; dropTagId = tag; }
                 this.addTagFragment(tag, q, c);
                 this.appendBattleLog(`获得 ${c} 个【${this.tagNames[tag] || ('标签'+tag)}】${this.qualityNames[q]}碎片！`, 'log-heal');
             } else {
                 if (!dropTagName) dropTagName = '万能';
+                if (!mainDropRecorded) { mainDropRecorded = true; dropTagId = null; }
                 this.permanent.universalFragments[q] = (this.permanent.universalFragments[q] || 0) + c;
                 this.appendBattleLog(`获得 ${c} 个万能${this.qualityNames[q]}碎片！`, 'log-heal');
             }
@@ -736,7 +893,7 @@ const game = {
         if (e.type === 'boss' && Math.random() < 0.2) {
             doAdd(4, 1);
         }
-        return { tagName: dropTagName || '万能', fragQuality, fragCount };
+        return { tagName: dropTagName || '万能', fragQuality, fragCount, tagId: dropTagId };
     },
     // 完整天赋掉落：精英2%/Boss5%直接获得对应完整天赋；已解锁则分解为等值同品质碎片（100%返还）
     rollCompleteTalentDrop(e, ratio) {
@@ -826,20 +983,6 @@ const game = {
     applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         this.currentTheme = theme;
-    },
-
-    // 切换主题（三个主题循环）
-    toggleTheme() {
-        const themes = ['dark', 'warm', 'light'];
-        const currentIndex = themes.indexOf(this.currentTheme);
-        const newIndex = (currentIndex + 1) % themes.length;
-        const newTheme = themes[newIndex];
-        this.applyTheme(newTheme);
-        try {
-            localStorage.setItem('tunshi_theme', newTheme);
-        } catch(e) { console.warn('保存主题失败', e); }
-        const themeNames = {dark: '深色（生物实验室）', warm: '复古标本册', light: '现代清爽'};
-        this.showGameAlert('主题切换', `已切换到${themeNames[newTheme]}主题`);
     },
 
     // 设置主题（支持三个主题：dark/warm/light）
@@ -1450,9 +1593,9 @@ const game = {
         this.savePermanent();
     },
 
-    // 获取图鉴收集的永久加成总值
+    // 获取图鉴收集的永久加成总值（审计修复：接入属性/伤害计算）
     getCodexBonus(bonusType) {
-        if (!this.permanent.codexBonuses) return 0;
+        if (!this.permanent || !this.permanent.codexBonuses) return 0;
         
         let total = 0;
         this.codexBonusConfig.forEach(config => {
@@ -1463,9 +1606,9 @@ const game = {
         return total;
     },
 
-    // 获取吞噬累计的永久加成总值
+    // 获取吞噬累计的永久加成总值（审计修复：接入属性/伤害计算）
     getDevourBonus(bonusType) {
-        const ds = this.permanent.devourStats;
+        const ds = this.permanent && this.permanent.devourStats;
         if (!ds || !ds.unlockedBonuses) return 0;
         
         let total = 0;
@@ -1608,7 +1751,6 @@ const game = {
             const res = await Promise.all([
                 fetch('./enemies.json?t=' + ts).then(r => r.json()),
                 fetch('./maps.json?t=' + ts).then(r => r.json()),
-                fetch('./narratives.json?t=' + ts).then(r => r.json()),
                 fetch('./shop.json?t=' + ts).then(r => r.json()),
                 fetch('./talents_skills.json?t=' + ts).then(r => r.json()),
                 fetch('./symbionts.json?t=' + ts).then(r => r.json()),
@@ -1616,11 +1758,10 @@ const game = {
             ]);
             this.data.enemies = res[0];
             this.data.maps = res[1];
-            this.data.narratives = res[2];
-            this.data.shop = res[3];
-            this.data.talents = res[4];
-            this.data.symbionts = res[5];
-            this.data.talentSets = res[6];
+            this.data.shop = res[2];
+            this.data.talents = res[3];
+            this.data.symbionts = res[4];
+            this.data.talentSets = res[5];
             console.log("所有JSON加载完成");
             this.initDailyTasks();
             this.initLeaderboard();
@@ -1742,6 +1883,11 @@ const game = {
     //  开始新轮回
     // ============================================================
     startNewRun() {
+        // 广告频控：新局/轮回重置局内广告计数与场次标记
+        this._adRunCounts = {};
+        this._killDropDoubled = false;
+        this._deathPermanentSnapshot = null;
+        this._deathUI = null;
         const b = this.permanent.bonusStats;
         // 显示开场剧情（每次开始新轮回都显示，第一次完整版，后续简化版）
         const isFirstRun = !this.permanent.achievementStats || this.permanent.achievementStats.battlesCompleted === 0;
@@ -1801,11 +1947,24 @@ const game = {
         this.inBattle = false;
         this.inEndlessMode = false;  // 无尽深层模式
         this.endlessFloor = 0;  // 无尽深层层数
+        this.eventBuffs = {};  // 随机事件百分比增益（本局生效，每轮回重置）
+        this._fragDropRemainder = 0;  // 碎片掉落加成余数（每轮回重置）
         this.currentEnemy = null;
         this.battleLog = [];
 
         if (this.data.maps && this.data.maps.maps.length > 0) {
             this.currentMap = this.data.maps.maps[Math.floor(Math.random()*this.data.maps.maps.length)];
+        }
+
+        // 商店永久强化：开局补给（跨轮回生效，每次轮回开局发放）
+        if (this.permanent.startWithItem && this.permanent.startWithItem.length > 0) {
+            if (!this.player.items) this.player.items = [];
+            this.permanent.startWithItem.forEach(itemId => {
+                const normalized = itemId === 'con_health_potion_small' ? 'con_health_small' : itemId;
+                if ((this.data.shop.consumables || []).find(c => c.id === normalized) && this.player.items.indexOf(normalized) < 0) {
+                    this.player.items.push(normalized);
+                }
+            });
         }
 
         this.calcDerivedStats();
@@ -2154,6 +2313,38 @@ const game = {
         if (evoBuffs.fragmentBonus) {
             p.evoFragmentBonus = evoBuffs.fragmentBonus;
         }
+        // ============================================================
+        // 随机事件百分比增益（eventBuffs，本局生效，审计修复：事件buff接入）
+        // ============================================================
+        const eb = this.eventBuffs || {};
+        if (eb.maxHp) {
+            p.maxHp = Math.floor(p.maxHp * (1 + eb.maxHp / 100));
+        }
+        if (eb.attack) {
+            p.attack = Math.floor(p.attack * (1 + eb.attack / 100));
+        }
+        if (eb.defense) {
+            p.defense = +(p.defense * (1 + eb.defense / 100)).toFixed(1);
+        }
+        if (eb.speed) {
+            p.speed = Math.floor(p.speed * (1 + eb.speed / 100));
+        }
+        // ============================================================
+        // 商店永久强化：能量上限 / 先手值（移速映射）
+        // ============================================================
+        if (this.permanent.shopMaxEnergyBonus) {
+            p.maxEnergy = (p.maxEnergy || 0) + this.permanent.shopMaxEnergyBonus;
+        }
+        if (this.permanent.moveSpeedBonusPercent) {
+            p.speed = Math.floor(p.speed * (1 + this.permanent.moveSpeedBonusPercent / 100));
+        }
+        // ============================================================
+        // 图鉴收集永久加成：先手值+5（速系全收集）
+        // ============================================================
+        const codexSpeed = this.getCodexBonus('speedBonus');
+        if (codexSpeed > 0) {
+            p.speed = (p.speed || 0) + codexSpeed;
+        }
     },
 
     // ============================================================
@@ -2429,12 +2620,6 @@ const game = {
             return tags;
         }
         return new Set((unit && unit.tags) || []);
-    },
-
-    // 单位是否免疫环境法则（immuneTag 数字标签）
-    isImmuneToEnv(unit, immuneTag) {
-        if (!immuneTag) return false;
-        return this.getUnitTags(unit).has(immuneTag);
     },
 
     // V10-2 环境免疫程度：玩家带对应系天赋=完全免疫(1)；敌人按类型 boss 1 / elite 0.5 / normal 0
@@ -2868,8 +3053,8 @@ const game = {
         } else if (choiceId === 'eternal_cycle' || choiceId === 'eternal_reincarnation') {
             this.showEndingB();
         } else {
-            // 默认进入无尽深层
-            this.enterEndlessMode();
+            // 审计修复（任务5）：无尽深层模式尚未实装，移除默认进入入口，改为敬请期待提示
+            this.showGameAlert('无尽深层', '无尽深层模式正在建设中，敬请期待！\n\n当前请选择「成为虚无」或「永恒轮回」继续游戏。');
         }
     },
     
@@ -2950,63 +3135,20 @@ const game = {
         this.showGameAlert('新游戏+', `新游戏+模式已开始！\n\n${this.permanent.eternalReincarnation ? '永恒轮回加成：永久属性+' + (this.permanent.eternalBonusCount * 5) + '%\n' : ''}祝你在新的轮回中更加强大！`);
     },
     
-    // 进入无尽深层模式
+    // 进入无尽深层模式（审计修复：任务5——功能尚未实装，入口已从最终抉择拆除，仅保留待上线提示）
     enterEndlessMode() {
         this.inEndlessMode = true;
         this.endlessFloor = 1;
-        this.appendBattleLog('<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 你已通关所有地图，进入无尽深层！', 'log-victory');
+        this.appendBattleLog('<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽深层模式正在建设中，敬请期待！', 'log-info');
         
         // 显示无尽深层提示
         setTimeout(() => {
-            this.showGameAlert('<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽深层', '恭喜你通关了所有地图！\n\n现在进入无尽深层模式：\n• 无限层数，敌人越来越强\n• 每5层一个首领\n• 第100层遭遇终极首领\n• 这是轮回成长数值的终极考验！\n\n你能推到第几层？');
+            this.showGameAlert('<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽深层', '无尽深层模式正在建设中，敬请期待！');
         }, 500);
         
         this.refreshUI();
     },
     
-    // 获取无尽深层的敌人（属性递增）
-    getEndlessEnemy(floor) {
-        const allEnemies = this.data.enemies.enemies;
-        const bosses = allEnemies.filter(e => e.type === 'boss');
-        const normals = allEnemies.filter(e => e.type === 'normal');
-        const elites = allEnemies.filter(e => e.type === 'elite');
-        
-        // 每5层一个首领
-        const isBossFloor = floor % 5 === 0;
-        // 第100层是终极Boss
-        const isFinalBoss = floor >= 100;
-        
-        let baseEnemy;
-        if (isFinalBoss) {
-            // 终极Boss：使用最强的Boss
-            baseEnemy = bosses[bosses.length - 1];
-        } else if (isBossFloor) {
-            baseEnemy = bosses[Math.floor(Math.random() * bosses.length)];
-        } else if (floor % 3 === 0 && elites.length > 0) {
-            baseEnemy = elites[Math.floor(Math.random() * elites.length)];
-        } else {
-            baseEnemy = normals[Math.floor(Math.random() * normals.length)];
-        }
-        
-        // 属性递增：每层+5%
-        const multiplier = 1 + floor * 0.05;
-        const enemy = JSON.parse(JSON.stringify(baseEnemy));
-        enemy.stats.hp = Math.floor(enemy.stats.hp * multiplier);
-        enemy.stats.atk = Math.floor(enemy.stats.atk * multiplier);
-        enemy.stats.def = Math.floor(enemy.stats.def * multiplier);
-        
-        // 无尽深层敌人名称前缀
-        if (isFinalBoss) {
-            enemy.name = `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z\"/><path d=\"M5 20h14\"/></svg> 终极Boss·${enemy.name}`;
-        } else if (isBossFloor) {
-            enemy.name = `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽首领·${enemy.name}`;
-        } else {
-            enemy.name = `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3a9 9 0 0 1 9 9\"/><path d=\"M12 21a9 9 0 0 1-9-9\"/><path d=\"M4.93 4.93a9 9 0 0 1 12.73 0\"/><path d=\"M6.34 17.66a9 9 0 0 1-1.41-1.41\"/></svg> 无尽深层·第${floor}层·${enemy.name}`;
-        }
-        
-        return enemy;
-    },
-
     // ============================================================
     //  探索
     // ============================================================
@@ -3397,6 +3539,8 @@ const game = {
     applyEventEffect(eff) {
         if (!eff || !eff.type) return '';
         const p = this.player;
+        const statNames = {maxHp:'生命', defense:'防御', attack:'攻击', speed:'先手值', crit:'暴击率', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', talentPower:'天赋强度', firstStrike:'先手值', hp:'生命', hpRegen:'生命恢复', dotDamage:'持续伤害', cooldownReduction:'冷却缩减', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾', thorns:'荆棘'};
+        const qNames = {1:'普通',2:'稀有',3:'史诗',4:'传说',5:'神话'};
         switch(eff.type) {
             case 'heal': {
                 const rawHeal = eff.value || 0;
@@ -3409,6 +3553,7 @@ const game = {
                 p.hp = Math.max(1, p.hp - (eff.value || 0));
                 return `受到${eff.value}点伤害`;
             case 'gain_exp':
+            case 'exp':
                 p.exp += eff.value || 0;
                 while (p.exp >= p.expToNext) {
                     p.exp -= p.expToNext;
@@ -3424,28 +3569,89 @@ const game = {
                 }
                 return `获得${eff.value}点经验`;
             case 'gain_stat':
+            case 'stat': {
                 p[eff.stat] = (p[eff.stat] || 0) + (eff.value || 0);
-                const statNames = {maxHp:'生命', defense:'防御', attack:'攻击', speed:'先手值', crit:'暴击率', agility:'敏捷', strength:'力量', vitality:'体质', perception:'感知', evolution:'进化', hit:'命中率', dodge:'闪避率', critDamage:'暴击伤害', energy:'能量', maxEnergy:'能量上限', energyRegen:'能量恢复', talentPower:'天赋强度', firstStrike:'先手值', hp:'生命', hpRegen:'生命恢复', dotDamage:'持续伤害', cooldownReduction:'冷却缩减', armorPenetration:'护甲穿透', critResistance:'暴击抗性', lifeSteal:'吸血', reflectDamage:'反伤', shield:'护盾', thorns:'荆棘'};
+                // 五维基础属性立即重算派生属性；直接改派生属性（如defense）不重算，避免被覆盖
+                if (['strength','agility','vitality','perception','evolution'].indexOf(eff.stat) >= 0) this.calcDerivedStats();
                 return `${statNames[eff.stat] || eff.stat}+${eff.value}`;
+            }
             case 'gain_fragment':
-                const qNames = {1:'普通',2:'稀有',3:'史诗',4:'传说',5:'神话'};
+            case 'gain_fragments':
+            case 'fragments': {
+                const cnt = eff.count || eff.value || 0;
                 if (eff.tag && eff.tag > 0) {
                     // 标签专属碎片
-                    this.addTagFragment(eff.tag, eff.quality, eff.count || 0);
+                    this.addTagFragment(eff.tag, eff.quality, cnt);
                     const tagName = this.tagNames[eff.tag] || ('标签' + eff.tag);
-                    return `获得${eff.count}个【${tagName}】${qNames[eff.quality] || ''}碎片`;
+                    return `获得${cnt}个【${tagName}】${qNames[eff.quality] || ''}碎片`;
                 } else {
                     // 万能碎片
-                    this.permanent.universalFragments[eff.quality] = (this.permanent.universalFragments[eff.quality] || 0) + (eff.count || 0);
-                    return `获得${eff.count}个${qNames[eff.quality] || ''}万能碎片`;
+                    if (!this.permanent.universalFragments) this.permanent.universalFragments = {1:0,2:0,3:0,4:0,5:0};
+                    this.permanent.universalFragments[eff.quality] = (this.permanent.universalFragments[eff.quality] || 0) + cnt;
+                    return `获得${cnt}个${qNames[eff.quality] || ''}万能碎片`;
                 }
+            }
             case 'gain_energy':
                 const energyAmt = Math.min(p.maxEnergy - p.energy, eff.value || 0);
                 p.energy = Math.min(p.maxEnergy, p.energy + (eff.value || 0));
                 return energyAmt > 0 ? `获得${energyAmt}点能量` : '';
+            case 'heal_percent': {
+                const pct = eff.value || eff.percent || 10;
+                const healAmt = Math.min(p.maxHp - p.hp, this.applyHealPenalty(Math.floor(p.maxHp * pct / 100)));
+                p.hp = Math.min(p.maxHp, p.hp + healAmt);
+                return healAmt > 0 ? `恢复${healAmt}点生命（${pct}%）` : '';
+            }
+            case 'gain_gold':
+                p.gold = (p.gold || 0) + (eff.value || 0);
+                return `获得${eff.value}基因精华`;
+            case 'lose_gold': {
+                const lost = Math.min(p.gold || 0, eff.value || 0);
+                p.gold = (p.gold || 0) - lost;
+                return lost > 0 ? `失去${lost}基因精华` : '';
+            }
+            case 'talent_points':
+                this.permanent.talentPoints = (this.permanent.talentPoints || 0) + (eff.value || 0);
+                return `获得${eff.value}天赋点`;
+            case 'buff_attack':
+            case 'buff_defense':
+            case 'buff_all': {
+                const pct = eff.value || 10;
+                if (!this.eventBuffs) this.eventBuffs = {};
+                if (eff.type === 'buff_all') {
+                    this.eventBuffs.maxHp = (this.eventBuffs.maxHp || 0) + pct;
+                    this.eventBuffs.attack = (this.eventBuffs.attack || 0) + pct;
+                    this.eventBuffs.defense = (this.eventBuffs.defense || 0) + pct;
+                    this.eventBuffs.speed = (this.eventBuffs.speed || 0) + pct;
+                } else if (eff.type === 'buff_attack') {
+                    this.eventBuffs.attack = (this.eventBuffs.attack || 0) + pct;
+                } else {
+                    this.eventBuffs.defense = (this.eventBuffs.defense || 0) + pct;
+                }
+                this.calcDerivedStats();
+                if (eff.type === 'buff_all') return `全属性+${pct}%（本局生效）`;
+                return `${eff.type === 'buff_attack' ? '攻击力' : '防御力'}+${pct}%（本局生效）`;
+            }
+            case 'buff_perception':
+            case 'buff_agility':
+            case 'buff_strength':
+            case 'buff_vitality':
+            case 'buff_evolution': {
+                const statField = eff.type.replace('buff_', '');
+                const v = eff.value || 1;
+                p[statField] = (p[statField] || 0) + v;
+                this.calcDerivedStats();
+                return `${statNames[statField] || statField}+${v}`;
+            }
+            case 'random_buff': {
+                // 随机获得一个增益（复用上方分支）
+                const randBuffs = ['buff_attack', 'buff_defense', 'buff_all', 'buff_perception', 'buff_agility', 'buff_strength', 'buff_vitality'];
+                const t = randBuffs[Math.floor(Math.random() * randBuffs.length)];
+                return this.applyEventEffect(Object.assign({}, eff, {type: t}));
+            }
             case 'spawn_elite':
                 return '惊动了精英敌人！';
             case 'nothing':
+            case 'none':
             default:
                 return '';
         }
@@ -4033,19 +4239,6 @@ const game = {
     // ============================================================
     REDEEM_SECRET: "DEVOUR_SECRET_2026",
 
-    // 生成兑换码（管理员用）
-    generateRedeemCode(reward, expireDays = 365) {
-        const data = {
-            reward: reward,
-            expire: Date.now() + expireDays * 24 * 60 * 60 * 1000,
-            secret: this.REDEEM_SECRET
-        };
-        const jsonStr = JSON.stringify(data);
-        // Base64编码，去掉等号（保持大小写，Base64区分大小写）
-        const code = btoa(jsonStr).replace(/=/g, '');
-        return code;
-    },
-
     // 验证并兑换码
     redeemCode(code) {
         if (!code || !code.trim()) {
@@ -4107,12 +4300,6 @@ const game = {
                 this.permanent.symbionts.push(reward.symbiontId);
                 const tpl = this.getSymbiontTemplate(reward.symbiontId);
                 rewardDesc = '共生体：' + (tpl ? tpl.name : reward.symbiontId);
-            } else if (reward.type === 'bossCore') {
-                if (!this.permanent.bossCores) this.permanent.bossCores = {};
-                this.permanent.bossCores[reward.bossCoreId] = (this.permanent.bossCores[reward.bossCoreId] || 0) + reward.count;
-                // 获取Boss名称
-                const bossName = this.getBossCoreName(reward.bossCoreId);
-                rewardDesc = reward.count + '个首领核心：' + bossName;
             } else if (reward.type === 'consumable') {
                 // 消耗品（道具）
                 if (!this.player.items) this.player.items = [];
@@ -4866,6 +5053,11 @@ const game = {
         // 天赋：造成伤害加成
         const atkTalent = isPlayer ? (this.talentBonus || {}) : {};
         if (atkTalent.damagePct) damage = Math.floor(damage * (1 + atkTalent.damagePct));
+        // 审计修复（任务7）：尾鞭群攻——1v1战斗下"可同时攻击相邻单位"映射为总伤害加成（20%基底+等级加成）
+        if (isPlayer && (atkTalent.groupAttackBonusPct || 0) > 0) {
+            damage = Math.floor(damage * (1 + atkTalent.groupAttackBonusPct / 100));
+            this.appendBattleLog('【尾鞭】群体横扫，攻击伤害+' + atkTalent.groupAttackBonusPct + '%！', 'log-info');
+        }
         // 审计修复：低血攻击力加成（狼人血统）
         if (isPlayer && atkTalent.lowHpAttackPct > 0 && this.player.hp / this.player.maxHp < (atkTalent.lowHpThreshold || 50) / 100) {
             damage = Math.floor(damage * (1 + atkTalent.lowHpAttackPct));
@@ -4878,6 +5070,18 @@ const game = {
         if (isPlayer && this.player._extraAttackMult > 0) {
             damage = Math.floor(damage * (1 + this.player._extraAttackMult));
             this.player._extraAttackMult = 0;
+        }
+        // 审计修复（任务4）：吞噬/图鉴永久加成——全伤害+3%、首领伤害+5%、物理伤害+5%
+        if (isPlayer) {
+            let permDmgMult = 0;
+            permDmgMult += this.getDevourBonus('allDamage') / 100;
+            permDmgMult += this.getCodexBonus('physicalDamage') / 100;
+            if (defender && (defender.type === 'boss' || defender.isBoss)) {
+                permDmgMult += this.getDevourBonus('bossDamage') / 100;
+            }
+            if (permDmgMult > 0) {
+                damage = Math.floor(damage * (1 + permDmgMult));
+            }
         }
         
         // 因果之链：附加上次记录的伤害
@@ -5251,7 +5455,11 @@ const game = {
 
     // 暴击判定
     calcCrit(attacker) {
-        const critRate = attacker.crit || (5 + (attacker.stats ? attacker.stats.per : 5) * 0.8);
+        let critRate = attacker.crit || (5 + (attacker.stats ? attacker.stats.per : 5) * 0.8);
+        // 审计修复（任务8）：猎食者击杀暴击叠加——runKillBuffs.crit 本局累计值生效（每击杀+0.5%，上限15%）
+        if (attacker === this.player && this.player.runKillBuffs && this.player.runKillBuffs.crit > 0) {
+            critRate += this.player.runKillBuffs.crit;
+        }
         return { crit: Math.random() * 100 < Math.min(100, critRate) };
     },
 
@@ -5374,7 +5582,6 @@ const game = {
         if (ex) { ex.stacks = Math.min(s.maxStacks||99, ex.stacks+(s.stacks||1)); ex.duration = Math.max(ex.duration, s.duration); }
         else list.push({id:s.id,name:s.name,type:s.type,subtype:s.subtype||s.id,stacks:s.stacks||1,maxStacks:s.maxStacks||99,duration:s.duration||3,value:s.value||0,source:s.source||"unknown",tags:s.tags||[]});
     },
-    removeStatus(unit, id) { const l=this.getStatuses(unit); const i=l.findIndex(s=>s.id===id); if(i>=0) l.splice(i,1); },
     hasStatus(unit, id) { return this.getStatuses(unit).some(s=>s.id===id); },
     clearStatuses(unit) { if(unit) unit.statuses=[]; },
     isControlled(unit, isBoss) {
@@ -5432,6 +5639,13 @@ const game = {
                 if (dotBonus.allDotDamagePct > 0) dmg = Math.floor(dmg * (1 + dotBonus.allDotDamagePct));
                 if (s.subtype === 'burn' && dotBonus.burnDamagePct > 0) dmg = Math.floor(dmg * (1 + dotBonus.burnDamagePct));
                 if (s.subtype === 'poison' && dotBonus.poisonPerStackDamagePct > 0) dmg = Math.floor(dmg * (1 + s.stacks * dotBonus.poisonPerStackDamagePct));
+                // 审计修复（任务4）：图鉴收集永久加成——毒系/火系/血系Dot伤害
+                const codexDotMap = { poison: 'poisonDamage', burn: 'fireDamage', bleed: 'bleedDamage' };
+                const codexDotType = codexDotMap[s.subtype];
+                if (codexDotType) {
+                    const permDot = this.getCodexBonus(codexDotType);
+                    if (permDot > 0) dmg = Math.floor(dmg * (1 + permDot / 100));
+                }
             }
             // 应用Dot抗性和穿透（仅对敌人受到的Dot生效）
             if(dmg > 0 && !isPlayer && this.currentEnemy) {
@@ -5452,6 +5666,13 @@ const game = {
                 if(isPlayer) {
                     const defBonus = this.getEquippedTalentBonus();
                     let actualDmg = dmg;
+                    // 审计修复（任务4）：吞噬永久加成——毒/火/血元素抗性（图鉴无对应Dot伤害来源的冰/雷抗不接入）
+                    const permResistMap = { poison: 'poisonResist', burn: 'fireResist', bleed: 'bleedResist' };
+                    const permResistType = permResistMap[s.subtype];
+                    if (permResistType) {
+                        const permResist = this.getDevourBonus(permResistType);
+                        if (permResist > 0) actualDmg = Math.floor(actualDmg * (1 - permResist / 100));
+                    }
                     // 冰火减伤（冰焰之躯，审计修复）
                     if(s.subtype === 'burn' && defBonus.iceFireResistPct > 0) {
                         actualDmg = Math.floor(actualDmg * (1 - defBonus.iceFireResistPct));
@@ -6014,9 +6235,9 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         const stageMultiplier = this.getGoldMultiplier();
         const goldReward = Math.floor((5 + this.currentFloor*2) * 0.5 * goldMultiplier * stageMultiplier);
         const expReward = Math.floor((10 + this.currentFloor*3) * 0.5 * stageMultiplier * (1 + (this.getEquippedTalentBonus().expBonusPct || 0)));
-        // Boss掉落Boss核心
+        // Boss掉落Boss核心（统一入口：重复核心自动转化为30进化精粹）
         if (e.type === 'boss' && e.id) {
-            this.permanent.bossCores[e.id] = (this.permanent.bossCores[e.id] || 0) + 1;
+            this.addBossCore(e.id, 1);
         }
         this.player.gold += goldReward;
         this.player.exp += expReward;
@@ -6042,7 +6263,12 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             count: dropInfo.fragCount,
             quality: dropInfo.fragQuality,
             desc: `专属碎片（快速狩猎70%），可用于解锁/升级${dropInfo.tagName}体系天赋`,
-            detail: `品质：${this.qualityNames[dropInfo.fragQuality]}\n体系：${dropInfo.tagName}\n数量：${dropInfo.fragCount}（快速狩猎70%）`
+            detail: `品质：${this.qualityNames[dropInfo.fragQuality]}\n体系：${dropInfo.tagName}\n数量：${dropInfo.fragCount}（快速狩猎70%）`,
+            doubleGrant: () => {
+                this.permanent.achievementStats.totalFragments += dropInfo.fragCount;
+                if (dropInfo.tagId) this.addTagFragment(dropInfo.tagId, dropInfo.fragQuality, dropInfo.fragCount);
+                else this.permanent.universalFragments[dropInfo.fragQuality] = (this.permanent.universalFragments[dropInfo.fragQuality] || 0) + dropInfo.fragCount;
+            }
         });
         quickDrops.push({
             icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>',
@@ -6066,7 +6292,10 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
                 name: `${e.name}核心`,
                 quality: 4,
                 desc: '首领核心，可用于解锁神话天赋',
-                detail: `来源：${e.name}\n用途：神话天赋解锁`
+                detail: `来源：${e.name}\n用途：神话天赋解锁`,
+                doubleGrant: () => {
+                    this.addBossCore(e.id, 1);
+                }
             });
         }
         
@@ -6090,7 +6319,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             }
         }
         
-        // 显示掉落弹窗，关闭后跳转回主界面
+        // 显示掉落弹窗，关闭后跳转回主界面（精英/Boss战显示广告双倍按钮）
         this.showKillDropPopup(quickDrops, () => {
             this.showScreen('mainScreen');
             this.refreshMainUI();
@@ -6103,7 +6332,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
                     this.showEvolutionChoice(chapter);
                 }, 500);
             }
-        });
+        }, e.type === 'elite' || e.type === 'boss');
     },
 
     endPlayerTurn() {
@@ -6402,11 +6631,13 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         // 玩家回合开始：结算玩家Dot + 环境法则效果 + 天赋每回合回复 + 能量回复
         this.tickStatuses(this.player, true, false);
         this.tickEnvironmentEffect(this.player);
-        // 天赋每回合回复生命（审计修复：回复效果+X%）
+        // 天赋每回合回复生命（审计修复：回复效果+X%；图鉴收集：永久生命回复+10%）
         const regenBonus = this.getEquippedTalentBonus();
+        const permRegenMult = 1 + this.getCodexBonus('regenBonus') / 100;
         if (regenBonus.hpRegen > 0) {
             let regenAmount = regenBonus.hpRegen;
             if (regenBonus.healEffectPct > 0) regenAmount = Math.floor(regenAmount * (1 + regenBonus.healEffectPct));
+            regenAmount = Math.floor(regenAmount * permRegenMult);
             // 受到暴击伤害后恢复量翻倍（骨骼再生）
             if (regenBonus.critHealDouble && this.player.tookCritThisTurn) {
                 regenAmount = regenAmount * 2;
@@ -6419,6 +6650,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             const lostHp = Math.max(0, this.player.maxHp - this.player.hp);
             let regenLost = Math.floor(lostHp * regenBonus.hpRegenLostPct);
             if (regenBonus.healEffectPct > 0) regenLost = Math.floor(regenLost * (1 + regenBonus.healEffectPct));
+            regenLost = Math.floor(regenLost * permRegenMult);
             if (regenBonus.lowHpRegenDouble && this.player.hp / this.player.maxHp < (regenBonus.lowHpRegenDoubleThreshold || 30) / 100) regenLost = regenLost * 2;
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + regenLost);
         }
@@ -6427,6 +6659,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             let regenPctAmount = Math.floor(this.player.maxHp * regenBonus.hpRegenPct);
             // 审计修复：回复效果+X%
             if (regenBonus.healEffectPct > 0) regenPctAmount = Math.floor(regenPctAmount * (1 + regenBonus.healEffectPct));
+            regenPctAmount = Math.floor(regenPctAmount * permRegenMult);
             // 审计修复：生命低于X%时回复翻倍（冬眠再生/无限增殖）
             if (regenBonus.lowHpRegenDouble && this.player.hp / this.player.maxHp < (regenBonus.lowHpRegenDoubleThreshold || 30) / 100) regenPctAmount = regenPctAmount * 2;
             // 受到暴击伤害后恢复量翻倍（骨骼再生）
@@ -6642,7 +6875,12 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
                 count: dropInfo.fragCount,
                 quality: dropInfo.fragQuality,
                 desc: `专属碎片，可用于解锁/升级${dropInfo.tagName}体系天赋`,
-                detail: `品质：${this.qualityNames[dropInfo.fragQuality]}\n体系：${dropInfo.tagName}\n数量：${dropInfo.fragCount}`
+                detail: `品质：${this.qualityNames[dropInfo.fragQuality]}\n体系：${dropInfo.tagName}\n数量：${dropInfo.fragCount}`,
+                doubleGrant: () => {
+                    this.permanent.achievementStats.totalFragments += dropInfo.fragCount;
+                    if (dropInfo.tagId) this.addTagFragment(dropInfo.tagId, dropInfo.fragQuality, dropInfo.fragCount);
+                    else this.permanent.universalFragments[dropInfo.fragQuality] = (this.permanent.universalFragments[dropInfo.fragQuality] || 0) + dropInfo.fragCount;
+                }
             });
             killDrops.push({
                 icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg>',
@@ -6670,16 +6908,21 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
                 });
             }
             if (e.type === 'boss' && e.id) {
+                // 首领核心统一入库（重复核心自动转化为30进化精粹）
+                this.addBossCore(e.id, 1);
                 killDrops.push({
                     icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M6 3h12l4 6-10 13L2 9z\"/><path d=\"M11 3 8 9l4 13 4-13-3-6\"/><path d=\"M2 9h20\"/></svg>',
                     name: `${e.name}核心`,
                     quality: 4,
                     desc: '首领核心，可用于解锁神话天赋',
-                    detail: `来源：${e.name}\n用途：神话天赋解锁`
+                    detail: `来源：${e.name}\n用途：神话天赋解锁`,
+                    doubleGrant: () => {
+                        this.addBossCore(e.id, 1);
+                    }
                 });
             }
             
-            // 显示掉落弹窗，关闭后跳转回主界面
+            // 显示掉落弹窗，关闭后跳转回主界面（精英/Boss战显示广告双倍按钮）
             this.showKillDropPopup(killDrops, () => {
                 // 显示共生体获得提醒（如果有）- 移到击杀掉落弹窗关闭后再显示
                 if (this._pendingSymbiontDrop) {
@@ -6735,7 +6978,7 @@ ${transition.buff.desc}`);
                         this.showEvolutionChoice(chapter);
                     }, 500);
                 }
-            });
+            }, e.type === 'elite' || e.type === 'boss');
         }, 400);
     },
 
@@ -6754,8 +6997,8 @@ ${transition.buff.desc}`);
         this.appendBattleLog(`升级恢复 ${actualLevelHeal} 点生命！`, 'log-heal');
     },
 
-    // 显示击杀掉落弹窗
-    showKillDropPopup(drops, callback) {
+    // 显示击杀掉落弹窗（isEliteOrBoss：精英/Boss战显示广告双倍按钮；普通怪不显示）
+    showKillDropPopup(drops, callback, isEliteOrBoss) {
         // 先移除已存在的弹窗，避免重复渲染
         const oldPopup = document.getElementById('killDropPopup');
         if (oldPopup) oldPopup.remove();
@@ -6766,6 +7009,23 @@ ${transition.buff.desc}`);
         this.closePop();
         const settingsPanel = document.getElementById('settingsPanel');
         if (settingsPanel) settingsPanel.style.display = 'none';
+        
+        // 存储掉落物品信息，供tooltip与广告双倍使用；每次新弹窗重置场次标记
+        this._currentKillDrops = drops;
+        this._killDropCallback = callback;
+        this._killDropIsEliteBoss = !!isEliteOrBoss;
+        this._killDropDoubled = false;
+        this._killDropAdPlaying = false;
+        this.renderKillDropPopup();
+    },
+
+    // 渲染击杀掉落弹窗（广告双倍后重渲染复用）
+    renderKillDropPopup() {
+        const oldPopup = document.getElementById('killDropPopup');
+        if (oldPopup) oldPopup.remove();
+        const oldTip = document.getElementById('dropTooltip');
+        if (oldTip) oldTip.remove();
+        const drops = this._currentKillDrops || [];
         
         let html = '<div id="killDropOverlay" onclick="game.closeKillDropPopup()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent">';
         html += '<div onclick="event.stopPropagation()" style="background:linear-gradient(135deg,var(--bg-card),var(--bg-secondary));border:2px solid var(--accent-primary);border-radius:16px;padding:20px;max-width:400px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 0 40px rgba(0,212,170,0.3);-webkit-overflow-scrolling:touch">';
@@ -6789,18 +7049,60 @@ ${transition.buff.desc}`);
         });
         
         html += '</div>';
+        // 精英/Boss战：看广告双倍领取按钮（每场1次）
+        if (this._killDropIsEliteBoss) {
+            if (this._killDropDoubled) {
+                html += '<button disabled style="width:100%;padding:14px;margin-top:12px;background:var(--text-faint);color:var(--text-secondary);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:not-allowed;min-height:48px">已双倍</button>';
+            } else {
+                html += '<button onclick="game.doubleKillDrops()" style="width:100%;padding:14px;margin-top:12px;background:var(--accent-warning);color:var(--bg-card);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent">看广告双倍领取（碎片/核心/物品×2）</button>';
+            }
+        }
         html += '<button onclick="game.closeKillDropPopup()" style="width:100%;padding:14px;margin-top:12px;background:var(--accent-primary);color:var(--bg-card);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;min-height:48px;-webkit-tap-highlight-color:transparent">确认领取</button>';
         html += '<div style="text-align:center;color:var(--text-faint);font-size:11px;margin-top:8px">点击任意处或按钮关闭</div>';
         html += '</div></div>';
-        
-        // 存储掉落物品信息，供tooltip使用
-        this._currentKillDrops = drops;
-        this._killDropCallback = callback;
         
         const popupDiv = document.createElement('div');
         popupDiv.id = 'killDropPopup';
         popupDiv.innerHTML = html;
         document.body.appendChild(popupDiv);
+    },
+
+    // 可被广告翻倍的掉落物：仅弹窗内的碎片/核心/物品，不含基因精华和经验
+    _isDoublableDrop(drop) {
+        if (!drop || typeof drop.count !== 'number' || drop.count <= 0) return false;
+        if (drop.name === '基因精华' || drop.name === '经验值') return false;
+        return true;
+    },
+
+    // 看广告双倍领取（精英/Boss战，每场1次）
+    doubleKillDrops() {
+        if (this._killDropDoubled || this._killDropAdPlaying) return;
+        const avail = this.checkAdAvailable('elite_double');
+        if (!avail.available) {
+            this.showGameAlert('提示', '本场双倍已使用');
+            return;
+        }
+        const drops = this._currentKillDrops || [];
+        const self = this;
+        this._killDropAdPlaying = true;
+        this.showRewardedVideo('elite_double', (ok) => {
+            self._killDropAdPlaying = false;
+            if (!ok) return;
+            self.consumeAd('elite_double');
+            self._killDropDoubled = true;
+            drops.forEach(drop => {
+                if (!self._isDoublableDrop(drop)) return;
+                // 实际补发翻倍部分（碎片/核心/物品）
+                if (drop.doubleGrant) {
+                    try { drop.doubleGrant(); } catch (err) { console.error('[AdManager] 双倍补发失败:', err); }
+                }
+                drop.count *= 2;
+            });
+            self.savePermanent();
+            // 弹窗仍存在则重新渲染（若看广告期间已关闭弹窗，奖励照发但不重开）
+            if (document.getElementById('killDropPopup')) self.renderKillDropPopup();
+            self.appendBattleLog('观看广告，本次击杀掉落翻倍！', 'log-heal');
+        });
     },
     
     // 显示掉落物品tooltip
@@ -6859,6 +7161,8 @@ ${transition.buff.desc}`);
     //  死亡结算
     // ============================================================
     deathSettlement() {
+        // 广告复活快照：记录死亡结算前的永久存档，供“看广告复活”整体回滚（含死亡次数/精华转化/碎片返还/成绩）
+        this._deathPermanentSnapshot = JSON.parse(JSON.stringify(this.permanent));
         // 记录本局装备的天赋，供下一轮回自动装备（死亡/自杀统一走这里）
         this.permanent.lastEquippedTalents = (this.player.equippedTalents || []).slice();
         // 成就统计：死亡
@@ -6890,7 +7194,12 @@ ${transition.buff.desc}`);
         });
 
         // 天赋点奖励：层数×0.3（向上取整）+ 等级奖励（再乘轮回成长加成）
-        const talentPointReward = Math.floor((Math.ceil(this.currentFloor * 0.35) + Math.floor(p.level / 5)) * growthMult);
+        let talentPointReward = Math.floor((Math.ceil(this.currentFloor * 0.35) + Math.floor(p.level / 5)) * growthMult);
+        // 商店永久强化：死亡结算天赋点+X%（跨轮回生效）
+        const deathTalentBonus = this.permanent.deathTalentBonusPercent || 0;
+        if (deathTalentBonus > 0) {
+            talentPointReward = Math.floor(talentPointReward * (1 + deathTalentBonus / 100));
+        }
         this.permanent.talentPoints = (this.permanent.talentPoints || 0) + talentPointReward;
         this.permanent.freePoints += totalFree;
 
@@ -6924,29 +7233,56 @@ ${transition.buff.desc}`);
                 <p style="color:var(--accent-purple);font-size:15px;line-height:1.8;font-style:italic;margin:0">${this.firstDeathNarrative.replace(/\n/g, '<br>')}</p>
             </div>`;
         }
-        
-        document.getElementById('deathStats').innerHTML = deathNarrativeHtml + `
+        // 缓存结算展示数据，供“转化率翻倍”广告后重渲染
+        this._deathUI = {
+            p: p,
+            deathNarrativeHtml: deathNarrativeHtml,
+            canConvertEssence: canConvertEssence,
+            killsThisRun: killsThisRun,
+            rate: 0.3,
+            goldToEssence: goldToEssence,
+            fragReturned: fragReturned,
+            talentPointReward: talentPointReward,
+            totalFree: totalFree,
+            floorBonus: floorBonus,
+            allocatedGained: allocatedGained,
+            unspentPoints: unspentPoints,
+            totalGained: totalGained,
+            growthMult: growthMult
+        };
+        this.renderDeathSettlementUI();
+        this.showScreen('deathScreen');
+    },
+
+    // 渲染死亡结算面板（死亡转化 + 广告按钮；转化率翻倍后重渲染复用）
+    renderDeathSettlementUI() {
+        const ui = this._deathUI;
+        if (!ui) return;
+        const p = ui.p;
+        const ratePct = Math.round(ui.rate * 100);
+
+        document.getElementById('deathStats').innerHTML = ui.deathNarrativeHtml + `
             <div class="stat-row"><span class="stat-label">轮回难度 / 奖励加成</span><span>难度 ×${this.getReincarnationDifficulty().toFixed(2)} · 奖励 ×${this.getGrowthMult().toFixed(2)}</span></div>
             <div class="stat-row"><span class="stat-label">到达层数</span><span>第 ${this.currentFloor} 层</span></div>
             <div class="stat-row"><span class="stat-label">最终等级</span><span>${p.level} 级</span></div>
-            <div class="stat-row"><span class="stat-label">剩余基因精华</span><span>${p.gold}${canConvertEssence ? `（30%转化为${goldToEssence}进化精粹）` : `（击杀不足5个，无法转化）`}</span></div>
+            <div class="stat-row"><span class="stat-label">剩余基因精华</span><span>${p.gold}${ui.canConvertEssence ? `（${ratePct}%转化为${ui.goldToEssence}进化精粹）` : `（击杀不足5个，无法转化）`}</span></div>
             <div class="stat-row"><span class="stat-label">剩余属性点</span><span>${p.statPoints}</span></div>
             <div class="stat-row"><span class="stat-label">最终五维</span><span>力${p.strength} 敏${p.agility} 体${p.vitality} 感${p.perception} 进${p.evolution}</span></div>
             <div class="stat-row"><span class="stat-label">局内五维获得</span><span>力+${p.runStrGained} 敏+${p.runAgiGained} 体+${p.runVitGained} 感+${p.runPerGained} 进+${p.runEvoGained}</span></div>
         `;
 
-        let conv = `<div class="reward-box"><p style="color:var(--accent-warning);font-size:18px">获得自由属性点：+${totalFree}</p>`;
-        conv += `<p style="color:var(--accent-success);font-size:16px">获得天赋点：+${talentPointReward}</p>`;
-        conv += `<p style="font-size:13px;color:var(--text-secondary)">已分配五维${allocatedGained}点 + 未分配属性点${unspentPoints}点 = ${totalGained}点 × 55% = ${Math.floor(totalGained*0.55)}点</p>`;
-        conv += `<p style="font-size:13px;color:var(--text-secondary)">层数保底：第${this.currentFloor}层 × 0.5 = ${floorBonus}点</p></div>`;
+        let conv = `<div class="reward-box"><p style="color:var(--accent-warning);font-size:18px">获得自由属性点：+${ui.totalFree}</p>`;
+        conv += `<p style="color:var(--accent-success);font-size:16px">获得天赋点：+${ui.talentPointReward}</p>`;
+        conv += `<p style="font-size:13px;color:var(--text-secondary)">已分配五维${ui.allocatedGained}点 + 未分配属性点${ui.unspentPoints}点 = ${ui.totalGained}点 × 55% = ${Math.floor(ui.totalGained*0.55)}点</p>`;
+        conv += `<p style="font-size:13px;color:var(--text-secondary)">层数保底：第${this.currentFloor}层 × 0.5 = ${ui.floorBonus}点</p></div>`;
 
         let fragText = [];
-        for (let q=1; q<=5; q++) if (fragReturned[q]>0) fragText.push(`${this.qualityNames[q]}碎片+${fragReturned[q]}`);
+        for (let q=1; q<=5; q++) if (ui.fragReturned[q]>0) fragText.push(`${this.qualityNames[q]}碎片+${ui.fragReturned[q]}`);
         if (fragText.length > 0) conv += `<div class="reward-box"><p style="color:var(--accent-success)">天赋转化：${fragText.join('，')}</p></div>`;
-        if (goldToEssence > 0) {
-            conv += `<div class="reward-box"><p style="color:var(--accent-purple)">基因精华转化：${p.gold} × 30% = ${goldToEssence} 进化精粹</p></div>`;
-        } else if (!canConvertEssence && p.gold > 0) {
-            conv += `<div class="reward-box"><p style="color:var(--text-muted)">基因精华转化：击杀不足5个（当前${killsThisRun}个），无法转化</p></div>`;
+        if (ui.goldToEssence > 0) {
+            conv += `<div class="reward-box"><p style="color:var(--accent-purple)">基因精华转化：${p.gold} × ${ratePct}% = ${ui.goldToEssence} 进化精粹</p></div>`;
+        } else if (!ui.canConvertEssence && p.gold > 0) {
+            conv += `<div class="reward-box"><p style="color:var(--text-muted)">基因精华转化：击杀不足5个（当前${ui.killsThisRun}个），无法转化</p></div>`;
         }
         conv += `<p style="color:var(--text-secondary);font-size:13px;margin-top:10px">所有碎片100%保留至局外</p>`;
         
@@ -6959,16 +7295,16 @@ ${transition.buff.desc}`);
         const previewHints = [];
         
         // 1. 再推几层可以多获得多少进化精粹
-        if (p.gold > 0 && canConvertEssence) {
-            const nextFloorEssence = Math.floor((p.gold + 20) * 0.3);  // 假设再推一层多20基因精华
-            const extraEssence = nextFloorEssence - goldToEssence;
+        if (p.gold > 0 && ui.canConvertEssence) {
+            const nextFloorEssence = Math.floor((p.gold + 20) * ui.rate);  // 假设再推一层多20基因精华
+            const extraEssence = nextFloorEssence - ui.goldToEssence;
             if (extraEssence > 0) {
                 previewHints.push(`再推1层 → 进化精粹再多约 +${extraEssence}`);
             }
         }
         
         // 2. 距离下一层数保底还差多少
-        const nextFloorBonus = Math.ceil((this.currentFloor + 1) * 0.5) - floorBonus;
+        const nextFloorBonus = Math.ceil((this.currentFloor + 1) * 0.5) - ui.floorBonus;
         if (nextFloorBonus > 0) {
             previewHints.push(`再推1层 → 自由属性点再多 +${nextFloorBonus}`);
         }
@@ -7011,7 +7347,90 @@ ${transition.buff.desc}`);
         conv += '</div>';
 
         document.getElementById('deathConversion').innerHTML = conv;
-        this.showScreen('deathScreen');
+
+        // ===== 广告按钮：复活 / 转化率翻倍（两按钮独立、各限1次） =====
+        const adBox = document.getElementById('deathAdButtons');
+        if (adBox) {
+            let adHtml = '<div style="display:flex;flex-direction:column;gap:10px;margin:14px 0">';
+            const revAvail = this.checkAdAvailable('death_revive');
+            if (revAvail.available) {
+                adHtml += '<button onclick="game.reviveViaAd()" style="width:100%;padding:13px;background:var(--accent-success);color:white;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;min-height:46px;-webkit-tap-highlight-color:transparent">看广告复活（30%生命，每局限1次）</button>';
+            } else {
+                adHtml += '<button disabled style="width:100%;padding:13px;background:var(--text-faint);color:var(--text-secondary);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:not-allowed;min-height:46px">复活广告已使用</button>';
+            }
+            const convAvail = this.checkAdAvailable('death_convert');
+            if (!ui.canConvertEssence) {
+                adHtml += '<button disabled style="width:100%;padding:13px;background:var(--text-faint);color:var(--text-secondary);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:not-allowed;min-height:46px">转化率翻倍（击杀不足5个不可转化）</button>';
+            } else if (convAvail.available) {
+                adHtml += '<button onclick="game.convertEssenceViaAd()" style="width:100%;padding:13px;background:var(--accent-warning);color:var(--bg-card);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;min-height:46px;-webkit-tap-highlight-color:transparent">看广告转化率翻倍（30%→60%，每局限1次）</button>';
+            } else {
+                adHtml += '<button disabled style="width:100%;padding:13px;background:var(--text-faint);color:var(--text-secondary);border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:not-allowed;min-height:46px">转化翻倍广告已使用</button>';
+            }
+            adHtml += '</div>';
+            adBox.innerHTML = adHtml;
+        }
+    },
+
+    // 看广告复活：以30%最大生命复活，回滚死亡结算的永久改动，回到探索界面
+    reviveViaAd() {
+        const avail = this.checkAdAvailable('death_revive');
+        if (!avail.available) {
+            this.showGameAlert('提示', '本局复活次数已用完');
+            return;
+        }
+        const self = this;
+        this.showRewardedVideo('death_revive', (ok) => {
+            if (!ok) return;
+            self.consumeAd('death_revive');
+            // 回滚死亡结算写入的永久数据（死亡次数/精华转化/碎片返还/成绩记录等）
+            if (self._deathPermanentSnapshot) {
+                self.permanent = self._deathPermanentSnapshot;
+                self._deathPermanentSnapshot = null;
+            }
+            self._deathUI = null;
+            // 以30%最大生命复活，恢复探索状态
+            self.player.hp = Math.max(1, Math.floor(self.player.maxHp * 0.3));
+            self.battleEnding = false;
+            self.inBattle = false;
+            self.playerTurn = true;
+            self.showScreen('mainScreen');
+            self.refreshMainUI();
+            const eb = document.getElementById('exploreBtn');
+            if (eb) eb.disabled = false;
+            self.appendBattleLog('你以30%生命复活了！', 'log-heal');
+            self.showGameAlert('复活成功', `你以30%最大生命复活（${self.player.hp}/${self.player.maxHp}），继续探索！`);
+        });
+    },
+
+    // 看广告转化率翻倍：本次死亡转化 30%→60%，重新计算精粹并刷新面板
+    convertEssenceViaAd() {
+        const avail = this.checkAdAvailable('death_convert');
+        if (!avail.available) {
+            this.showGameAlert('提示', '本局转化翻倍次数已用完');
+            return;
+        }
+        const self = this;
+        this.showRewardedVideo('death_convert', (ok) => {
+            if (!ok) return;
+            self.consumeAd('death_convert');
+            const ui = self._deathUI;
+            if (ui) {
+                if (ui.canConvertEssence && ui.p.gold > 0) {
+                    const newAmount = Math.floor(ui.p.gold * 0.6);
+                    const extra = newAmount - ui.goldToEssence;
+                    if (extra > 0) {
+                        self.permanent.essence = (self.permanent.essence || 0) + extra;
+                    }
+                    ui.rate = 0.6;
+                    ui.goldToEssence = newAmount;
+                    self.savePermanent();
+                } else {
+                    ui.rate = 0.6;
+                }
+            }
+            self.renderDeathSettlementUI();
+            self.showGameAlert('转化率翻倍', '本次死亡转化率提升至60%！');
+        });
     },
 
     goToGrowth() { this.openGrowth(); },
@@ -7023,6 +7442,25 @@ ${transition.buff.desc}`);
         this.showGameConfirm('<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg>️ 结束轮回', '确定要结束当前轮回吗？\n将进入死亡结算，所有进度转化为局外成长。', () => {
             self.player.hp = 0;
             self.defeat();
+        });
+    },
+
+    // 看广告领取进化精粹（essence_daily，每日3次，每次+30）
+    claimEssenceDaily() {
+        const avail = this.checkAdAvailable('essence_daily');
+        if (!avail.available) {
+            this.showGameAlert('提示', '今日次数已用完，明天再来吧！');
+            return;
+        }
+        const self = this;
+        this.showRewardedVideo('essence_daily', (ok) => {
+            if (!ok) return;
+            self.consumeAd('essence_daily');
+            self.permanent.essence = (self.permanent.essence || 0) + 30;
+            self.savePermanent();
+            const remain = self.checkAdAvailable('essence_daily').remaining;
+            self.refreshGrowthUI();
+            self.showGameAlert('领取成功', `获得30进化精粹！今日剩余${remain}次`);
         });
     },
 
@@ -7079,6 +7517,12 @@ ${transition.buff.desc}`);
         eh += `<span data-tooltip="essence" style="color:var(--accent-purple);font-weight:bold;font-size:16px;cursor:pointer"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z\"/></svg> 进化精粹：${this.permanent.essence || 0}</span>`;
         eh += `<span style="color:var(--text-muted);font-size:12px;margin-left:10px">死亡时剩余基因精华30%转化（需击杀≥5敌人）</span>`;
         eh += `<button onclick="game.resetEssenceUpgrades()" style="float:right;font-size:11px;padding:3px 8px;background:var(--accent-danger)">重置残留强化</button>`;
+        // 看广告领取进化精粹（每日3次，每次+30）
+        const essDailyAvail = this.checkAdAvailable('essence_daily');
+        eh += `<div style="margin-top:6px;display:flex;align-items:center;gap:8px">`;
+        eh += `<button onclick="game.claimEssenceDaily()" ${essDailyAvail.available ? '' : 'disabled'} style="font-size:12px;padding:6px 10px;background:var(--accent-warning);color:var(--bg-card);border:none;border-radius:6px;font-weight:bold;cursor:${essDailyAvail.available ? 'pointer' : 'not-allowed'}">看广告领取进化精粹（今日剩余${essDailyAvail.remaining}次）</button>`;
+        eh += `<span style="color:var(--text-muted);font-size:11px">每次+30</span>`;
+        eh += `</div>`;
         eh += `</div>`;
         eh += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`;
         for (const stat in this.essenceUpgradeConfig) {
@@ -7642,6 +8086,8 @@ ${transition.buff.desc}`);
         // 检查图鉴收集是否解锁新的永久加成
         this.checkCodexBonuses();
         this.permanent.talentLevels[talentId] = 1;
+        // 审计修复（任务11）：每日任务推进——解锁天赋计入 daily_talent（此前永不推进）
+        this.updateDailyTask('talents');
         this.savePermanent();
         this.refreshGrowthUI();
         return {success: true, msg: `解锁天赋：${t.name}！`};
@@ -7657,21 +8103,6 @@ ${transition.buff.desc}`);
             bottomNav.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
             const navBtn = bottomNav.querySelector('[data-screen="' + screenName + '"]');
             if (navBtn) navBtn.classList.add('active');
-        }
-    },
-    
-    // 玩家详细属性展开/收起
-    togglePlayerDetail() {
-        const detail = document.getElementById('playerDetailInfo');
-        const arrow = document.getElementById('playerDetailArrow');
-        if (detail && arrow) {
-            if (detail.style.display === 'none') {
-                detail.style.display = 'block';
-                arrow.textContent = '▲';
-            } else {
-                detail.style.display = 'none';
-                arrow.textContent = '▼';
-            }
         }
     },
     
@@ -8157,39 +8588,6 @@ ${transition.buff.desc}`);
         }
     },
 
-    // 获取品质碎片详情tooltip文本（悬浮在品质标签上显示）
-    getQualityFragmentTooltip(quality) {
-        const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
-        const qName = qualityNames[quality] || ('品质'+quality);
-        const universal = this.permanent.universalFragments[quality] || 0;
-        
-        let text = qName + '碎片详情：\n';
-        text += '万能碎片：' + universal + '个\n';
-        text += '--- 各体系专属碎片 ---\n';
-        
-        // 遍历所有体系，显示该品质的专属碎片数量
-        const tagIds = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,20,21,22,23,24,25,26,27,28];
-        let hasAny = false;
-        tagIds.forEach(tagId => {
-            // 只统计专属碎片，万能碎片单独显示
-            const count = this.permanent.tagFragments && this.permanent.tagFragments[tagId] ? (this.permanent.tagFragments[tagId][quality] || 0) : 0;
-            if (count > 0) {
-                const tagName = this.tagNames[tagId] || ('体系'+tagId);
-                text += tagName + '：' + count + '个\n';
-                hasAny = true;
-            }
-        });
-        
-        if (!hasAny) {
-            text += '（暂无任何体系的' + qName + '专属碎片）\n';
-        }
-        
-        text += '---\n';
-        text += '提示：专属碎片只能用于对应体系，万能碎片可用于任意体系';
-        
-        return text;
-    },
-
     // 显示天赋Tooltip
     showTalentTooltip(talentId, event) {
         const talent = this.data.talents.talents.find(t => t.id === talentId);
@@ -8397,13 +8795,13 @@ ${transition.buff.desc}`);
                     attack_boost: '攻击力+', defense_boost: '防御力+', speed_boost: '先手值+', all_boost: '全属性+',
                     gain_fragments: '获得', exp_boost: '获得经验+', drop_boost: '掉落率+', gain_talent_points: '获得',
                     revive: '死亡时以', unlock_passive_slot: '额外解锁天赋槽位', max_energy: '能量上限+',
-                    fragment_drop_bonus_percent: '碎片收益+', upgrade_success_rate_bonus: '升阶成功率+',
+                    fragment_drop_bonus_percent: '碎片收益+',
                     start_with_item: '开局获得补给品', death_talent_bonus_percent: '死亡结算天赋加成+',
                     move_speed_percent: '永久移动速度+', drop_quality_bonus: '稀有掉落概率提升',
                     give_currency: '获得', random_fragment: '随机获得', give_items: '获得随机消耗品',
-                    upgrade_protection: '升阶失败不消耗材料', random_boss_core: '随机获得1个首领核心'
+                    random_boss_core: '随机获得1个首领核心'
                 };
-                const effSuffix = {attack_boost:'', defense_boost:'', speed_boost:'', all_boost:'%', exp_boost:'%', drop_boost:'%', max_energy:'', move_speed_percent:'%', fragment_drop_bonus_percent:'%', death_talent_bonus_percent:'%', upgrade_success_rate_bonus:'%'};
+                const effSuffix = {attack_boost:'', defense_boost:'', speed_boost:'', all_boost:'%', exp_boost:'%', drop_boost:'%', max_energy:'', move_speed_percent:'%', fragment_drop_bonus_percent:'%', death_talent_bonus_percent:'%'};
                 const qNames = {1:'普通', 2:'稀有', 3:'史诗', 4:'传说', 5:'神话'};
                 const base = effNames[eff.type] || (eff.type || '特殊效果');
                 if (eff.type === 'gain_fragments') {
@@ -8524,34 +8922,6 @@ ${transition.buff.desc}`);
             el.addEventListener('mouseleave', function() {
                 self.hideTooltip();
             });
-        });
-    },
-    
-    // 初始化Tooltip事件绑定
-    initTooltips() {
-        const self = this;
-        // 点击空白处隐藏Tooltip（除了点击天赋/技能/商品名称本身）
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('[data-talent-id]') && 
-                !e.target.closest('[data-skill-id]') && 
-                !e.target.closest('[data-item-id]') &&
-                !e.target.closest('.tooltip-trigger') && 
-                !e.target.closest('.top-bar-item') && 
-                !e.target.closest('.stat-row') &&
-                !e.target.closest('.status-tag') &&
-                !e.target.closest('.tooltip-box')) {
-                self.hideTooltip();
-            }
-        });
-        // ESC键关闭Tooltip
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                self.hideTooltip();
-            }
-        });
-        // 滚动时隐藏Tooltip
-        window.addEventListener('scroll', function() {
-            self.hideTooltip();
         });
     },
     
@@ -9593,20 +9963,6 @@ ${transition.buff.desc}`);
         this.openTalentPanel();
     },
 
-    toggleTalent(talentId) {
-        const idx = this.player.equippedTalents.indexOf(talentId);
-        if (idx >= 0) {
-            this.player.equippedTalents.splice(idx, 1);
-        } else {
-            if (this.player.equippedTalents.length >= this.getPassiveSlots()) { this.showGameAlert("提示", "天赋槽已满（" + this.getPassiveSlots() + "个）"); return; }
-            this.player.equippedTalents.push(talentId);
-        }
-        this.calcDerivedStats();
-        this.player.hp = Math.min(this.player.hp, this.player.maxHp);
-        this.openTalentPanel();
-        this.refreshMainUI();
-    },
-
     // ========== 天赋系统核心函数 ==========
     // 获取天赋等级（未解锁返回0）
     getTalentLevel(talentId) {
@@ -9739,6 +10095,8 @@ ${transition.buff.desc}`);
         // 手动扩充：消耗50精粹+1槽（最多手动+3槽）
         const manualSlots = this.permanent.manualPassiveSlots || 0;
         slots += Math.min(3, manualSlots);
+        // 商店永久强化：额外被动槽位（跨轮回生效，不设上限）
+        slots += this.permanent.shopPassiveSlots || 0;
         return slots;
     },
     
@@ -9893,7 +10251,7 @@ ${transition.buff.desc}`);
             // 新增：战斗开始效果
             startStealth:false, startCharm:false, startShield:0,
             // 新增：击杀效果
-            energyOnKill:0, expBonusPct:0, dropBonusPct:0,
+            energyOnKill:0, expBonusPct:0,
             // ========== 新机制字段 ==========
             dotExplosionRetainPct:0,      // 毒爆/爆燃保留层数百分比
             critExtraAttackChance:0,       // 暴击追加攻击概率
@@ -9909,7 +10267,6 @@ ${transition.buff.desc}`);
             killStackCrit:0,                 // 击杀叠加暴击率
             lowHpInvincibleChance:0,         // 低血量无敌概率
             lowHpInvincibleMaxUses:0,        // 低血量无敌最大次数
-            bossSkillSteal:false,            // 击杀Boss获得技能
             randomMythicTrigger:false,       // 随机触发神话效果
             allTalentEffectPct:0,            // 所有天赋效果百分比加成
             allDotDamagePct:0,               // 所有Dot伤害百分比
@@ -9930,7 +10287,6 @@ ${transition.buff.desc}`);
             killCritStackPermanent:false,      // 击杀暴击叠加永久（本局）
             healEffectPct:0,                   // 回复效果百分比
             lifeStealBonusPct:0,               // 吸血比例加成
-            shieldEffectPct:0,                 // 护盾效果百分比
             shieldDamageReduction:0,           // 护盾存在时减伤
             reflectBonusPct:0,                 // 反伤比例加成
             reflectHealPct:0,                  // 反伤回血百分比
@@ -9943,7 +10299,6 @@ ${transition.buff.desc}`);
             causalChain:false,                 // 因果之链
             causalChainPct:0.35,               // 因果之链附加伤害百分比
             causalMaxRecord:200,               // 因果之链最大记录伤害
-            bossSkillSteal:false,              // 噬神者：击杀Boss获得技能
             chimeraSoul:false,                 // 奇美拉之魂
             chimeraChance:0.25,                // 奇美拉之魂附加Dot概率
             poisonPenetration:0,               // 毒素穿透
@@ -10408,9 +10763,6 @@ ${transition.buff.desc}`);
         // 经验加成
         m = text.match(/获得经验\s*\+\s*(\d+)%/);
         if (m) bonus.expBonusPct += parseInt(m[1]) / 100;
-        // 掉落加成
-        m = text.match(/掉落(?:概率|数量)?\s*\+\s*(\d+)%/);
-        if (m) bonus.dropBonusPct += parseInt(m[1]) / 100;
         
         // ========== 新机制解析 ==========
         // Dot穿透效果
@@ -10508,9 +10860,6 @@ ${transition.buff.desc}`);
         // 所有元素抗性+X%
         m = text.match(/所有元素抗性\s*\+\s*(\d+)%/);
         if (m) bonus.allResist = (bonus.allResist||0) + parseInt(m[1]);
-        // 吞噬额外获取X%碎片收益
-        m = text.match(/吞噬(?:敌人|单位)?额外获取\s*(\d+)%\s*碎片收益/);
-        if (m) bonus.fragmentBonusPct = (bonus.fragmentBonusPct||0) + parseInt(m[1])/100;
         // 撕咬伤害+X%
         m = text.match(/撕咬伤害\s*\+\s*(\d+)%/);
         if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
@@ -10562,9 +10911,6 @@ ${transition.buff.desc}`);
         // 吸血比例加成
         m = text.match(/吸血比例\+(\d+)%/);
         if (m) bonus.lifeStealBonusPct = parseInt(m[1]);
-        // 护盾效果加成
-        m = text.match(/护盾效果\+(\d+)%/);
-        if (m) bonus.shieldEffectPct = parseInt(m[1])/100;
         // 反伤比例加成
         m = text.match(/反伤比例\+(\d+)%/);
         if (m) bonus.reflectBonusPct = parseInt(m[1])/100;
@@ -10588,10 +10934,6 @@ ${transition.buff.desc}`);
             if (m) bonus.causalChainPct = parseInt(m[1]) / 100;
             m = text.match(/最多记录(\d+)点/);
             if (m) bonus.causalMaxRecord = parseInt(m[1]);
-        }
-        // 噬神者
-        if (/击杀Boss后.*获得.*技能|噬神者/.test(text)) {
-            bonus.bossSkillSteal = true;
         }
         // 奇美拉之魂：随机附加多种Dot
         if (/奇美拉之魂|随机附加流血.*中毒.*灼烧/.test(text)) {
@@ -10679,9 +11021,13 @@ ${transition.buff.desc}`);
         // 技能伤害+X%（真实之姿）
         m = text.match(/技能伤害\+(\d+)%/);
         if (m) bonus.skillDamagePct = (bonus.skillDamagePct||0) + parseInt(m[1])/100;
-        // 群体攻击伤害+X%（尾鞭，战斗为1v1，映射为总伤害加成）
+        // 群体攻击伤害+X%（尾鞭：战斗为1v1，累加进群攻总伤害加成，随等级递增20→25→30→35→45%）
         m = text.match(/群体攻击伤害\+(\d+)%/);
-        if (m) bonus.damagePct = (bonus.damagePct||0) + parseInt(m[1])/100;
+        if (m) bonus.groupAttackBonusPct = (bonus.groupAttackBonusPct||0) + parseInt(m[1]);
+        // 可同时攻击相邻单位（尾鞭1级基底：1v1战斗下映射为20%总伤害加成，随等级叠加群体攻击伤害）
+        if (text.indexOf('可同时攻击相邻单位') >= 0) {
+            bonus.groupAttackBonusPct = (bonus.groupAttackBonusPct || 0) + 20;
+        }
         // 受到的冰火伤害-X%（冰焰之躯；灼烧为火系主要伤害）
         m = text.match(/受到的冰火伤害-(\d+)%/);
         if (m) bonus.iceFireResistPct = (bonus.iceFireResistPct||0) + parseInt(m[1])/100;
@@ -10735,8 +11081,8 @@ ${transition.buff.desc}`);
         const consumables = shop.consumables || [];
         const currencyNames = {fragments_1:'普通碎片', fragments_2:'稀有碎片', fragments_3:'史诗碎片', fragments_4:'传说碎片', fragments_5:'神话碎片', gold:'基因精华', essence:'进化精粹'};
         const currencyColors = {fragments_1:'var(--quality-common)', fragments_2:'var(--accent-info)', fragments_3:'var(--accent-purple)', fragments_4:'var(--accent-warning)', fragments_5:'var(--accent-danger)', gold:'var(--accent-warning)', essence:'var(--accent-purple)'};
-        const categoryNames = {heal:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M7 20h10\"/><path d=\"M10 20c5.5-2.5.8-6.4 3-10\"/><path d=\"M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z\"/><path d=\"M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z\"/></svg> 生命恢复', energy:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 能量恢复', buff:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M18 3a3 3 0 0 0-3 3v1a3 3 0 0 1-3 3 3 3 0 0 1-3-3V6a3 3 0 0 0-6 0v9a6 6 0 0 0 6 6h2a6 6 0 0 0 6-6V8a3 3 0 0 1 3-3 3 3 0 0 0-3-3z\"/></svg> 属性强化', resource:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"/><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"/><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"/></svg> 资源包', special:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 特殊道具', daily:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 每日特惠', weekly:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> 每周特惠'};
-        const categories = ['heal', 'energy', 'buff', 'resource', 'special', 'daily', 'weekly'];
+        const categoryNames = {heal:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M7 20h10\"/><path d=\"M10 20c5.5-2.5.8-6.4 3-10\"/><path d=\"M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z\"/><path d=\"M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z\"/></svg> 生命恢复', energy:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 能量恢复', buff:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M18 3a3 3 0 0 0-3 3v1a3 3 0 0 1-3 3 3 3 0 0 1-3-3V6a3 3 0 0 0-6 0v9a6 6 0 0 0 6 6h2a6 6 0 0 0 6-6V8a3 3 0 0 1 3-3 3 3 0 0 0-3-3z\"/></svg> 属性强化', resource:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z\"/><polyline points=\"3.27 6.96 12 12.01 20.73 6.96\"/><line x1=\"12\" y1=\"22.08\" x2=\"12\" y2=\"12\"/></svg> 资源包', special:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> 特殊道具', permanent:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="m12 15 2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg> 永久强化', daily:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 每日特惠', weekly:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> 每周特惠'};
+        const categories = ['heal', 'energy', 'buff', 'resource', 'special', 'permanent', 'daily', 'weekly'];
         const activeCat = category || 'all';
 
         // 初始化本局购买记录
@@ -10764,7 +11110,7 @@ ${transition.buff.desc}`);
         html += '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
         html += `<button onclick="game.openShop('all')" style="padding:6px 12px;font-size:12px;border-radius:6px;${activeCat==='all'?'background:var(--accent-warning);color:var(--bg-card);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}" class="shop-cat-btn">全部</button>`;
         categories.forEach(cat => {
-            const count = cat === 'daily' ? (shop.dailyItems || []).length : (cat === 'weekly' ? (shop.weeklyItems || []).length : consumables.filter(i => i.category === cat).length);
+            const count = cat === 'daily' ? (shop.dailyItems || []).length : (cat === 'weekly' ? (shop.weeklyItems || []).length : (cat === 'permanent' ? (shop.permanentItems || []).length : consumables.filter(i => i.category === cat).length));
             html += `<button onclick="game.openShop('${cat}')" style="padding:6px 12px;font-size:12px;border-radius:6px;${activeCat===cat?'background:var(--accent-warning);color:var(--bg-card);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}" class="shop-cat-btn">${categoryNames[cat]} (${count})</button>`;
         });
         html += '</div>';
@@ -10772,10 +11118,12 @@ ${transition.buff.desc}`);
         // 商品列表
                 const dailyItems = shop.dailyItems || [];
         const weeklyItems = shop.weeklyItems || [];
+        const permanentItems = shop.permanentItems || [];
         let filtered;
         if (activeCat === 'daily') filtered = dailyItems;
         else if (activeCat === 'weekly') filtered = weeklyItems;
-        else if (activeCat === 'all') filtered = consumables.concat(dailyItems, weeklyItems);
+        else if (activeCat === 'permanent') filtered = permanentItems;
+        else if (activeCat === 'all') filtered = consumables.concat(permanentItems, dailyItems, weeklyItems);
         else filtered = consumables.filter(i => i.category === activeCat);
         html += '<div class="scroll-area" style="padding-bottom:50px">';
         filtered.forEach(item => {
@@ -10808,33 +11156,29 @@ ${transition.buff.desc}`);
             // 显示具体效果数值
             if (item.effect && item.effect.type) {
                 const effectNames = {
-                    heal: '恢复生命', heal_percent: '恢复生命', max_hp: '最大生命',
-                    energy: '恢复能量', energy_percent: '恢复能量', max_energy: '能量上限',
+                    heal_percent: '恢复生命', energy_percent: '恢复能量', max_energy: '能量上限',
                     attack_boost: '攻击力', defense_boost: '防御力', speed_boost: '先手值',
                     all_boost: '全属性', exp_boost: '经验获取', drop_boost: '掉落率',
                     unlock_passive_slot: '天赋槽位', fragment_drop_bonus_percent: '碎片掉落',
-                    upgrade_success_rate_bonus: '升阶成功率', start_with_item: '开局道具',
+                    start_with_item: '开局道具', death_talent_bonus_percent: '死亡结算天赋点',
+                    move_speed_percent: '先手值（移速）', drop_quality_bonus: '掉落品质',
                     gain_fragments: '获得碎片', gain_talent_points: '获得天赋点',
-                    gain_gold: '获得基因精华', revive: '复活', revive_percent: '复活恢复',
-                    damage_boost: '伤害提升', crit_boost: '暴击率', crit_damage_boost: '暴击伤害',
-                    hit_boost: '命中率', dodge_boost: '闪避率', hp_regen: '生命恢复',
-                    energy_regen: '能量恢复', dot_damage: '持续伤害', cooldown_reduction: '冷却缩减',
-                    life_steal: '吸血', reflect_damage: '反伤', shield: '护盾',
-                    armor_penetration: '护甲穿透', crit_resistance: '暴击抗性',
-                    firstStrike: '先手值', first_strike: '先手值',
-                    talentPower: '天赋强度', talent_power: '天赋强度'
+                    revive: '复活'
                 };
                 const effectName = effectNames[item.effect.type] || item.effect.type;
                 const effectValue = item.effect.value;
                 let effectText = '';
                 if (typeof effectValue === 'number') {
-                    if (item.effect.type.includes('percent') || item.effect.type.includes('bonus') || item.effect.type.includes('rate') || item.effect.type === 'exp_boost' || item.effect.type === 'drop_boost') {
+                    if ((item.effect.type.includes('percent') || item.effect.type.includes('bonus') || item.effect.type.includes('rate') || item.effect.type === 'exp_boost' || item.effect.type === 'drop_boost') && item.effect.type !== 'drop_quality_bonus') {
                         effectText = `${effectName} +${effectValue}%`;
                     } else if (item.effect.type === 'heal_percent') {
                         effectText = `${effectName} +${effectValue}%`;
                     } else {
                         effectText = `${effectName} +${effectValue}`;
                     }
+                } else if (item.effect.type === 'start_with_item') {
+                    const startItem = (shop.consumables || []).find(c => c.id === effectValue);
+                    effectText = `每局开局获得：${startItem ? startItem.name : effectValue}`;
                 } else if (item.effect.type === 'give_currency' && effectValue && effectValue.currency) {
                     const qn = effectValue.currency === 'essence' ? '进化精粹' : (currencyNames[effectValue.currency] || effectValue.currency);
                     effectText = `获得${effectValue.amount || 0}个${qn}`;
@@ -10842,8 +11186,6 @@ ${transition.buff.desc}`);
                     effectText = `随机获得${effectValue.amount || 0}个品质${effectValue.minQuality || 3}-${effectValue.maxQuality || 5}碎片`;
                 } else if (item.effect.type === 'give_items' && Array.isArray(effectValue)) {
                     effectText = `获得${effectValue.length}种消耗品`;
-                } else if (item.effect.type === 'upgrade_protection') {
-                    effectText = '下次基因升阶失败不降级';
                 } else if (item.effect.type === 'random_boss_core') {
                     effectText = '随机获得1个首领核心';
                 } else if (effectValue) {
@@ -11072,9 +11414,9 @@ ${transition.buff.desc}`);
         // 记录购买
         this.shopPurchaseCount[item.id] = purchased + 1;
 
-        // 每日/每周品级包即时生效；普通消耗品存入背包
+        // 每日/每周品级包与永久强化即时生效；普通消耗品存入背包
         let resultMsg = '';
-        if (item.type === 'daily' || item.type === 'weekly') {
+        if (item.type === 'daily' || item.type === 'weekly' || item.type === 'permanent') {
             const detail = this.applyInstantShopItem(item);
             resultMsg = `购买了【${item.name}】！\n${detail || '效果已生效'}`;
         } else {
@@ -11085,16 +11427,17 @@ ${transition.buff.desc}`);
         }
 
         // 用游戏内弹窗显示结果
-        this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 购买成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><div style="display:flex;gap:10px;margin-top:15px">${(item.type === 'daily' || item.type === 'weekly') ? '' : '<button onclick="game.useLastBoughtItem()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-warning);color:white">立即使用</button>'}<button onclick="game.openShop()" style="flex:1;padding:10px;border-radius:6px">继续购物</button><button onclick="game.openInventory()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white">打开背包</button></div>`);
+        this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 购买成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><div style="display:flex;gap:10px;margin-top:15px">${(item.type === 'daily' || item.type === 'weekly' || item.type === 'permanent') ? '' : '<button onclick="game.useLastBoughtItem()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-warning);color:white">立即使用</button>'}<button onclick="game.openShop()" style="flex:1;padding:10px;border-radius:6px">继续购物</button><button onclick="game.openInventory()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white">打开背包</button></div>`);
         this.savePermanent();
         this.refreshMainUI();
     },
 
-    // 按ID查找商店商品（普通消耗品 + 每日/每周品级包）
+    // 按ID查找商店商品（普通消耗品 + 永久强化 + 每日/每周品级包）
     findShopItem(itemId) {
         const shop = this.data.shop;
         if (!shop) return null;
         return (shop.consumables || []).find(i => i.id === itemId)
+            || (shop.permanentItems || []).find(i => i.id === itemId)
             || (shop.dailyItems || []).find(i => i.id === itemId)
             || (shop.weeklyItems || []).find(i => i.id === itemId) || null;
     },
@@ -11129,17 +11472,57 @@ ${transition.buff.desc}`);
             if (!this.player.items) this.player.items = [];
             ids.forEach(id => this.player.items.push(id));
             return `获得${ids.length}种消耗品`;
-        } else if (eff.type === 'upgrade_protection') {
-            this.permanent.upgradeProtection = (this.permanent.upgradeProtection || 0) + (v || eff.value || 1);
-            return '获得1次基因升阶保护';
         } else if (eff.type === 'random_boss_core') {
-            if (!this.permanent.bossCores) this.permanent.bossCores = {};
             const bossIds = Object.keys(this.bossCoreNames || {});
             if (bossIds.length > 0) {
                 const bid = bossIds[Math.floor(Math.random() * bossIds.length)];
-                this.permanent.bossCores[bid] = (this.permanent.bossCores[bid] || 0) + (eff.value || 1);
+                const coreRes = this.addBossCore(bid, eff.value || 1);
+                if (coreRes.type === 'essence') {
+                    return `重复的【${this.getBossCoreName(bid)}】核心已自动转化为${coreRes.amount}进化精粹`;
+                }
                 return `获得随机首领核心：${this.getBossCoreName(bid)}`;
             }
+        } else if (eff.type === 'unlock_passive_slot') {
+            // 永久被动槽位+1（跨轮回生效）
+            this.permanent.shopPassiveSlots = (this.permanent.shopPassiveSlots || 0) + (eff.value || 1);
+            this.savePermanent();
+            return `永久解锁${eff.value || 1}个被动天赋槽位！（当前${this.getPassiveSlots()}个）`;
+        } else if (eff.type === 'max_energy') {
+            // 永久能量上限+30（跨轮回生效）
+            this.permanent.shopMaxEnergyBonus = (this.permanent.shopMaxEnergyBonus || 0) + (eff.value || 30);
+            this.savePermanent();
+            this.calcDerivedStats();
+            return `永久提升${eff.value || 30}点能量上限！`;
+        } else if (eff.type === 'fragment_drop_bonus_percent') {
+            // 全局碎片掉落+10%（跨轮回生效）
+            this.permanent.fragmentDropBonusPercent = (this.permanent.fragmentDropBonusPercent || 0) + (eff.value || 10);
+            this.savePermanent();
+            return `全局基因碎片掉落数量+${eff.value || 10}%！`;
+        } else if (eff.type === 'start_with_item') {
+            // 每局开局发放补给品（跨轮回生效）
+            const rawId = eff.value || 'con_health_small';
+            const itemId = rawId === 'con_health_potion_small' ? 'con_health_small' : rawId;
+            if (!this.permanent.startWithItem) this.permanent.startWithItem = [];
+            if (this.permanent.startWithItem.indexOf(itemId) < 0) this.permanent.startWithItem.push(itemId);
+            this.savePermanent();
+            const startItem = this.data.shop.consumables.find(c => c.id === itemId);
+            return `每局开局自动获得：${startItem ? startItem.name : itemId}！`;
+        } else if (eff.type === 'death_talent_bonus_percent') {
+            // 死亡结算天赋点+20%（跨轮回生效）
+            this.permanent.deathTalentBonusPercent = (this.permanent.deathTalentBonusPercent || 0) + (eff.value || 20);
+            this.savePermanent();
+            return `死亡结算天赋点+${eff.value || 20}%！`;
+        } else if (eff.type === 'move_speed_percent') {
+            // 永久移速+5%（映射到先手值，跨轮回生效）
+            this.permanent.moveSpeedBonusPercent = (this.permanent.moveSpeedBonusPercent || 0) + (eff.value || 5);
+            this.savePermanent();
+            this.calcDerivedStats();
+            return `永久先手值（移速）+${eff.value || 5}%！`;
+        } else if (eff.type === 'drop_quality_bonus') {
+            // 掉落品质+1（跨轮回生效）
+            this.permanent.dropQualityBonus = (this.permanent.dropQualityBonus || 0) + (eff.value || 1);
+            this.savePermanent();
+            return `全局掉落品质永久+${eff.value || 1}！`;
         }
         return '';
     },
@@ -12033,27 +12416,6 @@ ${transition.buff.desc}`);
         this.showPopup(html);
     },
 
-    // 切换共生体装备状态（旧函数，保留兼容）
-    toggleSymbiontEquip(id) {
-        const symbionts = this.permanent.symbionts || [];
-        const s = symbionts.find(x => x.id === id);
-        if (!s) return;
-        
-        if (s.equipped) {
-            // 卸下
-            s.equipped = false;
-        } else {
-            // 装备：先卸下同部位的其他共生体
-            symbionts.forEach(x => {
-                if (x.slot === s.slot && x.equipped) x.equipped = false;
-            });
-            s.equipped = true;
-        }
-        
-        this.savePermanent();
-        this.renderCharacterPanel();
-    },
-
     // 渲染人物状态-天赋标签页
     renderCharacterTalents() {
         const equipped = this.player.equippedTalents || [];
@@ -12187,12 +12549,6 @@ ${transition.buff.desc}`);
         }
         this.savePermanent();
         this.openSkillLoadoutPanel();
-    },
-
-    // 从角色界面打开技能面板
-    openSkillPanelFromCharacter() {
-        this.returnToScreen = 'characterScreen';
-        this.openSkillPanel();
     },
 
     // 从角色界面打开天赋面板
@@ -12374,13 +12730,6 @@ ${transition.buff.desc}`);
 
         // 显示结果并返回背包
         this.showPopup(`<h3 style="color:var(--accent-success)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"20 6 9 17 4 12\"/></svg> 使用成功</h3><p style="color:var(--text-secondary);line-height:1.8;white-space:pre-line">${resultMsg}</p><div style="display:flex;gap:10px;margin-top:15px"><button onclick="game.closePop(); game.openInventory()" style="flex:1;padding:10px;border-radius:6px">返回背包</button><button onclick="game.closePop(); game.openInventory()" style="flex:1;padding:10px;border-radius:6px">关闭</button></div>`);
-    },
-
-    // 获得消耗品后询问是否立即使用
-    promptUseConsumable(itemId) {
-        const item = (this.data.shop && this.data.shop.consumables || []).find(x => x.id === itemId);
-        if (!item) return;
-        this.showPopup(`<h3 style="color:var(--accent-warning)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10 2v7.31\"/><path d=\"M14 9.3V1.99\"/><path d=\"M8.5 2h7\"/><path d=\"M14 9.3a6.5 6.5 0 1 1-4 0\"/></svg> 获得消耗品</h3><p style="color:var(--text-secondary);line-height:1.8">获得【${item.name}】，是否立即使用？</p><div style="display:flex;gap:10px;margin-top:15px"><button onclick="game.usePromptedItem('${itemId}')" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white">立即使用</button><button onclick="game.closePop()" style="flex:1;padding:10px;border-radius:6px">暂不使用</button></div>`);
     },
 
     // 使用刚获得的消耗品（从背包移除并应用效果）
@@ -12913,11 +13262,6 @@ ${transition.buff.desc}`);
         this.permanent.tutorialCompleted = true;
         this.savePermanent();
         document.getElementById('tutorialOverlay').classList.remove('active');
-    },
-
-    resetTutorial() {
-        this.permanent.tutorialCompleted = false;
-        this.savePermanent();
     }
 };
 
