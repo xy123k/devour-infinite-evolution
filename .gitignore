@@ -6,4 +6,9 @@ __pycache__/
 Thumbs.db
 
 *.bak_*
+*.bak
 _localStorage_backup_*.json
+
+# 本地备份与软著材料（不入库）
+备份_修改前/
+软著材料/
