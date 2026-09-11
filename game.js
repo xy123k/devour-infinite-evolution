@@ -3,15 +3,145 @@
 //  力量/敏捷/体质/感知/进化 → 衍生战斗属性
 // ============================================================
 
+// ============================================================
+//  TapTap 小游戏环境适配层
+//  存储 / 登录 / 屏幕尺寸 / 生命周期（详见 TapTap 小游戏文档）
+// ============================================================
+
+// 存储适配：TapTap(tt) 环境用 tt.*StorageSync，浏览器降级 localStorage
+const storage = (function () {
+    const hasTT = typeof tt !== 'undefined' && typeof tt.setStorageSync === 'function';
+    return {
+        hasTT: hasTT,
+        get(key) {
+            try { return hasTT ? tt.getStorageSync(key) : localStorage.getItem(key); }
+            catch (e) { return null; }
+        },
+        set(key, val) {
+            try { if (hasTT) tt.setStorageSync(key, val); else localStorage.setItem(key, val); }
+            catch (e) {}
+        },
+        remove(key) {
+            try { if (hasTT) tt.removeStorageSync(key); else localStorage.removeItem(key); }
+            catch (e) {}
+        }
+    };
+})();
+
+// 登录/身份适配：TapTap 登录 → openid；无登录/非 tt 环境 → 本地游客ID
+// 存档 key = tunshi_save_v2_<uid>，uid = openid 或游客ID，实现按用户隔离
+const user = (function () {
+    const SAVE_KEY_PREFIX = 'tunshi_save_v2';
+    const GUEST_KEY = 'tunshi_guest_id';
+    const OPENID_KEY = 'tunshi_openid';
+    let _openid = null;
+    let _guestId = null;
+
+    function guestId() {
+        if (_guestId) return _guestId;
+        _guestId = storage.get(GUEST_KEY);
+        if (!_guestId) {
+            _guestId = 'g_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+            storage.set(GUEST_KEY, _guestId);
+        }
+        return _guestId;
+    }
+
+    function saveKey(uid) {
+        return SAVE_KEY_PREFIX + '_' + (uid || uidFallback());
+    }
+    function uidFallback() { return _openid || guestId(); }
+
+    // 登录成功拿到 openid 后：把游客存档迁移到 openid 存档（仅当目标不存在）
+    function migrateSave() {
+        if (!_openid) return;
+        const guestKey = SAVE_KEY_PREFIX + '_' + guestId();
+        const openidKey = saveKey(_openid);
+        if (openidKey === guestKey) return;
+        const g = storage.get(guestKey);
+        if (g && !storage.get(openidKey)) {
+            storage.set(openidKey, g);
+        }
+    }
+
+    function init() {
+        _openid = storage.get(OPENID_KEY) || null;
+        guestId(); // 确保游客ID存在
+        // TapTap 环境：发起登录（包体硬性要求：必须接入 TapTap 登录）
+        if (typeof tt !== 'undefined' && typeof tt.login === 'function') {
+            try {
+                tt.login({
+                    force: false,
+                    success: function () {
+                        tryGetOpenid();
+                    },
+                    fail: function () { /* 游客模式 */ }
+                });
+            } catch (e) {}
+        }
+    }
+
+    function tryGetOpenid() {
+        try {
+            if (typeof tt !== 'undefined' && typeof tt.getUserInfo === 'function') {
+                tt.getUserInfo({
+                    withCredentials: false,
+                    success: function (info) {
+                        const oid = info && (info.openId || (info.userInfo && info.userInfo.openId));
+                        if (oid) setOpenid(oid);
+                    },
+                    fail: function () {}
+                });
+            }
+        } catch (e) {}
+    }
+
+    function setOpenid(oid) {
+        if (!oid || _openid === oid) return;
+        _openid = oid;
+        storage.set(OPENID_KEY, oid);
+        migrateSave();
+        // 重新加载当前用户存档
+        try {
+            if (typeof game !== 'undefined' && game.loadPermanent) game.loadPermanent();
+        } catch (e) {}
+    }
+
+    return {
+        init: init,
+        uid: uidFallback,
+        isTapTap: function () { return typeof tt !== 'undefined' && typeof tt.login === 'function'; },
+        saveKey: saveKey
+    };
+})();
+
+// 屏幕尺寸适配：tt 环境用 tt.getSystemInfoSync()，浏览器降级 window
+const SCREEN_W = (function () {
+    if (typeof tt !== 'undefined' && typeof tt.getSystemInfoSync === 'function') {
+        try {
+            const s = tt.getSystemInfoSync();
+            if (s && s.windowWidth) return s.windowWidth;
+        } catch (e) {}
+    }
+    return window.innerWidth || 375;
+})();
+const SCREEN_H = (function () {
+    if (typeof tt !== 'undefined' && typeof tt.getSystemInfoSync === 'function') {
+        try {
+            const s = tt.getSystemInfoSync();
+            if (s && s.windowHeight) return s.windowHeight;
+        } catch (e) {}
+    }
+    return window.innerHeight || 667;
+})();
+
 const game = {
     // ========== 广告管理模块（TapTap小游戏） ==========
     adManager: {
         config: {
             rewardedVideoAdUnitId: 'YOUR_REWARDED_VIDEO_AD_UNIT_ID',
-            interstitialAdUnitId: 'YOUR_INTERSTITIAL_AD_UNIT_ID',
         },
         _rewardedVideoAd: null,
-        _interstitialAd: null,
         _pendingCallback: null,
         _pendingType: null,
 
@@ -34,11 +164,6 @@ const game = {
                     if (typeof game !== 'undefined') game.appendBattleLog('广告加载失败，请稍后重试', 'log-info');
                     this._clearPending();
                 });
-                if (tt.createInterstitialAd) {
-                    this._interstitialAd = tt.createInterstitialAd({
-                        adUnitId: this.config.interstitialAdUnitId
-                    });
-                }
             } else {
                 console.log('[AdManager] 非TapTap环境，使用模拟广告');
             }
@@ -126,14 +251,6 @@ const game = {
                     this._grantReward();
                     this._clearPending();
                 }, 1500);
-            }
-        },
-
-        showInterstitial() {
-            if (this._interstitialAd) {
-                this._interstitialAd.show().catch((err) => {
-                    console.error('[AdManager] 插屏广告错误:', err);
-                });
             }
         },
 
@@ -784,7 +901,7 @@ const game = {
 
     loadPermanent() {
         try {
-            const saved = localStorage.getItem('tunshi_save_v2');
+            const saved = storage.get(user.saveKey());
             if (saved) {
                 this.permanent = JSON.parse(saved);
                 // 标签exclusive碎片：fragments[tag][quality]
@@ -972,7 +1089,7 @@ const game = {
     // 初始化主题
     initTheme() {
         try {
-            const savedTheme = localStorage.getItem('tunshi_theme') || 'dark';
+            const savedTheme = storage.get('tunshi_theme') || 'dark';
             this.applyTheme(savedTheme);
             // 延迟更新按钮高亮状态（确保DOM已加载）
             setTimeout(() => this.updateThemeButtons(), 100);
@@ -990,7 +1107,7 @@ const game = {
         if (theme !== 'dark' && theme !== 'warm' && theme !== 'light') return;
         this.applyTheme(theme);
         try {
-            localStorage.setItem('tunshi_theme', theme);
+            storage.set('tunshi_theme', theme);
         } catch(e) { console.warn('保存主题失败', e); }
         // 更新主题切换按钮的高亮状态
         this.updateThemeButtons();
@@ -1138,7 +1255,7 @@ const game = {
     },
 
     savePermanent() {
-        localStorage.setItem('tunshi_save_v2', JSON.stringify(this.permanent));
+        storage.set(user.saveKey(), JSON.stringify(this.permanent));
     },
 
     // ========== 成就系统 ==========
@@ -4376,7 +4493,7 @@ const game = {
     // 加载设置
     loadSettings() {
         try {
-            const saved = localStorage.getItem('tunshi_settings');
+            const saved = storage.get('tunshi_settings');
             if (saved) {
                 this.settings = JSON.parse(saved);
             } else {
@@ -4391,7 +4508,7 @@ const game = {
     // 保存设置
     saveSettings() {
         try {
-            localStorage.setItem('tunshi_settings', JSON.stringify(this.settings));
+            storage.set('tunshi_settings', JSON.stringify(this.settings));
         } catch(e) {}
     },
 
@@ -4568,8 +4685,8 @@ const game = {
         const self = this;
         this.showGameConfirm('警告', '确定要清除所有存档吗？此操作不可恢复！', function() {
             self.showGameConfirm('最终确认', '所有游戏进度、天赋、碎片都将被清除，确定吗？', function() {
-                localStorage.removeItem('tunshi_save_v2');
-                localStorage.removeItem('tunshi_settings');
+                storage.remove(user.saveKey());
+                storage.remove('tunshi_settings');
                 self.showGameAlert('提示', '存档已清除！页面将刷新。');
                 setTimeout(function() { location.reload(); }, 1500);
             });
@@ -8468,11 +8585,11 @@ ${transition.buff.desc}`);
         let left = rect.left;
         
         // 防止超出右边界
-        if (left + tooltipRect.width > window.innerWidth - 10) {
-            left = window.innerWidth - tooltipRect.width - 10;
+        if (left + tooltipRect.width > SCREEN_W - 10) {
+            left = SCREEN_W - tooltipRect.width - 10;
         }
         // 防止超出下边界，显示在上方
-        if (top + tooltipRect.height > window.innerHeight - 10) {
+        if (top + tooltipRect.height > SCREEN_H - 10) {
             top = rect.top - tooltipRect.height - 8;
         }
         // 防止超出左边界
@@ -8566,8 +8683,8 @@ ${transition.buff.desc}`);
             tooltipBox.style.maxWidth = '650px';
             // 定位（居中显示，避免超出屏幕）
             const tooltipRect = tooltipBox.getBoundingClientRect();
-            let left = (window.innerWidth - tooltipRect.width) / 2;
-            let top = (window.innerHeight - tooltipRect.height) / 2;
+            let left = (SCREEN_W - tooltipRect.width) / 2;
+            let top = (SCREEN_H - tooltipRect.height) / 2;
             if (left < 10) left = 10;
             if (top < 10) top = 10;
             tooltipBox.style.top = top + 'px';
@@ -8694,8 +8811,8 @@ ${transition.buff.desc}`);
             const tooltipRect = tooltipBox.getBoundingClientRect();
             let top = rect.top + rect.height + 8;
             let left = rect.left;
-            if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
-            if (top + tooltipRect.height > window.innerHeight - 10) top = rect.top - tooltipRect.height - 8;
+            if (left + tooltipRect.width > SCREEN_W - 10) left = SCREEN_W - tooltipRect.width - 10;
+            if (top + tooltipRect.height > SCREEN_H - 10) top = rect.top - tooltipRect.height - 8;
             if (left < 10) left = 10;
             if (top < 10) top = 10;
             tooltipBox.style.top = top + 'px';
@@ -8758,8 +8875,8 @@ ${transition.buff.desc}`);
             const tooltipRect = tooltipBox.getBoundingClientRect();
             let top = rect.top + rect.height + 8;
             let left = rect.left;
-            if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
-            if (top + tooltipRect.height > window.innerHeight - 10) top = rect.top - tooltipRect.height - 8;
+            if (left + tooltipRect.width > SCREEN_W - 10) left = SCREEN_W - tooltipRect.width - 10;
+            if (top + tooltipRect.height > SCREEN_H - 10) top = rect.top - tooltipRect.height - 8;
             if (left < 10) left = 10;
             if (top < 10) top = 10;
             tooltipBox.style.top = top + 'px';
@@ -8859,8 +8976,8 @@ ${transition.buff.desc}`);
             const tooltipRect = tooltipBox.getBoundingClientRect();
             let top = rect.top + rect.height + 8;
             let left = rect.left;
-            if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
-            if (top + tooltipRect.height > window.innerHeight - 10) top = rect.top - tooltipRect.height - 8;
+            if (left + tooltipRect.width > SCREEN_W - 10) left = SCREEN_W - tooltipRect.width - 10;
+            if (top + tooltipRect.height > SCREEN_H - 10) top = rect.top - tooltipRect.height - 8;
             if (left < 10) left = 10;
             if (top < 10) top = 10;
             tooltipBox.style.top = top + 'px';
@@ -10633,8 +10750,8 @@ ${transition.buff.desc}`);
             const tooltipRect = tooltipBox.getBoundingClientRect();
             let top = rect.top + rect.height + 8;
             let left = rect.left;
-            if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
-            if (top + tooltipRect.height > window.innerHeight - 10) top = rect.top - tooltipRect.height - 8;
+            if (left + tooltipRect.width > SCREEN_W - 10) left = SCREEN_W - tooltipRect.width - 10;
+            if (top + tooltipRect.height > SCREEN_H - 10) top = rect.top - tooltipRect.height - 8;
             if (left < 10) left = 10;
             if (top < 10) top = 10;
             tooltipBox.style.top = top + 'px';
@@ -12174,7 +12291,7 @@ ${transition.buff.desc}`);
         
         // 防止超出屏幕
         if (left < 10) left = 10;
-        if (left + tooltipWidth > window.innerWidth - 10) left = window.innerWidth - tooltipWidth - 10;
+        if (left + tooltipWidth > SCREEN_W - 10) left = SCREEN_W - tooltipWidth - 10;
         if (top < 10) top = y + 20;
         
         tooltip.style.left = left + 'px';
@@ -13265,5 +13382,56 @@ ${transition.buff.desc}`);
     }
 };
 
+// ============================================================
+//  隐私政策（TapTap 小游戏行为规范：启动页须提供隐私政策入口）
+//  上线前请将 privacyPolicyUrl 替换为实际托管地址，文本同步更新
+// ============================================================
+game.privacyPolicyUrl = 'https://example.com/privacy.html';
+game.privacyPolicyText = [
+    '《吞噬·无限进化》隐私政策',
+    '更新日期：2026年9月11日',
+    '本小游戏（下称"本游戏"）由开发者"灵鱼"提供。我们高度重视用户个人信息保护，依据《中华人民共和国个人信息保护法》及相关法律法规制定本政策。',
+    '一、我们收集的信息',
+    '1. 设备信息：为保障游戏正常运行与广告展示，我们可能获取设备型号、操作系统版本、屏幕分辨率等基础信息。',
+    '2. 广告标识信息：本游戏接入第三方广告SDK用于展示激励视频广告，广告SDK可能收集设备标识、广告标识符（OAID/IDFA等）及广告交互数据，用于广告投放、效果统计与反作弊。',
+    '二、第三方广告SDK',
+    '本游戏接入的广告SDK包括：Dirichlet（TapADN）、穿山甲（CSJ）、优量汇（GDT）等，具体以实际接入版本为准。上述SDK可能独立收集并使用您的信息，其数据处理行为适用各自隐私政策。',
+    '三、信息的使用',
+    '所收集信息仅用于：游戏存档与运行、广告投放与计费、广告效果归因与反作弊、服务稳定性保障。我们不会将您的个人信息用于本政策未载明的用途。',
+    '四、信息的存储与保护',
+    '游戏存档存储于您的设备本地；广告相关数据由对应广告SDK按其规则处理。我们采取合理的安全措施保护您的信息。',
+    '五、您的权利',
+    '您可通过 TapTap 客户端设置或联系我们行使查询、更正、删除个人信息等权利。',
+    '六、联系我们',
+    '开发者：灵鱼。如需就隐私政策咨询或投诉，请通过 TapTap 开发者主页联系。',
+    '本政策可能适时更新，更新后将在本游戏内公示。'
+].join('\n');
+
+// 隐私政策弹窗（游戏内展示，≥40×40px 入口见 index.html 右下角按钮）
+game.showPrivacyPolicy = function () {
+    const lines = this.privacyPolicyText.split('\n');
+    const html = '<div style="max-height:60vh;overflow-y:auto;padding:6px 4px;font-size:13px;line-height:1.7;color:var(--text-primary)">' +
+        lines.map(function (l) { return '<div style="margin-bottom:8px">' + l + '</div>'; }).join('') +
+        '</div><button onclick="game.closePop()" class="btn-success" style="width:100%;padding:10px;margin-top:12px">关闭</button>';
+    this.showPopup(html);
+};
+
 // 启动
-setTimeout(() => game.init(), 100);
+setTimeout(() => {
+    game.init();
+    user.init();
+    // TapTap 生命周期：切后台立即存盘（防杀进程丢档），回前台恢复
+    if (typeof tt !== 'undefined') {
+        if (typeof tt.onHide === 'function') {
+            tt.onHide(function () {
+                try { game.savePermanent(); } catch (e) {}
+                game._appHidden = true;
+            });
+        }
+        if (typeof tt.onShow === 'function') {
+            tt.onShow(function () {
+                game._appHidden = false;
+            });
+        }
+    }
+}, 100);
