@@ -7,6 +7,17 @@
     'use strict';
 
     // ============================================================
+    //  安全 DOM 辅助（阶段 5）：无 DOM 容器返回 null/[]，浏览器转发真实 document。
+    //  game.js 的全部 document 引用已替换为这些函数（容器内 document 引用 0）。
+    // ============================================================
+    window.__gid = window.__gid || function (id) { try { return (typeof document !== 'undefined' && document.getElementById) ? document.getElementById(id) : null; } catch (e) { return null; } };
+    window.__qs = window.__qs || function (sel) { try { return (typeof document !== 'undefined' && document.querySelector) ? document.querySelector(sel) : null; } catch (e) { return null; } };
+    window.__qsa = window.__qsa || function (sel) { try { if (typeof document === 'undefined' || !document.querySelectorAll) return []; return Array.prototype.slice.call(document.querySelectorAll(sel)); } catch (e) { return []; } };
+    window.__ce = window.__ce || function (tag) { try { return (typeof document !== 'undefined' && document.createElement) ? document.createElement(tag) : null; } catch (e) { return null; } };
+    window.__qadd = window.__qadd || function (ev, fn, opt) { try { if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener(ev, fn, opt); } catch (e) {} };
+    window.__qrm = window.__qrm || function (ev, fn, opt) { try { if (typeof document !== 'undefined' && document.removeEventListener) document.removeEventListener(ev, fn, opt); } catch (e) {} };
+
+    // ============================================================
     //  0.1 Canvas 初始化（tt.createCanvas 优先，浏览器降级 DOM）
     // ============================================================
     const hasTT = typeof tt !== 'undefined';
@@ -37,11 +48,12 @@
     if (isTTEnv) {
         canvas = tt.createCanvas();
     } else {
-        canvas = document.getElementById('gameCanvas');
+        canvas = window.__gid('gameCanvas');
         if (!canvas) {
-            canvas = document.createElement('canvas');
+            canvas = window.__ce('canvas');
             canvas.id = 'gameCanvas';
-            document.body.appendChild(canvas);
+            const _b = window.__qs('body');
+            if (_b) _b.appendChild(canvas);
         }
     }
 

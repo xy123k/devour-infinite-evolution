@@ -17,11 +17,11 @@
     // 隐藏所有 DOM 屏（迁移后由 canvas 接管显示）
     function hideDomScreens() {
         if (typeof document === 'undefined') return;
-        const actives = document.querySelectorAll('.screen.active');
+        const actives = window.__qsa('.screen.active');
         for (let i = 0; i < actives.length; i++) actives[i].classList.remove('active');
-        const overlay = document.getElementById('overlay');
+        const overlay = window.__gid('overlay');
         if (overlay) overlay.classList.remove('active');
-        const popBox = document.getElementById('popBox');
+        const popBox = window.__gid('popBox');
         if (popBox) popBox.style.display = 'none';
     }
 
@@ -29,7 +29,7 @@
     const NAV_SCREENS = ['mainScreen', 'battleScreen', 'settingsScreen', 'talentScreen', 'inventoryScreen', 'shopScreen', 'characterScreen'];
     function updateBottomNav(screenId) {
         if (typeof document === 'undefined') return;
-        const bottomNav = document.getElementById('bottomNav');
+        const bottomNav = window.__gid('bottomNav');
         if (!bottomNav) return;
         const btns = bottomNav.querySelectorAll('button');
         for (let i = 0; i < btns.length; i++) btns[i].classList.remove('active');

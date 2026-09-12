@@ -4,6 +4,33 @@
 // ============================================================
 
 // ============================================================
+//  Canvas 渲染层加载（阶段 5）：TapTap 容器无 DOM 且不加载 index.html，
+//  入口 game.js 用 require 拉取 render 层与内嵌数据。
+//  浏览器由 index.html 的 <script> 顺序加载，此处 Render 已存在则幂等跳过。
+// ============================================================
+if (typeof Render === 'undefined' && typeof require === 'function') {
+    try {
+        require('./data.js');
+        require('./render/canvas.js');
+        require('./render/input.js');
+        require('./render/screen.js');
+        require('./render/html.js');
+        require('./render/screens/mainScreen.js');
+        require('./render/screens/battleScreen.js');
+        require('./render/screens/settingsScreen.js');
+        require('./render/screens/characterScreen.js');
+        require('./render/screens/talentScreen.js');
+        require('./render/screens/inventoryScreen.js');
+        require('./render/screens/shopScreen.js');
+        require('./render/screens/growthScreen.js');
+        require('./render/screens/deathScreen.js');
+        require('./render/screens/tutorialOverlay.js');
+    } catch (e) {
+        if (typeof console !== 'undefined') console.error('[Canvas] 渲染层 require 加载失败', e);
+    }
+}
+
+// ============================================================
 //  TapTap 小游戏环境适配层
 //  存储 / 登录 / 屏幕尺寸 / 生命周期（详见 TapTap 小游戏文档）
 // ============================================================
@@ -498,7 +525,7 @@ const game = {
             return;
         }
         // 如果不在主界面，先切换到主界面
-        if (document.getElementById('mainScreen').classList.contains('active')) {
+        if (__gid('mainScreen').classList.contains('active')) {
             // 已经在主界面
         } else {
             this.showScreen('mainScreen');
@@ -520,7 +547,7 @@ const game = {
             const lineNum = currentLine + 1;
             
             // 在主界面的storyText元素中显示剧情
-            const storyText = document.getElementById('storyText');
+            const storyText = __gid('storyText');
             if (storyText) {
                 let html = '<div style="padding:15px;background:linear-gradient(135deg,rgba(0,60,50,0.6),rgba(0,30,40,0.6));border-left:4px solid var(--accent-primary);border-radius:8px;margin:10px 0">';
                 html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
@@ -592,6 +619,7 @@ const game = {
     permanent: {
         freePoints: 0,
         fragments: {1:0, 2:0, 3:0, 4:0, 5:0},
+        universalFragments: {1:0, 2:0, 3:0, 4:0, 5:0},  // 万能碎片（无存档新玩家也需要结构，死亡结算/掉落依赖）
         unlockedTalents: [],
         talentLevels: {},  // {talentId: level}，未解锁的天赋等级为0
         talentPoints: 0,   // 天赋点，用于升级天赋
@@ -1130,8 +1158,13 @@ const game = {
 
     // 应用主题
     applyTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
+        const _html = __qs('html');
+        if (_html) _html.setAttribute('data-theme', theme);
         this.currentTheme = theme;
+        // Canvas 主题同步（渲染层色表）
+        if (typeof Render !== 'undefined' && Render.Theme && typeof Render.Theme.set === 'function') {
+            Render.Theme.set(theme);
+        }
     },
 
     // 设置主题（支持三个主题：dark/warm/light）
@@ -1148,9 +1181,9 @@ const game = {
     // 更新主题切换按钮的高亮状态
     updateThemeButtons() {
         const buttons = {
-            dark: document.getElementById('btnThemeDark'),
-            warm: document.getElementById('btnThemeWarm'),
-            light: document.getElementById('btnThemeLight')
+            dark: __gid('btnThemeDark'),
+            warm: __gid('btnThemeWarm'),
+            light: __gid('btnThemeLight')
         };
         for (const key in buttons) {
             const btn = buttons[key];
@@ -1390,7 +1423,7 @@ const game = {
             setTimeout(() => {
                 // 若击杀奖励弹窗仍在显示，等它关闭后再展示成就，避免顶掉击杀奖励
                 const showWhenReady = () => {
-                    if (document.getElementById('killDropPopup')) {
+                    if (__gid('killDropPopup')) {
                         setTimeout(showWhenReady, 300);
                     } else {
                         this.showGameAlert('成就解锁', msg);
@@ -1879,13 +1912,13 @@ const game = {
     switchLeaderboardTab(type) {
         // 更新Tab样式
         this.leaderboardTypes.forEach(t => {
-            const btn = document.getElementById('lb_tab_' + t.id);
+            const btn = __gid('lb_tab_' + t.id);
             if (btn) {
                 btn.style.background = t.id === type ? 'var(--accent-info)' : 'var(--text-faint)';
             }
         });
         // 更新内容
-        const content = document.getElementById('leaderboard_content');
+        const content = __gid('leaderboard_content');
         if (content) {
             content.innerHTML = this.renderLeaderboardList(type);
         }
@@ -1974,29 +2007,29 @@ const game = {
 
     showScreenDOM(screenId) {
         // 关闭击杀奖励弹窗（如果存在）
-        const killDropPopup = document.getElementById('killDropPopup');
+        const killDropPopup = __gid('killDropPopup');
         if (killDropPopup) killDropPopup.remove();
-        const dropTooltip = document.getElementById('dropTooltip');
+        const dropTooltip = __gid('dropTooltip');
         if (dropTooltip) dropTooltip.remove();
         // 关闭所有tooltip（防止切换界面后tooltip残留）
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) tooltipBox.classList.remove('show');
         this.currentTooltipKey = null;
         // 关闭天赋详情tooltip
-        const talentTooltip = document.getElementById('talentTooltip');
+        const talentTooltip = __gid('talentTooltip');
         if (talentTooltip) talentTooltip.remove();
         
         // 记录切换前的页面ID（用于判断是否需要自动渲染）
-        const prevActive = document.querySelector('.screen.active');
+        const prevActive = __qs('.screen.active');
         const prevId = prevActive ? prevActive.id : null;
         
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        const target = document.getElementById(screenId);
+        __qsa('.screen').forEach(s => s.classList.remove('active'));
+        const target = __gid(screenId);
         if (target) target.classList.add('active');
         window.scrollTo(0, 0);
         
         // 底部导航栏切换
-        const bottomNav = document.getElementById('bottomNav');
+        const bottomNav = __gid('bottomNav');
         if (bottomNav) {
             bottomNav.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
             const navBtn = bottomNav.querySelector('[data-screen="' + screenId + '"]');
@@ -2030,11 +2063,11 @@ const game = {
             this.battleEnding = false;
             this.currentEnemy = null;
             this.playerTurn = true;
-            const battleButtons = document.querySelectorAll('#battleActions button');
+            const battleButtons = __qsa('#battleActions button');
             battleButtons.forEach(b => b.disabled = false);
-            const killDropPopup = document.getElementById('killDropPopup');
+            const killDropPopup = __gid('killDropPopup');
             if (killDropPopup) killDropPopup.remove();
-            const overlay = document.getElementById('killDropOverlay');
+            const overlay = __gid('killDropOverlay');
             if (overlay) overlay.remove();
             this.closePop();
             this.hideTooltip();
@@ -2043,7 +2076,7 @@ const game = {
         this.showScreen('mainScreen');
         this.refreshMainUI();
         // 清空战斗日志容器，避免下次战斗显示旧内容
-        const battleLog = document.getElementById('battleLog');
+        const battleLog = __gid('battleLog');
         if (battleLog) battleLog.innerHTML = '';
     },
 
@@ -2052,12 +2085,12 @@ const game = {
         // 先关闭所有弹窗
         this.closePop();
         // 关闭击杀奖励弹窗（如果存在）
-        const killDropPopup = document.getElementById('killDropPopup');
+        const killDropPopup = __gid('killDropPopup');
         if (killDropPopup) killDropPopup.remove();
-        const dropTooltip = document.getElementById('dropTooltip');
+        const dropTooltip = __gid('dropTooltip');
         if (dropTooltip) dropTooltip.remove();
         // 关闭所有tooltip
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) tooltipBox.classList.remove('show');
         this.currentTooltipKey = null;
         
@@ -2071,7 +2104,7 @@ const game = {
         } else {
             this.showScreen('mainScreen');
             this.refreshMainUI();
-            const eb = document.getElementById('exploreBtn');
+            const eb = __gid('exploreBtn');
             if (eb) eb.disabled = false;
         }
     },
@@ -2552,7 +2585,7 @@ const game = {
     updateTopBar() {
         // Canvas 化主界面：顶栏由 render/screens/mainScreen.js 每帧绘制
         if (this._isCanvasScreen('mainScreen')) return;
-        const topBar = document.getElementById('topResourceBar');
+        const topBar = __gid('topResourceBar');
         if (!topBar) return;
         const gold = this.player.gold || 0;
         const talentPoints = this.permanent.talentPoints || 0;
@@ -2615,24 +2648,24 @@ const game = {
         }
         const currentMap = this.getCurrentMap();
         const mapName = currentMap ? currentMap.name : '未知区域';
-        document.getElementById('floorInfo').innerText = `${mapName} · 第 ${this.currentLayer}${currentMap && currentMap.totalLayers === -1 ? ' 层（无限轮回）' : '/' + (currentMap ? currentMap.totalLayers : '?') + ' 层'}（全局第 ${this.currentFloor} 层）`;
+        __gid('floorInfo').innerText = `${mapName} · 第 ${this.currentLayer}${currentMap && currentMap.totalLayers === -1 ? ' 层（无限轮回）' : '/' + (currentMap ? currentMap.totalLayers : '?') + ' 层'}（全局第 ${this.currentFloor} 层）`;
         // 隐藏遭遇确认区域
-        const enc = document.getElementById('encounterArea');
+        const enc = __gid('encounterArea');
         if (enc) enc.style.display = 'none';
-        const evt = document.getElementById('eventArea');
+        const evt = __gid('eventArea');
         if (evt) evt.style.display = 'none';
-        const rest = document.getElementById('bossRestArea');
+        const rest = __gid('bossRestArea');
         if (rest) rest.style.display = 'none';
         this.pendingEnemy = null;
         const p = this.player;
-        const info = document.getElementById('playerInfo');
+        const info = __gid('playerInfo');
         // 更新顶部资源栏
         this.updateTopBar();
 
         // 局内封锁轮回空间，显示自杀按钮
-        const growthBtn = document.getElementById('growthBtn');
-        const suicideBtn = document.getElementById('suicideBtn');
-        const growthHint = document.getElementById('growthHint');
+        const growthBtn = __gid('growthBtn');
+        const suicideBtn = __gid('suicideBtn');
+        const growthHint = __gid('growthHint');
         if (this.currentFloor > 1) {
             if (growthBtn) { growthBtn.disabled = true; growthBtn.style.opacity = '0.5'; }
             if (suicideBtn) suicideBtn.style.display = 'block';
@@ -2708,7 +2741,7 @@ const game = {
         });
 
         // 属性点分配面板
-        const allocDiv = document.getElementById('statAlloc');
+        const allocDiv = __gid('statAlloc');
         if (p.statPoints > 0) {
             allocDiv.style.display = 'block';
             const stats = ['strength','agility','vitality','perception','evolution'];
@@ -2751,15 +2784,15 @@ const game = {
         if (currentMap && envEff) {
             const isBossFloor = currentMap && currentMap.totalLayers === -1 ? (this.currentLayer % 5 === 0) : (this.currentLayer >= (currentMap.totalLayers || 3));
             const bossHint = isBossFloor ? "<br><br><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--accent-danger)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg> <span style=\"color:var(--accent-danger)\">前方是首领层，做好准备！</span>" : "";
-            document.getElementById('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${envEff.name}<br>${envEff.desc}${bossHint}`;
+            __gid('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${envEff.name}<br>${envEff.desc}${bossHint}`;
             return;
         }
         if (currentMap && currentMap.environmentLaw) {
             const law = currentMap.environmentLaw;
-            document.getElementById('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${law.name}<br>${law.effect}`;
+            __gid('storyText').innerHTML = `【${currentMap.name}】<br>环境法则：${law.name}<br>${law.effect}`;
             return;
         }
-        document.getElementById('storyText').innerHTML = "继续探索，寻找更强的猎物...";
+        __gid('storyText').innerHTML = "继续探索，寻找更强的猎物...";
     },
 
     // ============================================================
@@ -3427,7 +3460,7 @@ const game = {
 
         // 在主界面显示该敌人对应的前置文本
         const narrative = this.getEnemyNarrative(enemy);
-        document.getElementById('storyText').innerHTML = narrative.replace(/\n/g, '<br>');
+        __gid('storyText').innerHTML = narrative.replace(/\n/g, '<br>');
 
         // 显示敌人信息
         const typeLabel = enemy.type === 'boss' ? '【首领】' : (enemy.type === 'elite' ? '【精英】' : '【普通】');
@@ -3457,15 +3490,15 @@ const game = {
         });
         resistHtml += '</div>';
         
-        document.getElementById('encounterEnemyInfo').innerHTML =
+        __gid('encounterEnemyInfo').innerHTML =
             `<div style="color:${typeColor};font-size:16px;font-weight:bold;margin-bottom:6px">${typeLabel} ${enemy.name}</div>` +
             `<div style="color:var(--text-muted);font-size:13px;margin-bottom:6px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"/></svg> 生命：${ehp} | <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"14.5 17.5 3 6 3 3 6 3 17.5 14.5\"/><line x1=\"13\" y1=\"19\" x2=\"19\" y2=\"13\"/><line x1=\"16\" y1=\"16\" x2=\"20\" y2=\"20\"/><line x1=\"19\" y1=\"21\" x2=\"21\" y2=\"19\"/></svg> 攻击：${eatk} | <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg> 防御：${edef} | <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 先手：${eagi}</div>` +
             `<div style="color:var(--text-faint);font-size:12px;line-height:1.5">${edesc}</div>` +
             resistHtml;
 
         // 显示遭遇确认区域，玩家手动选择进入战斗
-        document.getElementById('encounterArea').style.display = 'block';
-        const eb = document.getElementById('exploreBtn');
+        __gid('encounterArea').style.display = 'block';
+        const eb = __gid('exploreBtn');
         if (eb) eb.disabled = true;
     },
 
@@ -3488,16 +3521,16 @@ const game = {
         }
 
         // 事件模板展示（不再弹窗）
-        document.getElementById('eventTitle').innerText = `遇到${m.name}`;
-        document.getElementById('eventDesc').innerHTML =
+        __gid('eventTitle').innerText = `遇到${m.name}`;
+        __gid('eventDesc').innerHTML =
             `<div style="margin-bottom:12px;padding:12px;background:var(--bg-secondary);border-radius:8px;border-left:3px solid var(--accent-success)"><p style="color:var(--text-muted);font-size:13px;line-height:1.8;margin-bottom:8px">${m.desc}</p><p style="color:var(--accent-success);font-size:12px">主营：${m.items}</p></div>` +
             `<div style="margin-bottom:12px;padding:8px;background:var(--bg-card);border-radius:6px;font-size:13px"><span style="color:var(--accent-warning)">基因精华：${this.player.gold}</span><span style="color:var(--accent-success);margin-left:15px">全场8折</span></div>`;
-        document.getElementById('eventOptions').innerHTML =
+        __gid('eventOptions').innerHTML =
             `<div style="display:flex;gap:10px"><button onclick="game.enterMerchantShop()" style="flex:1;padding:12px;font-size:14px;border-radius:8px;font-weight:bold;background:var(--accent-success);color:white">进入商店（8折）</button>` +
             `<button onclick="game.closeEvent()" style="flex:1;padding:12px;font-size:14px;border-radius:8px;background:var(--text-faint);color:var(--text-secondary)">离开</button></div>`;
-        document.getElementById('eventArea').style.display = 'block';
-        document.getElementById('encounterArea').style.display = 'none';
-        const eb = document.getElementById('exploreBtn');
+        __gid('eventArea').style.display = 'block';
+        __gid('encounterArea').style.display = 'none';
+        const eb = __gid('exploreBtn');
         if (eb) eb.disabled = true;
     },
 
@@ -3512,15 +3545,15 @@ const game = {
             return;
         }
         // 显示主界面商人模式区域
-        const merchantArea = document.getElementById('merchantArea');
+        const merchantArea = __gid('merchantArea');
         if (merchantArea) {
-            document.getElementById('merchantDesc').innerText = this.currentMerchant ? this.currentMerchant.desc : '';
+            __gid('merchantDesc').innerText = this.currentMerchant ? this.currentMerchant.desc : '';
             merchantArea.style.display = 'block';
         }
         // 隐藏其他区域
-        const encounterArea = document.getElementById('encounterArea');
+        const encounterArea = __gid('encounterArea');
         if (encounterArea) encounterArea.style.display = 'none';
-        const eventArea = document.getElementById('eventArea');
+        const eventArea = __gid('eventArea');
         if (eventArea) eventArea.style.display = 'none';
         // 打开商店
         setTimeout(() => this.openShop('all'), 100);
@@ -3539,12 +3572,12 @@ const game = {
             this.showRandomStory();
             return;
         }
-        const merchantArea = document.getElementById('merchantArea');
+        const merchantArea = __gid('merchantArea');
         if (merchantArea) merchantArea.style.display = 'none';
         // 设置标志，防止立即又触发商人事件（软保底保护）
         this.exploreSinceSpecial = 3;
         // 回到主界面，显示环境法则，让玩家手动点击探索前进
-        const eb = document.getElementById('exploreBtn');
+        const eb = __gid('exploreBtn');
         if (eb) eb.disabled = false;
         this.showScreen('mainScreen');
         this.showRandomStory();
@@ -3572,17 +3605,17 @@ const game = {
         }
 
         // 事件模板展示（不再弹窗）
-        document.getElementById('eventTitle').innerText = '发现基因提取装置';
-        document.getElementById('eventDesc').innerHTML =
+        __gid('eventTitle').innerText = '发现基因提取装置';
+        __gid('eventDesc').innerHTML =
             `<p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;line-height:1.6">"一台古老的基因提取装置还在运转...消耗${gachaCost}基因精华启动它，可能获得有用的东西。"</p>` +
             `<div style="margin-bottom:12px;padding:8px;background:var(--bg-card);border-radius:6px;font-size:13px"><span style="color:var(--accent-warning)">基因精华：${this.player.gold}</span></div>` +
             `<div style="margin-bottom:12px;padding:10px;background:var(--bg-secondary);border-radius:6px;font-size:12px;color:var(--text-secondary)"><div style="color:var(--text-primary);margin-bottom:5px;font-weight:bold">可能获得</div><div>普通万能碎片×2~5：50%</div><div>稀有万能碎片×1~3：30%</div><div>随机消耗品×1：15%</div><div>基因精华×20~50：5%</div><div style="color:var(--accent-warning);margin-top:5px">仅低阶奖励，史诗及以上需通过战斗获取</div></div>`;
-        document.getElementById('eventOptions').innerHTML =
+        __gid('eventOptions').innerHTML =
             `<div style="display:flex;gap:10px"><button onclick="game.playGachaEvent()" ${canAfford?'':'disabled'} style="flex:1;padding:12px;font-size:14px;border-radius:8px;font-weight:bold;background:${canAfford?'var(--accent-purple)':'var(--text-faint)'};color:${canAfford?'white':'var(--text-muted)'}">启动装置（${gachaCost}精华）</button>` +
             `<button onclick="game.closeEvent()" style="flex:1;padding:12px;font-size:14px;border-radius:8px;background:var(--text-faint);color:var(--text-secondary)">离开</button></div>`;
-        document.getElementById('eventArea').style.display = 'block';
-        document.getElementById('encounterArea').style.display = 'none';
-        const eb = document.getElementById('exploreBtn');
+        __gid('eventArea').style.display = 'block';
+        __gid('encounterArea').style.display = 'none';
+        const eb = __gid('exploreBtn');
         if (eb) eb.disabled = true;
     },
 
@@ -3657,11 +3690,11 @@ const game = {
                 };
                 return;
             }
-            document.getElementById('eventTitle').innerText = '提取结果';
-            document.getElementById('eventDesc').innerHTML =
+            __gid('eventTitle').innerText = '提取结果';
+            __gid('eventDesc').innerHTML =
                 `<div style="text-align:center;margin:20px 0"><div style="font-size:50px;margin-bottom:12px">${resultIcon}</div><div style="font-size:17px;color:var(--text-primary);font-weight:bold">${resultText}</div></div>` +
                 `<div style="color:var(--accent-warning);text-align:center;margin-bottom:10px">剩余基因精华：${this.player.gold}</div>`;
-            document.getElementById('eventOptions').innerHTML =
+            __gid('eventOptions').innerHTML =
                 (prizeKey === 'item' ? `<button onclick="game.useLastGachaItem()" style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;background:var(--accent-warning);color:white;margin-bottom:8px">立即使用</button>` : '') +
                 `<button onclick="game.playGachaEvent()" style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;background:var(--accent-purple);color:white;margin-bottom:8px">继续抽奖（${gachaCost}精华）</button>` +
                 `<button onclick="game.closeEvent()" style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;background:var(--accent-success);color:white">继续探索</button>`;
@@ -3724,13 +3757,13 @@ const game = {
         </div>
         <div style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:4px">抽取中，请稍候…</div>`;
 
-        document.getElementById('eventTitle').innerText = '基因提取中…';
-        document.getElementById('eventDesc').innerHTML = wheelHTML;
-        document.getElementById('eventOptions').innerHTML =
+        __gid('eventTitle').innerText = '基因提取中…';
+        __gid('eventDesc').innerHTML = wheelHTML;
+        __gid('eventOptions').innerHTML =
             `<button disabled style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;background:var(--text-faint);color:var(--text-muted)">抽取中…</button>`;
 
         // 分两帧设置动画（先归零再旋转，保证每次动画完整）
-        const wheel = document.getElementById('gachaWheel');
+        const wheel = __gid('gachaWheel');
         if (wheel) {
             wheel.style.transition = 'none';
             wheel.style.transform = 'rotate(0deg)';
@@ -3764,16 +3797,16 @@ const game = {
             return;
         }
 
-        document.getElementById('eventTitle').innerText = event.name || '随机事件';
-        document.getElementById('eventDesc').innerText = event.description || '';
+        __gid('eventTitle').innerText = event.name || '随机事件';
+        __gid('eventDesc').innerText = event.description || '';
 
         let optionsHtml = '';
         event.options.forEach((opt, idx) => {
             optionsHtml += `<button onclick="game.chooseEventOption(${idx})" style="display:block;width:100%;margin:6px 0;text-align:left;padding:10px">${opt.text}</button>`;
         });
-        document.getElementById('eventOptions').innerHTML = optionsHtml;
-        document.getElementById('eventArea').style.display = 'block';
-        document.getElementById('encounterArea').style.display = 'none';
+        __gid('eventOptions').innerHTML = optionsHtml;
+        __gid('eventArea').style.display = 'block';
+        __gid('encounterArea').style.display = 'none';
     },
 
     // 选择事件选项
@@ -3819,8 +3852,8 @@ const game = {
             };
             return;
         }
-        document.getElementById('eventDesc').innerText = resultText;
-        document.getElementById('eventOptions').innerHTML = `<button onclick="game.closeEvent()" style="margin-top:10px">继续探索</button>`;
+        __gid('eventDesc').innerText = resultText;
+        __gid('eventOptions').innerHTML = `<button onclick="game.closeEvent()" style="margin-top:10px">继续探索</button>`;
     },
 
     // 应用事件效果
@@ -4004,8 +4037,8 @@ const game = {
             this.showRandomStory();
             return;
         }
-        document.getElementById('eventArea').style.display = 'none';
-        const eb = document.getElementById('exploreBtn');
+        __gid('eventArea').style.display = 'none';
+        const eb = __gid('exploreBtn');
         if (eb) eb.disabled = false;
         this.refreshMainUI();
         this.showRandomStory();
@@ -4383,7 +4416,7 @@ const game = {
     },
 
     toggleTalentCodexDetail(id) {
-        const el = document.getElementById('codexDetail_' + id);
+        const el = __gid('codexDetail_' + id);
         if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
     },
 
@@ -4475,8 +4508,8 @@ const game = {
     
     // 切换共生体部位折叠/展开
     toggleSymbiontSlot(slotId) {
-        const el = document.getElementById(slotId);
-        const arrow = document.getElementById(slotId + '_arrow');
+        const el = __gid(slotId);
+        const arrow = __gid(slotId + '_arrow');
         if (el) {
             if (el.style.display === 'none') {
                 el.style.display = 'block';
@@ -4656,10 +4689,10 @@ const game = {
 
     // 提交兑换码
     submitRedeemCode() {
-        const input = document.getElementById('redeemCodeInput');
+        const input = __gid('redeemCodeInput');
         const code = input ? input.value : '';
         const result = this.redeemCode(code);
-        const resultDiv = document.getElementById('redeemResult');
+        const resultDiv = __gid('redeemResult');
         if (resultDiv) {
             if (result.success) {
                 resultDiv.innerHTML = '<div style="color:var(--accent-success);font-size:14px;padding:10px;background:rgba(46,213,115,0.1);border-radius:6px">' + result.msg + '</div>';
@@ -4705,7 +4738,7 @@ const game = {
 
     // 关闭设置面板
     closeSettings() {
-        document.getElementById('settingsPanel').style.display = 'none';
+        __gid('settingsPanel').style.display = 'none';
     },
 
     // 切换事件结果显示方式
@@ -4724,8 +4757,8 @@ const game = {
 
     // 更新设置UI
     updateSettingsUI() {
-        const btnDetail = document.getElementById('btnEventDetail');
-        const btnHide = document.getElementById('btnEventHide');
+        const btnDetail = __gid('btnEventDetail');
+        const btnHide = __gid('btnEventHide');
         if (btnDetail && btnHide) {
             if (this.settings.eventDetail) {
                 btnDetail.style.background = 'var(--accent-success)';
@@ -4740,21 +4773,21 @@ const game = {
             }
         }
         // 战斗速度高亮
-        const speedBtns = document.querySelectorAll('[id^=btnSpeed]');
+        const speedBtns = __qsa('[id^=btnSpeed]');
         speedBtns.forEach(btn => {
             btn.style.background = '';
             btn.style.color = '';
         });
         const speedMap = { slow: 'btnSpeedSlow', normal: 'btnSpeedNormal', fast: 'btnSpeedFast' };
-        const activeBtn = document.getElementById(speedMap[this.settings.battleSpeed]);
+        const activeBtn = __gid(speedMap[this.settings.battleSpeed]);
         if (activeBtn) {
             activeBtn.style.background = 'var(--accent-success)';
             activeBtn.style.color = 'var(--text-primary)';
         }
         
         // 主题按钮高亮
-        const btnThemeDark = document.getElementById('btnThemeDark');
-        const btnThemeLight = document.getElementById('btnThemeLight');
+        const btnThemeDark = __gid('btnThemeDark');
+        const btnThemeLight = __gid('btnThemeLight');
         if (btnThemeDark && btnThemeLight) {
             if (this.currentTheme === 'dark') {
                 btnThemeDark.style.border = '2px solid var(--accent-primary)';
@@ -4777,7 +4810,7 @@ const game = {
 
     // 更新开关按钮显示
     updateToggleButton(btnId, isOn) {
-        const btn = document.getElementById(btnId);
+        const btn = __gid(btnId);
         if (!btn) return;
         if (isOn) {
             btn.style.background = 'linear-gradient(135deg, var(--accent-primary), var(--accent-primary-dark))';
@@ -4923,10 +4956,10 @@ const game = {
         if (map.totalLayers === -1) {
             optionsHtml += '<button onclick="game.leaveInfiniteMap()" style="display:block;width:100%;margin:8px 0;text-align:left;padding:12px;font-size:14px;color:var(--accent-warning)">离开混沌轮回（进入下一张地图）</button>';
         }
-        document.getElementById('bossRestOptions').innerHTML = optionsHtml;
-        document.getElementById('bossRestArea').style.display = 'block';
-        document.getElementById('encounterArea').style.display = 'none';
-        document.getElementById('eventArea').style.display = 'none';
+        __gid('bossRestOptions').innerHTML = optionsHtml;
+        __gid('bossRestArea').style.display = 'block';
+        __gid('encounterArea').style.display = 'none';
+        __gid('eventArea').style.display = 'none';
     },
 
     // 选择Boss休整选项
@@ -4981,7 +5014,7 @@ const game = {
             return;
         }
 
-        document.getElementById('bossRestArea').style.display = 'none';
+        __gid('bossRestArea').style.display = 'none';
         this.refreshMainUI();
 
         // 直接进入Boss战
@@ -4989,7 +5022,7 @@ const game = {
         if (!enemy) { this.showGameAlert('提示', '没有找到首领数据'); return; }
         this.pendingEnemy = enemy;
         const narrative = this.getEnemyNarrative(enemy);
-        document.getElementById('storyText').innerHTML = narrative.replace(/\n/g, '<br>');
+        __gid('storyText').innerHTML = narrative.replace(/\n/g, '<br>');
         
         // 更新敌人信息（修复Boss战前显示错误敌人的问题）
         const typeLabel = '【首领】';
@@ -4999,17 +5032,17 @@ const game = {
         const edef = enemy.stats ? enemy.stats.def : 0;
         const eagi = enemy.stats ? enemy.stats.agi : 0;
         const edesc = enemy.description || '';
-        document.getElementById('encounterEnemyInfo').innerHTML =
+        __gid('encounterEnemyInfo').innerHTML =
             '<div style="color:' + typeColor + ';font-size:16px;font-weight:bold;margin-bottom:6px">' + typeLabel + ' ' + enemy.name + '</div>' +
             '<div style="color:var(--text-muted);font-size:13px;margin-bottom:6px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\"/></svg> 生命：' + ehp + ' | <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"14.5 17.5 3 6 3 3 6 3 17.5 14.5\"/><line x1=\"13\" y1=\"19\" x2=\"19\" y2=\"13\"/><line x1=\"16\" y1=\"16\" x2=\"20\" y2=\"20\"/><line x1=\"19\" y1=\"21\" x2=\"21\" y2=\"19\"/></svg> 攻击：' + eatk + ' | <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg> 防御：' + edef + ' | <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 先手：' + eagi + '</div>' +
             '<div style="color:var(--text-faint);font-size:12px;line-height:1.5">' + edesc + '</div>';
         
-        document.getElementById('encounterArea').style.display = 'block';
+        __gid('encounterArea').style.display = 'block';
     },
 
     // 离开无限层地图，进入下一张地图
     leaveInfiniteMap() {
-        document.getElementById('bossRestArea').style.display = 'none';
+        __gid('bossRestArea').style.display = 'none';
         this.bossRestShown = false;
         this.appendBattleLog('你从混沌轮回中脱离，踏入新的领域。', 'log-info');
         this.advanceToNextMap();
@@ -5020,21 +5053,23 @@ const game = {
         if (!this.pendingEnemy) return;
         // Canvas 化主界面：复位探索状态
         this._mainAreaState = 'explore';
-        document.getElementById('encounterArea').style.display = 'none';
+        const _ea = __gid('encounterArea');
+        if (_ea) _ea.style.display = 'none';
         this.startBattle(this.pendingEnemy);
         this.pendingEnemy = null;
-        const eb = document.getElementById('exploreBtn');
+        const eb = __gid('exploreBtn');
         if (eb) eb.disabled = false;
     },
 
     // 逃跑：损失20%生命，重新探索
     fleeBattle() {
         this.pendingEnemy = null;
-        document.getElementById('encounterArea').style.display = 'none';
+        const _ea = __gid('encounterArea');
+        if (_ea) _ea.style.display = 'none';
         const p = this.player;
         const damage = Math.floor(p.maxHp * 0.2);
         p.hp = Math.max(1, p.hp - damage);
-        const eb = document.getElementById('exploreBtn');
+        const eb = __gid('exploreBtn');
         if (eb) eb.disabled = false;
         this.showRandomStory();
         this.refreshMainUI();
@@ -5104,7 +5139,7 @@ const game = {
         const canvasBattle = typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['battleScreen'];
         if (!canvasBattle) {
             // 清空战斗日志DOM元素
-            const logDiv = document.getElementById('battleLog');
+            const logDiv = __gid('battleLog');
             if (logDiv) logDiv.innerHTML = '';
         }
         this.clearStatuses(this.player);
@@ -5147,7 +5182,7 @@ const game = {
         const map = this.getCurrentMap();
         const envName = envEff ? ` | 环境：${envEff.name}` : '';
         if (!this._isCanvasScreen('battleScreen')) {
-            document.getElementById('battleFloorInfo').innerText = `${map ? map.name : ''} · 第 ${this.currentLayer} 层${envName}`;
+            __gid('battleFloorInfo').innerText = `${map ? map.name : ''} · 第 ${this.currentLayer} 层${envName}`;
         }
         if (envEff) this.appendBattleLog(`【环境法则】${envEff.name}：${envEff.desc}`, 'log-info');
         this.appendBattleLog(`遭遇了 ${enemy.name}！`, 'log-info');
@@ -5185,7 +5220,7 @@ const game = {
         // Canvas 化战斗界面：快速狩猎按钮与敌人回合按钮禁用由渲染器处理
         if (!this._isCanvasScreen('battleScreen')) {
             // 快速狩猎：玩家攻击力 > 敌人最大生命 × 1.5 时显示
-            const quickBtn = document.getElementById('quickHuntBtn');
+            const quickBtn = __gid('quickHuntBtn');
             if (quickBtn) {
                 if (this.player.attack > enemy.stats.maxHp * 1.5 && enemy.type !== 'boss') {
                     quickBtn.style.display = 'block';
@@ -5194,7 +5229,7 @@ const game = {
                 }
             }
             if (!this.playerTurn) {
-                document.querySelectorAll('#battleActions button').forEach(b => b.disabled = true);
+                __qsa('#battleActions button').forEach(b => b.disabled = true);
                 setTimeout(() => this.enemyTurn(), this.getBattleDelay(500));
             }
         } else {
@@ -5209,32 +5244,32 @@ const game = {
         const p = this.player;
         // Canvas 化战斗界面：渲染器每帧直接读取 game 状态
         if (this._isCanvasScreen('battleScreen')) return;
-        document.getElementById('enemyName').innerText = e.name + (e.type === 'boss' ? '（首领）' : '');
-        document.getElementById('enemyHpFill').style.width = Math.max(0, e.stats.hp/e.stats.maxHp*100) + '%';
+        __gid('enemyName').innerText = e.name + (e.type === 'boss' ? '（首领）' : '');
+        __gid('enemyHpFill').style.width = Math.max(0, e.stats.hp/e.stats.maxHp*100) + '%';
         // HP条数值显示
-        const enemyHpBar = document.querySelector('.enemy-hp');
+        const enemyHpBar = __qs('.enemy-hp');
         if (enemyHpBar) enemyHpBar.setAttribute('data-hp', e.stats.hp + '/' + e.stats.maxHp);
-        const playerHpBar = document.querySelector('#battleScreen .hp-bar:not(.enemy-hp)');
+        const playerHpBar = __qs('#battleScreen .hp-bar:not(.enemy-hp)');
         if (playerHpBar) playerHpBar.setAttribute('data-hp', p.hp + '/' + p.maxHp);
         // 战斗界面顶部资源栏更新
-        const battleTopHp = document.getElementById('battleTopHp');
-        const battleTopEnergy = document.getElementById('battleTopEnergy');
-        const battleTopFloor = document.getElementById('battleTopFloor');
+        const battleTopHp = __gid('battleTopHp');
+        const battleTopEnergy = __gid('battleTopEnergy');
+        const battleTopFloor = __gid('battleTopFloor');
         if (battleTopHp) battleTopHp.textContent = p.hp + '/' + p.maxHp;
         if (battleTopEnergy) battleTopEnergy.textContent = p.energy + '/' + p.maxEnergy;
         if (battleTopFloor) battleTopFloor.textContent = (this.currentFloor || 1) + '-' + (this.currentLayer || 1) + '层';
         const eCrit = 5 + (e.stats.per || 5) * 0.8;
         const eHit = 85 + (e.stats.per || 5) / 5;
         const eStatus = this.formatStatuses(e);
-        document.getElementById('enemyStats').innerHTML =
+        __gid('enemyStats').innerHTML =
             `生命：${e.stats.hp}/${e.stats.maxHp} | 攻击：${e.stats.atk} | 防御：${e.stats.def} | 先手：${e.stats.agi||5} | 暴击：${eCrit.toFixed(0)}% | 命中：${eHit.toFixed(0)}%${eStatus?'<br>'+eStatus:''}`;
 
-        document.getElementById('playerHpFill').style.width = Math.max(0, p.hp/p.maxHp*100) + '%';
+        __gid('playerHpFill').style.width = Math.max(0, p.hp/p.maxHp*100) + '%';
         const pStatus = this.formatStatuses(p);
         // 给状态效果标签添加tooltip事件绑定
         const self = this;
         setTimeout(function() {
-            document.querySelectorAll('#battleScreen .status-tag').forEach(tag => {
+            __qsa('#battleScreen .status-tag').forEach(tag => {
                 const key = tag.getAttribute('data-tooltip');
                 if (key) {
                     tag.addEventListener('click', function(e) {
@@ -5250,7 +5285,7 @@ const game = {
                 }
             });
         }, 50);
-        document.getElementById('battlePlayerStats').innerHTML =
+        __gid('battlePlayerStats').innerHTML =
             `生命：${p.hp}/${p.maxHp} | 攻击：${p.attack} | 防御：${p.defense} | 暴击：${p.crit}% | 命中：${p.hit}% | 先手：${p.speed} | 能量：${p.energy}/${p.maxEnergy}${pStatus?'<br>'+pStatus:''}`;
     },
 
@@ -5258,8 +5293,8 @@ const game = {
         this.battleLog.push({text, className});
         // Canvas 化战斗界面：渲染器直接读 battleLog
         if (this._isCanvasScreen('battleScreen')) return;
-        const logDiv = document.getElementById('battleLog');
-        const p = document.createElement('p');
+        const logDiv = __gid('battleLog');
+        const p = __ce('p');
         p.className = className;
         p.innerHTML = text;
         logDiv.appendChild(p);
@@ -6670,7 +6705,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
             this.player.skillCooldowns[sid]--;
             if (this.player.skillCooldowns[sid] <= 0) delete this.player.skillCooldowns[sid];
         }
-        document.querySelectorAll('#battleActions button').forEach(b => b.disabled = true);
+        __qsa('#battleActions button').forEach(b => b.disabled = true);
         setTimeout(() => this.enemyTurn(), this.getBattleDelay(400));
     },
 
@@ -7019,7 +7054,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         if (this.checkBattleEnd()) return;
         this.refreshBattleUI();
         this.playerTurn = true;
-        document.querySelectorAll('#battleActions button').forEach(b => b.disabled = false);
+        __qsa('#battleActions button').forEach(b => b.disabled = false);
         // 近身毒素：每回合对敌人造成毒素伤害
         const turnBonus2 = this.getEquippedTalentBonus();
         if (turnBonus2.enemyPerTurnPoison > 0 && this.currentEnemy && this.currentEnemy.stats.hp > 0) {
@@ -7273,16 +7308,16 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
                 this.inBattle = false;
                 this.playerTurn = true;
                 // 重置按钮状态
-                const battleButtons = document.querySelectorAll('#battleActions button');
+                const battleButtons = __qsa('#battleActions button');
                 battleButtons.forEach(b => b.disabled = false);
                 // 审计修复：结算后确保主界面完全可用（防探索按钮disabled残留导致卡死）
-                const eb2 = document.getElementById('exploreBtn');
+                const eb2 = __gid('exploreBtn');
                 if (eb2) eb2.disabled = false;
-                const evArea = document.getElementById('eventArea');
+                const evArea = __gid('eventArea');
                 if (evArea) evArea.style.display = 'none';
-                const enArea = document.getElementById('encounterArea');
+                const enArea = __gid('encounterArea');
                 if (enArea) enArea.style.display = 'none';
-                const mArea = document.getElementById('merchantArea');
+                const mArea = __gid('merchantArea');
                 if (mArea) mArea.style.display = 'none';
                 this.showScreen('mainScreen');
                 this.refreshMainUI();
@@ -7328,14 +7363,14 @@ ${transition.buff.desc}`);
     // 显示击杀掉落弹窗（isEliteOrBoss：精英/Boss战显示广告双倍按钮；普通怪不显示）
     showKillDropPopup(drops, callback, isEliteOrBoss) {
         // 先移除已存在的弹窗，避免重复渲染
-        const oldPopup = document.getElementById('killDropPopup');
+        const oldPopup = __gid('killDropPopup');
         if (oldPopup) oldPopup.remove();
-        const oldTip = document.getElementById('dropTooltip');
+        const oldTip = __gid('dropTooltip');
         if (oldTip) oldTip.remove();
         
         // 先关闭其他弹窗，避免叠加
         this.closePop();
-        const settingsPanel = document.getElementById('settingsPanel');
+        const settingsPanel = __gid('settingsPanel');
         if (settingsPanel) settingsPanel.style.display = 'none';
         
         // 存储掉落物品信息，供tooltip与广告双倍使用；每次新弹窗重置场次标记
@@ -7349,9 +7384,9 @@ ${transition.buff.desc}`);
 
     // 渲染击杀掉落弹窗（广告双倍后重渲染复用）
     renderKillDropPopup() {
-        const oldPopup = document.getElementById('killDropPopup');
+        const oldPopup = __gid('killDropPopup');
         if (oldPopup) oldPopup.remove();
-        const oldTip = document.getElementById('dropTooltip');
+        const oldTip = __gid('dropTooltip');
         if (oldTip) oldTip.remove();
         const drops = this._currentKillDrops || [];
         
@@ -7389,10 +7424,16 @@ ${transition.buff.desc}`);
         html += '<div style="text-align:center;color:var(--text-faint);font-size:11px;margin-top:8px">点击任意处或按钮关闭</div>';
         html += '</div></div>';
         
-        const popupDiv = document.createElement('div');
+        // Canvas 模式：走通用弹窗渲染（容器无 DOM）
+        if (typeof Render !== 'undefined' && Render.Popup && Render.ScreenManager && Render.ScreenManager.mode === 'canvas') {
+            this.showPopup(html);
+            return;
+        }
+        
+        const popupDiv = __ce('div');
         popupDiv.id = 'killDropPopup';
         popupDiv.innerHTML = html;
-        document.body.appendChild(popupDiv);
+        __qs('body').appendChild(popupDiv);
     },
 
     // 可被广告翻倍的掉落物：仅弹窗内的碎片/核心/物品，不含基因精华和经验
@@ -7428,22 +7469,35 @@ ${transition.buff.desc}`);
             });
             self.savePermanent();
             // 弹窗仍存在则重新渲染（若看广告期间已关闭弹窗，奖励照发但不重开）
-            if (document.getElementById('killDropPopup')) self.renderKillDropPopup();
+            if (__gid('killDropPopup')) self.renderKillDropPopup();
             self.appendBattleLog('观看广告，本次击杀掉落翻倍！', 'log-heal');
         });
     },
     
     // 显示掉落物品tooltip
     showDropTooltip(event, idx) {
-        event.stopPropagation();
+        if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
         const drop = this._currentKillDrops[idx];
         if (!drop) return;
+
+        // Canvas 模式：走 canvas tooltip（自定义数据）
+        if (typeof Render !== 'undefined' && Render.Tooltip) {
+            const sections = [];
+            if (drop.desc) sections.push({ label: '说明', value: String(drop.desc) });
+            if (drop.detail) sections.push({ label: '详情', value: String(drop.detail) });
+            Render.Tooltip.show({
+                title: (drop.icon || '') + ' ' + (drop.name || '未知物品'),
+                sections: sections,
+                desc: ''
+            });
+            return;
+        }
         
         // 移除已存在的tooltip
-        const oldTip = document.getElementById('dropTooltip');
+        const oldTip = __gid('dropTooltip');
         if (oldTip) oldTip.remove();
         
-        const tip = document.createElement('div');
+        const tip = __ce('div');
         tip.id = 'dropTooltip';
         tip.style.cssText = `position:fixed;left:${event.clientX + 15}px;top:${event.clientY + 15}px;background:rgba(0,20,15,0.98);border:1px solid rgba(0,229,176,0.4);border-radius:8px;padding:12px 15px;max-width:280px;z-index:10001;font-size:12px;color:var(--text-secondary);line-height:1.6;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.5)`;
         
@@ -7451,7 +7505,7 @@ ${transition.buff.desc}`);
         if (drop.desc) tipHtml += `<div style="color:var(--text-muted);margin-bottom:6px">${drop.desc}</div>`;
         if (drop.detail) tipHtml += `<div style="color:var(--text-secondary);margin-top:6px;padding-top:6px;border-top:1px solid var(--text-faint)">${drop.detail}</div>`;
         tip.innerHTML = tipHtml;
-        document.body.appendChild(tip);
+        __qs('body').appendChild(tip);
         
         // 3秒后自动消失
         setTimeout(() => { if (tip.parentNode) tip.remove(); }, 3000);
@@ -7459,9 +7513,13 @@ ${transition.buff.desc}`);
     
     // 关闭击杀掉落弹窗
     closeKillDropPopup() {
-        const popup = document.getElementById('killDropPopup');
+        // Canvas 模式：关闭 canvas 弹窗（阶段 4）
+        if (typeof Render !== 'undefined' && Render.Popup) {
+            Render.Popup.close();
+        }
+        const popup = __gid('killDropPopup');
         if (popup) popup.remove();
-        const tip = document.getElementById('dropTooltip');
+        const tip = __gid('dropTooltip');
         if (tip) tip.remove();
         
         // 执行回调
@@ -7593,7 +7651,7 @@ ${transition.buff.desc}`);
         const p = ui.p;
         const ratePct = Math.round(ui.rate * 100);
 
-        document.getElementById('deathStats').innerHTML = ui.deathNarrativeHtml + `
+        __gid('deathStats').innerHTML = ui.deathNarrativeHtml + `
             <div class="stat-row"><span class="stat-label">轮回难度 / 奖励加成</span><span>难度 ×${this.getReincarnationDifficulty().toFixed(2)} · 奖励 ×${this.getGrowthMult().toFixed(2)}</span></div>
             <div class="stat-row"><span class="stat-label">到达层数</span><span>第 ${this.currentFloor} 层</span></div>
             <div class="stat-row"><span class="stat-label">最终等级</span><span>${p.level} 级</span></div>
@@ -7678,10 +7736,10 @@ ${transition.buff.desc}`);
         
         conv += '</div>';
 
-        document.getElementById('deathConversion').innerHTML = conv;
+        __gid('deathConversion').innerHTML = conv;
 
         // ===== 广告按钮：复活 / 转化率翻倍（两按钮独立、各限1次） =====
-        const adBox = document.getElementById('deathAdButtons');
+        const adBox = __gid('deathAdButtons');
         if (adBox) {
             let adHtml = '<div style="display:flex;flex-direction:column;gap:10px;margin:14px 0">';
             const revAvail = this.checkAdAvailable('death_revive');
@@ -7727,7 +7785,7 @@ ${transition.buff.desc}`);
             self.playerTurn = true;
             self.showScreen('mainScreen');
             self.refreshMainUI();
-            const eb = document.getElementById('exploreBtn');
+            const eb = __gid('exploreBtn');
             if (eb) eb.disabled = false;
             self.appendBattleLog('你以30%生命复活了！', 'log-heal');
             self.showGameAlert('复活成功', `你以30%最大生命复活（${self.player.hp}/${self.player.maxHp}），继续探索！`);
@@ -7810,7 +7868,7 @@ ${transition.buff.desc}`);
             return;
         }
         const b = this.permanent.bonusStats;
-        document.getElementById('permanentStats').innerHTML = `
+        __gid('permanentStats').innerHTML = `
             <div class="stat-row" data-tooltip="permanentStats" style="cursor:pointer"><span class="stat-label">力量加成</span><span>+${b.strength}（每点+2攻击）</span></div>
             <div class="stat-row" data-tooltip="permanentStats" style="cursor:pointer"><span class="stat-label">敏捷加成</span><span>+${b.agility}（每点+1先手）</span></div>
             <div class="stat-row" data-tooltip="permanentStats" style="cursor:pointer"><span class="stat-label">体质加成</span><span>+${b.vitality}（每点+8生命+0.4防御）</span></div>
@@ -7819,7 +7877,7 @@ ${transition.buff.desc}`);
         `;
         // 绑定永久属性tooltip
         const selfGrowth = this;
-        document.querySelectorAll('#permanentStats [data-tooltip]').forEach(item => {
+        __qsa('#permanentStats [data-tooltip]').forEach(item => {
             const key = item.getAttribute('data-tooltip');
             item.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -7832,7 +7890,7 @@ ${transition.buff.desc}`);
                 selfGrowth.hideTooltip();
             });
         });
-        const freePointsDisplay = document.getElementById('freePointsDisplay');
+        const freePointsDisplay = __gid('freePointsDisplay');
         freePointsDisplay.innerText = this.permanent.freePoints;
         freePointsDisplay.parentElement.setAttribute('data-tooltip', 'freePoints');
         freePointsDisplay.parentElement.style.cursor = 'pointer';
@@ -7879,7 +7937,7 @@ ${transition.buff.desc}`);
             eh += `</div>`;
         }
         eh += `</div>`;
-        const essenceDisplay = document.getElementById('essenceDisplay');
+        const essenceDisplay = __gid('essenceDisplay');
         if (essenceDisplay) essenceDisplay.innerHTML = eh;
 
         let fh = '';
@@ -7903,7 +7961,7 @@ ${transition.buff.desc}`);
         fh += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-primary)">';
         fh += '<span style="color:var(--accent-warning);font-size:12px">天赋进化：有进化路线的天赋可在下方列表中点击"进化"按钮，消耗1个该天赋+高阶碎片进化成指定高阶天赋</span>';
         fh += '</div>';
-        document.getElementById('fragmentsDisplay').innerHTML = fh;
+        __gid('fragmentsDisplay').innerHTML = fh;
         
         // ============================================================
         // 进化抉择区域
@@ -7959,7 +8017,7 @@ ${transition.buff.desc}`);
         
         // 绑定进化精粹和万能碎片的tooltip
         const growthSelf = this;
-        document.querySelectorAll('#essenceDisplay [data-tooltip], #fragmentsDisplay [data-tooltip]').forEach(item => {
+        __qsa('#essenceDisplay [data-tooltip], #fragmentsDisplay [data-tooltip]').forEach(item => {
             const key = item.getAttribute('data-tooltip');
             item.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -8026,7 +8084,7 @@ ${transition.buff.desc}`);
         if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['talentScreen']) {
             return;
         }
-        const all = this.data.talents.talents;        if (!all) return;        const listEl = document.getElementById('talentUnlockList');        if (!listEl) return;        const unlocked = this.permanent.unlockedTalents;        const equipped = this.player.equippedTalents;        const passiveSlots = this.getPassiveSlots();        let html = '';        html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:6px">            <span style="color:var(--accent-warning)">天赋点：${this.permanent.talentPoints || 0}</span>            <span style="margin-left:20px;color:var(--accent-success)">天赋槽：${equipped.length}/${passiveSlots}</span>            <span style="margin-left:20px;color:var(--accent-info)">技能槽：${this.getActiveSlots()}</span>        </div>`;        const sorted = [...all].sort((a,b)=>a.quality-b.quality);        sorted.forEach(t => {            const isUnlocked = unlocked.includes(t.id);            const isEquipped = equipped.includes(t.id);            const lv = this.getTalentLevel(t.id);            const maxLv = t.maxLevel || 5;            const cost = t.unlockCost || {fragQuality: t.quality, fragCount: 10};            const canAfford = this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, cost.fragQuality) >= cost.fragCount;            let effectText = '';            if (isUnlocked) {                const eff = this.getTalentEffect(t.id);                effectText = eff ? eff.passive : '';            } else if (t.effects && t.effects.length > 0) {                effectText = t.effects[0].passive || '';            }            let upgradeBtn = '';            if (isUnlocked && lv < maxLv) {                const levelCosts = t.levelCost || [2,4,7,11,16];                const pointCost = levelCosts[lv-1] || 2;                const fragCost = pointCost;                const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, t.quality) >= fragCost;                const nextEff = this.getTalentNextEffect(t.id);                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px" title="${nextEff ? nextEff.passive : ''}">升级至${lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;            } else if (isUnlocked && lv >= maxLv) {                upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';            }            let actionBtn = '';
+        const all = this.data.talents.talents;        if (!all) return;        const listEl = __gid('talentUnlockList');        if (!listEl) return;        const unlocked = this.permanent.unlockedTalents;        const equipped = this.player.equippedTalents;        const passiveSlots = this.getPassiveSlots();        let html = '';        html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:6px">            <span style="color:var(--accent-warning)">天赋点：${this.permanent.talentPoints || 0}</span>            <span style="margin-left:20px;color:var(--accent-success)">天赋槽：${equipped.length}/${passiveSlots}</span>            <span style="margin-left:20px;color:var(--accent-info)">技能槽：${this.getActiveSlots()}</span>        </div>`;        const sorted = [...all].sort((a,b)=>a.quality-b.quality);        sorted.forEach(t => {            const isUnlocked = unlocked.includes(t.id);            const isEquipped = equipped.includes(t.id);            const lv = this.getTalentLevel(t.id);            const maxLv = t.maxLevel || 5;            const cost = t.unlockCost || {fragQuality: t.quality, fragCount: 10};            const canAfford = this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, cost.fragQuality) >= cost.fragCount;            let effectText = '';            if (isUnlocked) {                const eff = this.getTalentEffect(t.id);                effectText = eff ? eff.passive : '';            } else if (t.effects && t.effects.length > 0) {                effectText = t.effects[0].passive || '';            }            let upgradeBtn = '';            if (isUnlocked && lv < maxLv) {                const levelCosts = t.levelCost || [2,4,7,11,16];                const pointCost = levelCosts[lv-1] || 2;                const fragCost = pointCost;                const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, t.quality) >= fragCost;                const nextEff = this.getTalentNextEffect(t.id);                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px" title="${nextEff ? nextEff.passive : ''}">升级至${lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;            } else if (isUnlocked && lv >= maxLv) {                upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';            }            let actionBtn = '';
             if (!isUnlocked) {
                 const talentTag = (t.tags && t.tags.length > 0) ? t.tags[0] : 1;
                 // 只获取专属碎片数量（不包含万能碎片）
@@ -8438,7 +8496,7 @@ ${transition.buff.desc}`);
     // ============================================================
     // 局内天赋面板（简化版，只显示解锁/升级/装备）
     updateBottomNav(screenName) {
-        const bottomNav = document.getElementById('bottomNav');
+        const bottomNav = __gid('bottomNav');
         if (bottomNav) {
             bottomNav.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
             const navBtn = bottomNav.querySelector('[data-screen="' + screenName + '"]');
@@ -8779,7 +8837,7 @@ ${transition.buff.desc}`);
             Render.Tooltip.show(dataKey);
             return;
         }
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         const data = this.tooltipData[dataKey];
         if (!tooltipBox || !data) return;
         
@@ -8834,7 +8892,7 @@ ${transition.buff.desc}`);
         if (typeof Render !== 'undefined' && Render.Tooltip) {
             Render.Tooltip.hide();
         }
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) {
             tooltipBox.classList.remove('show');
         }
@@ -8907,7 +8965,7 @@ ${transition.buff.desc}`);
         html += '</div>';
         
         // 显示在游戏内tooltip中
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) {
             tooltipBox.innerHTML = html;
             tooltipBox.classList.add('show');
@@ -8927,12 +8985,12 @@ ${transition.buff.desc}`);
                 if (!tooltipBox.contains(e.target)) {
                     this.hideTooltip();
                     this._currentQualityTooltip = null;
-                    document.removeEventListener('click', closeOnOutsideClick);
+                    __qrm('click', closeOnOutsideClick);
                 }
             };
             // 延迟添加，避免当前点击立即触发关闭
             setTimeout(() => {
-                document.addEventListener('click', closeOnOutsideClick);
+                __qadd('click', closeOnOutsideClick);
             }, 100);
         }
     },
@@ -9034,7 +9092,7 @@ ${transition.buff.desc}`);
             ` : ''}
         `;
         
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) {
             tooltipBox.innerHTML = html;
             tooltipBox.classList.add('show');
@@ -9099,7 +9157,7 @@ ${transition.buff.desc}`);
             </div>
         `;
         
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) {
             tooltipBox.innerHTML = html;
             tooltipBox.classList.add('show');
@@ -9200,7 +9258,7 @@ ${transition.buff.desc}`);
             ` : ''}
         `;
         
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) {
             tooltipBox.innerHTML = html;
             tooltipBox.classList.add('show');
@@ -9276,8 +9334,8 @@ ${transition.buff.desc}`);
     
     // 更多功能展开/收起
     toggleMoreFunctions() {
-        const area = document.getElementById('moreFunctionsArea');
-        const arrow = document.getElementById('moreFunctionsArrow');
+        const area = __gid('moreFunctionsArea');
+        const arrow = __gid('moreFunctionsArrow');
         if (area && arrow) {
             if (area.classList.contains('show')) {
                 area.classList.remove('show');
@@ -9587,7 +9645,7 @@ ${transition.buff.desc}`);
             this.openInRunTalentPanel();
             // 保持搜索框焦点
             setTimeout(() => {
-                const input = document.getElementById('inRunTalentSearchInput');
+                const input = __gid('inRunTalentSearchInput');
                 if (input) {
                     input.focus();
                     input.setSelectionRange(input.value.length, input.value.length);
@@ -9654,10 +9712,10 @@ ${transition.buff.desc}`);
         let ticking = false;
         const guard = function() {
             ticking = false;
-            const stickyEl = document.querySelector('.talent-filter-sticky');
+            const stickyEl = __qs('.talent-filter-sticky');
             if (!stickyEl) return;
             const stickyBottom = stickyEl.getBoundingClientRect().bottom;
-            const containers = [document.getElementById('talentScreenContent'), document.getElementById('popBox')];
+            const containers = [__gid('talentScreenContent'), __gid('popBox')];
             containers.forEach(function(content) {
                 if (!content) return;
                 const cards = content.querySelectorAll('.talent-card');
@@ -9679,7 +9737,7 @@ ${transition.buff.desc}`);
         };
         window.addEventListener('scroll', rafGuard, {passive: true});
         ['talentScreenContent', 'popBox'].forEach(function(id) {
-            const el = document.getElementById(id);
+            const el = __gid(id);
             if (el) el.addEventListener('scroll', rafGuard, {passive: true});
         });
         requestAnimationFrame(guard);
@@ -9886,7 +9944,7 @@ ${transition.buff.desc}`);
             html += `<div style="height:120px"></div>`;
             html += `</div>`;
             // 渲染到独立页面
-            const contentDiv = document.getElementById('talentScreenContent');
+            const contentDiv = __gid('talentScreenContent');
             if (contentDiv) {
                 contentDiv.innerHTML = html;
                 setTimeout(() => this.bindItemTooltips(contentDiv), 50);
@@ -10046,7 +10104,7 @@ ${transition.buff.desc}`);
         html += `<div style="height:120px"></div>`;
         html += `</div>`;
         // 渲染到独立页面
-        const contentDiv = document.getElementById('talentScreenContent');
+        const contentDiv = __gid('talentScreenContent');
         if (contentDiv) {
             contentDiv.innerHTML = html;
             // 绑定天赋/技能/物品名称的Tooltip点击事件（手机端无hover，必须支持点击查看详情）
@@ -10296,7 +10354,7 @@ ${transition.buff.desc}`);
             this.openTalentPanel();
             // 保持搜索框焦点
             setTimeout(() => {
-                const input = document.getElementById('talentSearchInput');
+                const input = __gid('talentSearchInput');
                 if (input) {
                     input.focus();
                     input.setSelectionRange(input.value.length, input.value.length);
@@ -10979,7 +11037,7 @@ ${transition.buff.desc}`);
             html += '<div style="font-size:11px;color:var(--accent-info);margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">' + (hintParts.length > 0 ? '提示：' + hintParts.join('，') : '已满足全部条件！') + '</div>';
         }
 
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) {
             tooltipBox.innerHTML = html;
             tooltipBox.classList.add('show');
@@ -11621,7 +11679,7 @@ ${transition.buff.desc}`);
         html += '</div>';
         
         // 渲染到独立页面
-        const contentDiv = document.getElementById('shopScreenContent');
+        const contentDiv = __gid('shopScreenContent');
         if (contentDiv) {
             contentDiv.innerHTML = html;
         }
@@ -12057,7 +12115,7 @@ ${transition.buff.desc}`);
         html += '</div></div>';
 
         // 渲染到独立页面
-        const contentDiv = document.getElementById('inventoryScreenContent');
+        const contentDiv = __gid('inventoryScreenContent');
         if (contentDiv) {
             contentDiv.innerHTML = html;
         }
@@ -12086,13 +12144,13 @@ ${transition.buff.desc}`);
     renderCharacterPanel() {
         // Canvas 化角色界面：渲染器每帧直接读取 game 状态
         if (this._isCanvasScreen('characterScreen')) return;
-        const contentDiv = document.getElementById('characterContent');
+        const contentDiv = __gid('characterContent');
         if (!contentDiv) return;
 
         // 更新标签页按钮样式
         const tabs = ['status', 'equipment', 'talents', 'skills', 'inventory'];
         tabs.forEach(tab => {
-            const btn = document.getElementById('charTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            const btn = __gid('charTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
             if (btn) {
                 if (this.characterTab === tab) {
                     btn.style.background = 'var(--accent-primary)';
@@ -12509,11 +12567,11 @@ ${transition.buff.desc}`);
         }
         
         // 移除旧的tooltip
-        const oldTooltip = document.getElementById('attrTooltip');
+        const oldTooltip = __gid('attrTooltip');
         if (oldTooltip) oldTooltip.remove();
         
         // 创建新的tooltip（详细版，和主界面一致）
-        const tooltip = document.createElement('div');
+        const tooltip = __ce('div');
         tooltip.id = 'attrTooltip';
         tooltip.style.cssText = 'position:fixed;background:var(--bg-card);color:var(--text-primary);padding:0;border-radius:10px;border:1px solid var(--accent-primary);font-size:13px;z-index:99999;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.8);pointer-events:none;overflow:hidden;';
         
@@ -12528,7 +12586,7 @@ ${transition.buff.desc}`);
         html += '</div>';
         
         tooltip.innerHTML = html;
-        document.body.appendChild(tooltip);
+        __qs('body').appendChild(tooltip);
         
         // 定位tooltip（在点击位置上方显示）
         const x = event.clientX;
@@ -12551,7 +12609,7 @@ ${transition.buff.desc}`);
 
     // 隐藏属性tooltip
     hideAttrTooltip() {
-        const tooltip = document.getElementById('attrTooltip');
+        const tooltip = __gid('attrTooltip');
         if (tooltip) tooltip.remove();
         clearTimeout(this._attrTooltipTimer);
         this._currentAttrTooltipKey = null;
@@ -13092,7 +13150,7 @@ ${transition.buff.desc}`);
 
         // 立即刷新背包视图，避免使用后图标残留（再次点击才提示无此物品）
         if (this.characterTab === 'inventory') this.renderCharacterPanel();
-        const invScreen = document.getElementById('inventoryScreen');
+        const invScreen = __gid('inventoryScreen');
         if (invScreen && invScreen.style.display !== 'none') this.openInventory();
 
         // 显示结果并返回背包
@@ -13357,14 +13415,14 @@ ${transition.buff.desc}`);
         }
         // 先关闭其他弹窗，避免叠加
         this.closeKillDropPopup();
-        const settingsPanel = document.getElementById('settingsPanel');
+        const settingsPanel = __gid('settingsPanel');
         if (settingsPanel) settingsPanel.style.display = 'none';
         
-        document.getElementById('popBox').innerHTML = html;
-        document.getElementById('popBox').style.display = 'block';
-        document.getElementById('overlay').classList.add('active');
+        __gid('popBox').innerHTML = html;
+        __gid('popBox').style.display = 'block';
+        __gid('overlay').classList.add('active');
         // 自动绑定物品Tooltip
-        setTimeout(() => this.bindItemTooltips(document.getElementById('popBox')), 50);
+        setTimeout(() => this.bindItemTooltips(__gid('popBox')), 50);
     },
 
     closePop() {
@@ -13373,19 +13431,19 @@ ${transition.buff.desc}`);
             Render.Popup.close();
         }
         if (typeof document === 'undefined') return;
-        document.getElementById('popBox').style.display = 'none';
-        document.getElementById('overlay').classList.remove('active');
+        __gid('popBox').style.display = 'none';
+        __gid('overlay').classList.remove('active');
         // 关闭所有tooltip（防止关闭弹窗后tooltip残留）
-        const tooltipBox = document.getElementById('tooltipBox');
+        const tooltipBox = __gid('tooltipBox');
         if (tooltipBox) tooltipBox.classList.remove('show');
         this.currentTooltipKey = null;
         // 关闭天赋详情tooltip
-        const talentTooltip = document.getElementById('talentTooltip');
+        const talentTooltip = __gid('talentTooltip');
         if (talentTooltip) talentTooltip.remove();
         // 关闭击杀奖励弹窗（如果存在）
-        const killDropPopup = document.getElementById('killDropPopup');
+        const killDropPopup = __gid('killDropPopup');
         if (killDropPopup) killDropPopup.remove();
-        const dropTooltip = document.getElementById('dropTooltip');
+        const dropTooltip = __gid('dropTooltip');
         if (dropTooltip) dropTooltip.remove();
     },
 
@@ -13502,9 +13560,9 @@ ${transition.buff.desc}`);
         const progressInterval = setInterval(() => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(100, (elapsed / duration) * 100);
-            const progressEl = document.getElementById('gachaProgress');
-            const progressText = document.getElementById('gachaProgressText');
-            const statusEl = document.getElementById('gachaStatus');
+            const progressEl = __gid('gachaProgress');
+            const progressText = __gid('gachaProgressText');
+            const statusEl = __gid('gachaStatus');
             if (progressEl) progressEl.style.width = progress + '%';
             if (progressText) progressText.textContent = Math.floor(progress) + '%';
             if (statusEl) {
@@ -13515,16 +13573,16 @@ ${transition.buff.desc}`);
             if (progress >= 100) {
                 clearInterval(progressInterval);
                 // 隐藏进度条和状态
-                const dnaEl = document.getElementById('gachaDna');
+                const dnaEl = __gid('gachaDna');
                 if (dnaEl) dnaEl.style.animation = 'none';
                 if (statusEl) statusEl.textContent = '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z\"/></svg> 提取完成！';
                 
                 // 逐个显示结果
-                const resultsContainer = document.getElementById('gachaResults');
+                const resultsContainer = __gid('gachaResults');
                 if (resultsContainer) {
                     results.forEach((r, index) => {
                         setTimeout(() => {
-                            const itemDiv = document.createElement('div');
+                            const itemDiv = __ce('div');
                             itemDiv.style.cssText = `padding:10px 15px;background:var(--bg-card);border-radius:8px;border:2px solid ${qualityColors[r.quality]};text-align:center;min-width:80px;animation:popIn 0.4s ease-out;animation:glow 1.5s ease-in-out infinite;color:${qualityColors[r.quality]}`;
                             itemDiv.innerHTML = `<div style="font-size:28px">${qualityIcons[r.quality]}</div><div style="color:${qualityColors[r.quality]};font-size:13px;font-weight:bold;margin-top:4px">${qualityNames[r.quality]}×${r.count}</div>`;
                             resultsContainer.appendChild(itemDiv);
@@ -13532,7 +13590,7 @@ ${transition.buff.desc}`);
                             // 最后一个结果显示后，显示统计
                             if (index === results.length - 1) {
                                 setTimeout(() => {
-                                    const summaryEl = document.getElementById('gachaSummary');
+                                    const summaryEl = __gid('gachaSummary');
                                     if (summaryEl) summaryEl.style.display = 'block';
                                 }, 300);
                             }
@@ -13589,7 +13647,7 @@ ${transition.buff.desc}`);
             Render.Tutorial.show();
             return;
         }
-        document.getElementById('tutorialOverlay').classList.add('active');
+        __gid('tutorialOverlay').classList.add('active');
     },
 
     showTutorialStep() {
@@ -13598,20 +13656,20 @@ ${transition.buff.desc}`);
             return;
         }
         const step = this.tutorialSteps[this.currentTutorialStep];
-        document.getElementById('tutorialTitle').textContent = step.title;
-        document.getElementById('tutorialContent').innerHTML = step.content + 
+        __gid('tutorialTitle').textContent = step.title;
+        __gid('tutorialContent').innerHTML = step.content + 
             (step.tip ? '<div class="tip">' + step.tip + '</div>' : '');
         
-        const progress = document.getElementById('tutorialProgress');
+        const progress = __gid('tutorialProgress');
         progress.innerHTML = '';
         for (let i = 0; i < this.tutorialSteps.length; i++) {
-            const dot = document.createElement('div');
+            const dot = __ce('div');
             dot.className = 'tutorial-dot' + (i === this.currentTutorialStep ? ' active' : '');
             progress.appendChild(dot);
         }
 
-        const prevBtn = document.getElementById('btnTutorialPrev');
-        const nextBtn = document.getElementById('btnTutorialNext');
+        const prevBtn = __gid('btnTutorialPrev');
+        const nextBtn = __gid('btnTutorialNext');
         prevBtn.style.display = this.currentTutorialStep > 0 ? 'inline-block' : 'none';
         nextBtn.textContent = this.currentTutorialStep === this.tutorialSteps.length - 1 ? '开始游戏' : '下一步';
     },
@@ -13639,7 +13697,7 @@ ${transition.buff.desc}`);
             Render.Tutorial.hide();
         }
         if (typeof document !== 'undefined') {
-            const ov = document.getElementById('tutorialOverlay');
+            const ov = __gid('tutorialOverlay');
             if (ov) ov.classList.remove('active');
         }
         this.showGameConfirm('跳过新手引导', '确定要跳过新手引导吗？', () => {
@@ -13650,7 +13708,7 @@ ${transition.buff.desc}`);
                 Render.Tutorial.show();
             }
             if (typeof document !== 'undefined') {
-                const ov2 = document.getElementById('tutorialOverlay');
+                const ov2 = __gid('tutorialOverlay');
                 if (ov2) ov2.classList.add('active');
             }
         });
@@ -13663,7 +13721,7 @@ ${transition.buff.desc}`);
             Render.Tutorial.hide();
         }
         if (typeof document !== 'undefined') {
-            const ov = document.getElementById('tutorialOverlay');
+            const ov = __gid('tutorialOverlay');
             if (ov) ov.classList.remove('active');
         }
     }

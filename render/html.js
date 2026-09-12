@@ -195,7 +195,7 @@
             items.forEach(function (child) {
                 let cw = autoW;
                 if (child.style.flex && child.style.flex !== '1') cw = parseFloat(child.style.flex) || autoW;
-                if (child.style.width) { const n = parseFloat(child.style.width); if (!isNaN(n)) cw = n; }
+                if (child.style.width) { const v = child.style.width; const n = parseFloat(v); if (!isNaN(n)) cw = (v.indexOf('%') >= 0) ? innerW * n / 100 : n; }
                 if (child.style['min-width']) { const n = parseFloat(child.style['min-width']); if (!isNaN(n)) cw = Math.max(cw, n); }
                 const ch = layoutBlock(child, cx, cursorY, cw, result);
                 maxH = Math.max(maxH, ch - cursorY);
@@ -394,8 +394,23 @@
             if (!item) return;
             drawNode(item, item.x + ox, item.y + oy, item.w, item.h);
             if (child.tag === 'button') { drawButtonNode(child, item, ox, oy); return; }
+            // 带 onclick 的非 button 节点（div/span 等）：只注册点击区域，不覆盖绘制
+            if (child.attrs && child.attrs.onclick) { registerNodeTap(child, item, ox, oy); }
             drawNodesRecursive(child, lay, ox, oy);
         });
+    }
+
+    // 为带 onclick 的非 button 节点注册点击区域（如 killDrop 物品行/遮罩）
+    function registerNodeTap(node, item, ox, oy) {
+        const onclick = node.attrs.onclick || '';
+        const cb = parseOnClick(onclick);
+        if (!cb) return;
+        Input.registerButton({
+            id: 'popBtn_' + (state.buttons.length),
+            x: item.x + ox, y: item.y + oy, w: item.w, h: item.h,
+            disabled: false, onTap: function () { if (cb) cb(); }
+        });
+        state.buttons.push({ x: item.x + ox, y: item.y + oy, w: item.w, h: item.h, disabled: false });
     }
 
     // 收集按钮所有后代文本（含子 span），按按钮宽换行
@@ -473,13 +488,15 @@
     // ============================================================
     const tooltipState = { key: null, data: null, x: 0, y: 0 };
 
-    function showTooltip(dataKey) {
+    function showTooltip(dataKeyOrObj) {
         const gameObj = (typeof game !== 'undefined') ? game : null;
-        const data = gameObj && gameObj.tooltipData ? gameObj.tooltipData[dataKey] : null;
+        const data = (typeof dataKeyOrObj === 'string')
+            ? (gameObj && gameObj.tooltipData ? gameObj.tooltipData[dataKeyOrObj] : null)
+            : dataKeyOrObj;
         if (!data) return;
         // 第二次点击同一 key：关闭
-        if (tooltipState.key === dataKey) { hideTooltip(); return; }
-        tooltipState.key = dataKey;
+        if (typeof dataKeyOrObj === 'string' && tooltipState.key === dataKeyOrObj) { hideTooltip(); return; }
+        tooltipState.key = typeof dataKeyOrObj === 'string' ? dataKeyOrObj : ('_obj_' + String(data.title || '').slice(0, 20));
         tooltipState.data = data;
         tooltipState.x = R.SCREEN_W / 2;
         tooltipState.y = Math.max(90, R.SCREEN_H / 2 - 60);
