@@ -13,12 +13,10 @@
     const Input = window.Input;
 
     // ---------------- HTML 解析（轻量） ----------------
-    // 支持标签：div/span/button/h2/h3/p/br/strong/b
-    // 忽略：svg（整体剔除）、script/style
+    // 支持标签：div/span/button/h2/h3/p/br/strong/b + svg（path/line/polyline/polygon/circle/rect）
+    // 忽略：script/style
     function parseHTML(html) {
-        // 剔除 svg/script/style 块
-        html = String(html || '').replace(/<svg[\s\S]*?<\/svg>/gi, '');
-        html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+        html = String(html || '').replace(/<script[\s\S]*?<\/script>/gi, '');
         html = html.replace(/<style[\s\S]*?<\/style>/gi, '');
         // 解析标签栈（属性整体捕获后由 attrRe 拆解；[^>]* 假设属性值不含 >）
         const root = { tag: 'root', children: [], style: {}, attrs: {} };
@@ -51,7 +49,7 @@
             }
             const node = { tag: tag, children: [], style: parseStyle(attrs.style), attrs: attrs };
             stack[stack.length - 1].children.push(node);
-            if (m[4] !== '/' && tag !== 'br' && tag !== 'img' && tag !== 'input') {
+            if (m[4] !== '/' && tag !== 'br' && tag !== 'img' && tag !== 'input' && tag !== 'path' && tag !== 'line' && tag !== 'circle' && tag !== 'rect' && tag !== 'polyline' && tag !== 'polygon') {
                 stack.push(node);
             }
         }
@@ -59,7 +57,48 @@
             const text = html.slice(lastIndex).replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
             if (text.trim()) root.children.push({ tag: '#text', text: text });
         }
+        mergeInlineSvg(root);
+        inheritFont(root, null);
         return root;
+    }
+
+    // svg 的 1em 基准与 svgtext 文本字号：继承父节点 font-size（如 div font-size:60px 内的图标应为 60px）
+    function inheritFont(node, parentFs) {
+        const fsStyle = node.style && node.style['font-size'];
+        const ownFs = fsStyle ? parseFloat(fsStyle) : parentFs;
+        (node.children || []).forEach(function (c) {
+            if (c.tag === 'svg' || c.tag === 'svgtext') {
+                if (!c.style['font-size'] && ownFs) c.style['font-size'] = ownFs + 'px';
+                if (c.tag === 'svgtext' && c.svg && !c.svg.style['font-size'] && ownFs) c.svg.style['font-size'] = ownFs + 'px';
+            }
+            inheritFont(c, ownFs);
+        });
+    }
+
+    // svg 与紧随的文本合并为 svgtext（图标+文字同行，避免图标单独占行）
+    function mergeInlineSvg(node) {
+        const ch = node.children || [];
+        const out = [];
+        for (let i = 0; i < ch.length; i++) {
+            const c = ch[i];
+            if (c.tag === 'svg' && i + 1 < ch.length && ch[i + 1].tag === '#text' && ch[i + 1].text.trim()) {
+                out.push({ tag: 'svgtext', svg: c, text: ch[i + 1], style: c.style, attrs: c.attrs, children: [] });
+                i++;
+            } else {
+                out.push(c);
+            }
+            if (c.children && c.children.length) mergeInlineSvg(c);
+        }
+        node.children = out;
+    }
+
+    // svg 尺寸：style width/height（px 或 em），缺省 1em
+    function svgSize(node, fs) {
+        function px(v, d) { if (!v) return d; if (v.indexOf('%') >= 0) return d; const n = parseFloat(v); if (isNaN(n)) return d; if (v.indexOf('em') >= 0) return n * fs; return n; }
+        const style = node.style || {};
+        const w = px(style.width, fs) || fs;
+        const h = px(style.height, fs) || fs;
+        return { w: w, h: h };
     }
 
     function parseStyle(s) {
@@ -178,6 +217,26 @@
             return cursorY + h + pad.bottom + marginBottom(node);
         }
 
+        // svg+文本同行（标题/物品行图标）
+        if (node.tag === 'svgtext') {
+            const fs = fontSizeOf(node, 13);
+            const size = svgSize(node.svg, fs);
+            const gap = 5;
+            const lines = textLines(node.text, innerW - size.w - gap, fs);
+            const th = lines.length * (fs + 5);
+            const h = Math.max(size.h, th);
+            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: h, lines: lines, fs: fs, svgSize: size, svgGap: gap });
+            return cursorY + h + pad.bottom + marginBottom(node);
+        }
+
+        // 独立 svg（flex/span 容器内图标）
+        if (node.tag === 'svg') {
+            const fs = fontSizeOf(node, 13);
+            const size = svgSize(node, fs);
+            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: size.h, svgSize: size });
+            return cursorY + size.h + pad.bottom + marginBottom(node);
+        }
+
         // 计算子元素
         const display = node.style.display || '';
         const flex = display === 'flex' || display === 'inline-flex';
@@ -270,6 +329,8 @@
     function drawNode(n, x, y, w, h) {
         const t = R.Theme.get();
         const node = n.node;
+        if (node.tag === 'svgtext') { drawSVGText(n, x, y, w, h); return; }
+        if (node.tag === 'svg') { drawSVG(node, x, y, (n.svgSize ? n.svgSize.w : w), (n.svgSize ? n.svgSize.h : h)); return; }
         if (node.tag === '#text') {
             const align = node.style['text-align'] || 'left';
             let ax = x;
@@ -315,6 +376,205 @@
             if (layout.nodes[i].node === node) return layout.nodes[i];
         }
         return null;
+    }
+
+    // ---------------- SVG 图标渲染（lucide 线性图标子集） ----------------
+    // svg 与紧随文本同行绘制（图标 + 文字）
+    function drawSVGText(n, x, y, w, h) {
+        const t = R.Theme.get();
+        const node = n.node;
+        const size = n.svgSize;
+        const fs = n.fs;
+        drawSVG(node.svg, x, y + (h - size.h) / 2, size.w, size.h);
+        const tx = x + size.w + n.svgGap;
+        n.lines.forEach(function (ln, i) {
+            R.drawText(ln, tx, y + (h - n.lines.length * (fs + 5)) / 2 + i * (fs + 5), {
+                fontSize: fs,
+                color: colorOf(node, t.textPrimary),
+                bold: node.style['font-weight'] === 'bold' || node.tag === 'h2' || node.tag === 'h3'
+            });
+        });
+    }
+
+    function svgColorVal(v, node, def) {
+        if (v == null || v === 'none') return null;
+        if (v === 'currentColor') { const c = node.style && node.style.color; return c ? colorOf(node, def) : def; }
+        if (v.indexOf('var(') === 0) return colorOf({ style: { color: v } }, def);
+        return v;
+    }
+
+    function roundedRectPath(x, y, w, h, r) {
+        const ctx = R.ctx;
+        r = Math.min(r, w / 2, h / 2);
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    function drawShape(shape, stroke, fill) {
+        const a = shape.attrs || {};
+        const ctx = R.ctx;
+        function f(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+        ctx.beginPath();
+        if (shape.tag === 'line') {
+            ctx.moveTo(f(a.x1), f(a.y1)); ctx.lineTo(f(a.x2), f(a.y2));
+        } else if (shape.tag === 'polyline' || shape.tag === 'polygon') {
+            const pts = (String(a.points || '').trim().match(/[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g) || []).map(parseFloat);
+            for (let i = 0; i + 1 < pts.length; i += 2) {
+                if (i === 0) ctx.moveTo(pts[i], pts[i + 1]); else ctx.lineTo(pts[i], pts[i + 1]);
+            }
+            if (shape.tag === 'polygon') ctx.closePath();
+        } else if (shape.tag === 'circle') {
+            ctx.arc(f(a.cx), f(a.cy), f(a.r), 0, Math.PI * 2);
+        } else if (shape.tag === 'rect') {
+            const rx = f(a.rx) || 0, ry = f(a.ry) || 0;
+            const x = f(a.x), y = f(a.y), w = f(a.width), h = f(a.height);
+            const rr = rx || ry;
+            if (rr) { if (ctx.roundRect) ctx.roundRect(x, y, w, h, rr); else roundedRectPath(x, y, w, h, rr); }
+            else ctx.rect(x, y, w, h);
+        } else if (shape.tag === 'path') {
+            tracePath(ctx, String(a.d || ''));
+        }
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+    }
+
+    // SVG path d 命令解析：M/L/H/V/C/S/Q/T/A/Z（含相对坐标与椭圆弧）
+    function tracePath(ctx, d) {
+        const cmds = d.match(/[a-zA-Z][^a-zA-Z]*/g) || [];
+        let cx = 0, cy = 0, sx = 0, sy = 0, lastC = null, lastQ = null;
+        cmds.forEach(function (raw) {
+            const c = raw[0];
+            const args = (raw.slice(1).trim().match(/[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g) || []).map(parseFloat);
+            const rel = c === c.toLowerCase();
+            const U = c.toUpperCase();
+            let i = 0;
+            while (i < args.length) {
+                switch (U) {
+                    case 'M': {
+                        let x = args[i], y = args[i + 1];
+                        if (rel) { x += cx; y += cy; }
+                        ctx.moveTo(x, y); cx = x; cy = y; sx = x; sy = y; lastC = null; lastQ = null; i += 2; break;
+                    }
+                    case 'L': {
+                        let x = args[i], y = args[i + 1];
+                        if (rel) { x += cx; y += cy; }
+                        ctx.lineTo(x, y); cx = x; cy = y; lastC = null; lastQ = null; i += 2; break;
+                    }
+                    case 'H': {
+                        const x = rel ? cx + args[i] : args[i];
+                        ctx.lineTo(x, cy); cx = x; lastC = null; lastQ = null; i += 1; break;
+                    }
+                    case 'V': {
+                        const y = rel ? cy + args[i] : args[i];
+                        ctx.lineTo(cx, y); cy = y; lastC = null; lastQ = null; i += 1; break;
+                    }
+                    case 'C': {
+                        const x1 = args[i], y1 = args[i + 1], x2 = args[i + 2], y2 = args[i + 3], x3 = args[i + 4], y3 = args[i + 5];
+                        ctx.bezierCurveTo(rel ? x1 + cx : x1, rel ? y1 + cy : y1, rel ? x2 + cx : x2, rel ? y2 + cy : y2, rel ? x3 + cx : x3, rel ? y3 + cy : y3);
+                        lastC = [rel ? x2 + cx : x2, rel ? y2 + cy : y2];
+                        cx = rel ? x3 + cx : x3; cy = rel ? y3 + cy : y3; lastQ = null; i += 6; break;
+                    }
+                    case 'S': {
+                        const x2 = args[i], y2 = args[i + 1], x3 = args[i + 2], y3 = args[i + 3];
+                        const x1 = lastC ? 2 * cx - lastC[0] : cx, y1 = lastC ? 2 * cy - lastC[1] : cy;
+                        ctx.bezierCurveTo(x1, y1, rel ? x2 + cx : x2, rel ? y2 + cy : y2, rel ? x3 + cx : x3, rel ? y3 + cy : y3);
+                        lastC = [rel ? x2 + cx : x2, rel ? y2 + cy : y2];
+                        cx = rel ? x3 + cx : x3; cy = rel ? y3 + cy : y3; lastQ = null; i += 4; break;
+                    }
+                    case 'Q': {
+                        const x1 = args[i], y1 = args[i + 1], x2 = args[i + 2], y2 = args[i + 3];
+                        ctx.quadraticCurveTo(rel ? x1 + cx : x1, rel ? y1 + cy : y1, rel ? x2 + cx : x2, rel ? y2 + cy : y2);
+                        lastQ = [rel ? x1 + cx : x1, rel ? y1 + cy : y1];
+                        cx = rel ? x2 + cx : x2; cy = rel ? y2 + cy : y2; lastC = null; i += 4; break;
+                    }
+                    case 'T': {
+                        const x2 = args[i], y2 = args[i + 1];
+                        const x1 = lastQ ? 2 * cx - lastQ[0] : cx, y1 = lastQ ? 2 * cy - lastQ[1] : cy;
+                        ctx.quadraticCurveTo(x1, y1, rel ? x2 + cx : x2, rel ? y2 + cy : y2);
+                        lastQ = [x1, y1];
+                        cx = rel ? x2 + cx : x2; cy = rel ? y2 + cy : y2; lastC = null; i += 2; break;
+                    }
+                    case 'A': {
+                        const rx = args[i], ry = args[i + 1], rot = args[i + 2], la = args[i + 3], sw = args[i + 4], x2 = args[i + 5], y2 = args[i + 6];
+                        const tx = rel ? x2 + cx : x2, ty = rel ? y2 + cy : y2;
+                        svgArc(ctx, cx, cy, rx, ry, rot, !!la, !!sw, tx, ty);
+                        cx = tx; cy = ty; lastC = null; lastQ = null; i += 7; break;
+                    }
+                    case 'Z': {
+                        ctx.closePath(); cx = sx; cy = sy; lastC = null; lastQ = null; i = args.length; break;
+                    }
+                    default: i = args.length;
+                }
+            }
+        });
+    }
+
+    // SVG 椭圆弧（rx/ry/rot/large/sweep → canvas arc）
+    function svgArc(ctx, x1, y1, rx, ry, rotDeg, large, sweep, x2, y2) {
+        rx = Math.abs(rx); ry = Math.abs(ry);
+        if (rx === 0 || ry === 0) { ctx.lineTo(x2, y2); return; }
+        if (x1 === x2 && y1 === y2) return;
+        const phi = (rotDeg || 0) * Math.PI / 180;
+        const cp = Math.cos(phi), sp = Math.sin(phi);
+        const dx = (x1 - x2) / 2, dy = (y1 - y2) / 2;
+        const x1p = cp * dx + sp * dy;
+        const y1p = -sp * dx + cp * dy;
+        const lam = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+        if (lam > 1) { const s = Math.sqrt(lam); rx *= s; ry *= s; }
+        const sign = (large === sweep) ? -1 : 1;
+        const num = Math.max(0, rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p);
+        const den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
+        const coef = den ? sign * Math.sqrt(num / den) : 0;
+        const cxp = coef * (rx * y1p) / ry;
+        const cyp = coef * -(ry * x1p) / rx;
+        const cxx = cp * cxp - sp * cyp + (x1 + x2) / 2;
+        const cyy = sp * cxp + cp * cyp + (y1 + y2) / 2;
+        let th1 = Math.atan2((y1p - cyp) / ry, (x1p - cxp) / rx);
+        let dth = Math.atan2((-y1p - cyp) / ry, (-x1p - cxp) / rx) - th1;
+        if (!sweep && dth > 0) dth -= 2 * Math.PI;
+        if (sweep && dth < 0) dth += 2 * Math.PI;
+        if (large && Math.abs(dth) < Math.PI) dth += (dth >= 0 ? 2 * Math.PI : -2 * Math.PI);
+        if (!large && Math.abs(dth) > Math.PI) dth -= (dth >= 0 ? 2 * Math.PI : -2 * Math.PI);
+        ctx.save();
+        ctx.translate(cxx, cyy);
+        ctx.rotate(phi);
+        ctx.scale(rx, ry);
+        ctx.arc(0, 0, 1, th1, th1 + dth, !sweep);
+        ctx.restore();
+    }
+
+    function drawSVG(node, x, y, w, h) {
+        const a = node.attrs || {};
+        const vb = String(a.viewbox || '0 0 24 24').trim().split(/[\s,]+/).filter(Boolean).map(parseFloat);
+        const vbW = vb[2] || 24, vbH = vb[3] || 24;
+        const ctx = R.ctx;
+        const scale = Math.min(w / vbW, h / vbH);
+        const ox = x + (w - vbW * scale) / 2;
+        const oy = y + (h - vbH * scale) / 2;
+        ctx.save();
+        ctx.translate(ox, oy);
+        ctx.scale(scale, scale);
+        const defColor = (node.style && node.style.color) ? colorOf(node, '#ffffff') : '#ffffff';
+        ctx.lineCap = a['stroke-linecap'] || 'round';
+        ctx.lineJoin = a['stroke-linejoin'] || 'round';
+        ctx.lineWidth = parseFloat(a['stroke-width'] || '2') || 2;
+        // svg 级 stroke/fill 下发给无显式属性的子形状（lucide 图标惯用写法）
+        const inheritStroke = a.stroke != null ? a.stroke : null;
+        const inheritFill = a.fill != null ? a.fill : null;
+        (node.children || []).forEach(function (shape) {
+            const sa = shape.attrs || {};
+            const strokeAttr = sa.stroke != null ? sa.stroke : inheritStroke;
+            const fillAttr = sa.fill != null ? sa.fill : inheritFill;
+            let stroke = svgColorVal(strokeAttr, node, defColor);
+            let fill = svgColorVal(fillAttr, node, null);
+            if (stroke == null && fill == null) stroke = defColor;
+            drawShape(shape, stroke, fill);
+        });
+        ctx.restore();
     }
 
     // ---------------- 弹窗状态 ----------------
