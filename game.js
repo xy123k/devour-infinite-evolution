@@ -7801,6 +7801,10 @@ ${transition.buff.desc}`);
     },
 
     refreshGrowthUI() {
+        // Canvas 化轮回空间：渲染器每帧直接读取 game 状态
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['growthScreen']) {
+            return;
+        }
         const b = this.permanent.bonusStats;
         document.getElementById('permanentStats').innerHTML = `
             <div class="stat-row" data-tooltip="permanentStats" style="cursor:pointer"><span class="stat-label">力量加成</span><span>+${b.strength}（每点+2攻击）</span></div>
@@ -8014,7 +8018,11 @@ ${transition.buff.desc}`);
         });
     },
 
-    renderTalentUnlockList() {        const all = this.data.talents.talents;        if (!all) return;        const listEl = document.getElementById('talentUnlockList');        if (!listEl) return;        const unlocked = this.permanent.unlockedTalents;        const equipped = this.player.equippedTalents;        const passiveSlots = this.getPassiveSlots();        let html = '';        html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:6px">            <span style="color:var(--accent-warning)">天赋点：${this.permanent.talentPoints || 0}</span>            <span style="margin-left:20px;color:var(--accent-success)">天赋槽：${equipped.length}/${passiveSlots}</span>            <span style="margin-left:20px;color:var(--accent-info)">技能槽：${this.getActiveSlots()}</span>        </div>`;        const sorted = [...all].sort((a,b)=>a.quality-b.quality);        sorted.forEach(t => {            const isUnlocked = unlocked.includes(t.id);            const isEquipped = equipped.includes(t.id);            const lv = this.getTalentLevel(t.id);            const maxLv = t.maxLevel || 5;            const cost = t.unlockCost || {fragQuality: t.quality, fragCount: 10};            const canAfford = this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, cost.fragQuality) >= cost.fragCount;            let effectText = '';            if (isUnlocked) {                const eff = this.getTalentEffect(t.id);                effectText = eff ? eff.passive : '';            } else if (t.effects && t.effects.length > 0) {                effectText = t.effects[0].passive || '';            }            let upgradeBtn = '';            if (isUnlocked && lv < maxLv) {                const levelCosts = t.levelCost || [2,4,7,11,16];                const pointCost = levelCosts[lv-1] || 2;                const fragCost = pointCost;                const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, t.quality) >= fragCost;                const nextEff = this.getTalentNextEffect(t.id);                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px" title="${nextEff ? nextEff.passive : ''}">升级至${lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;            } else if (isUnlocked && lv >= maxLv) {                upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';            }            let actionBtn = '';
+    renderTalentUnlockList() {        // Canvas 化后由渲染器直读 game 状态，跳过 DOM 写入
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['talentScreen']) {
+            return;
+        }
+        const all = this.data.talents.talents;        if (!all) return;        const listEl = document.getElementById('talentUnlockList');        if (!listEl) return;        const unlocked = this.permanent.unlockedTalents;        const equipped = this.player.equippedTalents;        const passiveSlots = this.getPassiveSlots();        let html = '';        html += `<div style="margin-bottom:10px;padding:8px;background:var(--bg-card);border-radius:6px">            <span style="color:var(--accent-warning)">天赋点：${this.permanent.talentPoints || 0}</span>            <span style="margin-left:20px;color:var(--accent-success)">天赋槽：${equipped.length}/${passiveSlots}</span>            <span style="margin-left:20px;color:var(--accent-info)">技能槽：${this.getActiveSlots()}</span>        </div>`;        const sorted = [...all].sort((a,b)=>a.quality-b.quality);        sorted.forEach(t => {            const isUnlocked = unlocked.includes(t.id);            const isEquipped = equipped.includes(t.id);            const lv = this.getTalentLevel(t.id);            const maxLv = t.maxLevel || 5;            const cost = t.unlockCost || {fragQuality: t.quality, fragCount: 10};            const canAfford = this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, cost.fragQuality) >= cost.fragCount;            let effectText = '';            if (isUnlocked) {                const eff = this.getTalentEffect(t.id);                effectText = eff ? eff.passive : '';            } else if (t.effects && t.effects.length > 0) {                effectText = t.effects[0].passive || '';            }            let upgradeBtn = '';            if (isUnlocked && lv < maxLv) {                const levelCosts = t.levelCost || [2,4,7,11,16];                const pointCost = levelCosts[lv-1] || 2;                const fragCost = pointCost;                const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && this.getTagFragmentCount((t.tags && t.tags.length > 0) ? t.tags[0] : 1, t.quality) >= fragCost;                const nextEff = this.getTalentNextEffect(t.id);                upgradeBtn = `<button onclick="game.upgradeTalentAndRefresh('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:11px;margin-top:4px" title="${nextEff ? nextEff.passive : ''}">升级至${lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;            } else if (isUnlocked && lv >= maxLv) {                upgradeBtn = '<span style="color:var(--accent-warning);font-size:11px">已满级</span>';            }            let actionBtn = '';
             if (!isUnlocked) {
                 const talentTag = (t.tags && t.tags.length > 0) ? t.tags[0] : 1;
                 // 只获取专属碎片数量（不包含万能碎片）
@@ -9670,6 +9678,11 @@ ${transition.buff.desc}`);
         if (!this.talentPanelTab) this.talentPanelTab = 'unlock';
         const all = this.data.talents.talents;
         if (!all) return;
+        // Canvas 化天赋界面：渲染器每帧直接读取 game 状态
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['talentScreen']) {
+            this.showScreen('talentScreen');
+            return;
+        }
         const unlocked = this.permanent.unlockedTalents;
         const equipped = this.player.equippedTalents;
         const passiveSlots = this.getPassiveSlots();
@@ -11403,6 +11416,12 @@ ${transition.buff.desc}`);
     // ============================================================
     openShop(category) {
         this.closePop();
+        this.shopCategory = category || 'all';
+        // Canvas 化商店界面：渲染器每帧直接读取 game 状态
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['shopScreen']) {
+            this.showScreen('shopScreen');
+            return;
+        }
         this.updateBottomNav('shop');
         const shop = this.data.shop;
         if (!shop) return;
@@ -11858,6 +11877,11 @@ ${transition.buff.desc}`);
     // 打开背包（独立页面）
     openInventory() {
         this.closePop();
+        // Canvas 化背包界面：渲染器每帧直接读取 game 状态
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['inventoryScreen']) {
+            this.showScreen('inventoryScreen');
+            return;
+        }
         const items = this.player.items || [];
         const shop = this.data.shop;
         const consumables = shop ? (shop.consumables || []) : [];
@@ -12047,6 +12071,8 @@ ${transition.buff.desc}`);
 
     // 渲染人物状态界面
     renderCharacterPanel() {
+        // Canvas 化角色界面：渲染器每帧直接读取 game 状态
+        if (this._isCanvasScreen('characterScreen')) return;
         const contentDiv = document.getElementById('characterContent');
         if (!contentDiv) return;
 
