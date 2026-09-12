@@ -847,6 +847,8 @@
     </style>
 </head>
 <body>
+<!-- Canvas 渲染层（阶段 0：由 render/canvas.js 接管初始化与 DPR 适配） -->
+<canvas id="gameCanvas"></canvas>
 <div class="container">
 
     <!-- ========== 主界面 ========== -->
@@ -1267,6 +1269,9 @@
 <!-- 通用弹窗 -->
 <div class="box" id="popBox" style="display:none;"></div>
 
+<script src="render/canvas.js?v=20260912_c0"></script>
+<script src="render/input.js?v=20260912_c0"></script>
+<script src="render/screen.js?v=20260912_c0"></script>
 <script src="data.js?v=20260912"></script>
 <script src="game.js?v=20260912_v11"></script>
 

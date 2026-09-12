@@ -1912,7 +1912,20 @@ const game = {
     // ============================================================
     //  界面切换
     // ============================================================
+    // ============================================================
+    //  界面切换（Canvas 化改造入口）
+    //  已 Canvas 化的界面 → Render.ScreenManager（canvas 绘制）
+    //  未迁移的界面 → showScreenDOM（原 DOM 逻辑），渐进迁移
+    // ============================================================
     showScreen(screenId) {
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens[screenId]) {
+            Render.ScreenManager.showScreen(screenId);
+            return;
+        }
+        this.showScreenDOM(screenId);
+    },
+
+    showScreenDOM(screenId) {
         // 关闭击杀奖励弹窗（如果存在）
         const killDropPopup = document.getElementById('killDropPopup');
         if (killDropPopup) killDropPopup.remove();

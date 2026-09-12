@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>阶段 0 渲染地基验证</title>
+<style>
+    body { margin: 0; background: #0a0e17; overflow: hidden; font-family: sans-serif; }
+</style>
+</head>
+<body>
+<!-- canvas.js 会自动挂载/创建 #gameCanvas -->
+<script src="canvas.js?v=test"></script>
+<script src="input.js?v=test"></script>
+<script src="screen.js?v=test"></script>
+<script>
+(function () {
+    'use strict';
+    const R = window.Render;
+    const T = R.Theme.get();
+
+    // ============ 验证各绘制函数 ============
+    // 注册一个 canvas 界面做全功能演示
+    R.ScreenManager.register('testMain', {
+        onShow: function () {},
+        render: function () {
+            R.clear();
+
+            // 1. drawRect / 圆角矩形
+            R.drawRect(20, 20, 160, 80, { fill: T.bgCard, radius: 12, stroke: T.border, lineWidth: 2 });
+            R.drawRect(200, 20, 160, 80, { fill: T.accent, radius: 12 });
+
+            // 2. drawText 自动换行 + 对齐
+            R.drawText('自动换行测试：吞噬无限进化 Canvas 化渲染地基，中英文混排 English Mixed 应该能正确断行显示。', 30, 40, {
+                fontSize: 14, color: T.textPrimary, maxWidth: 140, lineHeight: 20
+            });
+            R.drawText('居中', 280, 55, { fontSize: 16, color: '#0a0e17', align: 'center', bold: true });
+            R.drawText('右对齐', 350, 80, { fontSize: 13, color: T.textSecondary, align: 'right' });
+
+            // 3. drawBar 血条（渐变 + 文字 + 边框）
+            R.drawBar(20, 120, 340, 22, 0.68, { fg: T.danger, gradient: { from: '#ef5350', to: '#e53935' }, showText: true, border: T.border, radius: 11 });
+            R.drawBar(20, 152, 340, 16, 0.35, { fg: T.info, showText: false, radius: 8 });
+            R.drawBar(20, 178, 340, 14, 1.0, { fg: T.success, text: '经验 100%', fontSize: 10 });
+
+            // 4. drawButton（按压态 + 禁用态）
+            R.drawButton({ id: 'btnA', x: 20, y: 210, w: 160, h: 44, text: '主按钮（按我）', onTap: function () { R.toast('按钮 A 被点击', 1500, T.success); } });
+            R.drawButton({ id: 'btnB', x: 200, y: 210, w: 160, h: 44, text: '禁用按钮', disabled: true, bg: 'rgba(90,106,101,0.4)', color: '#8a9a95' });
+            R.drawButton({ id: 'btnC', x: 20, y: 264, w: 340, h: 40, text: '次按钮（弹模态框）', bg: T.bgCard, color: T.textPrimary, border: T.border, onTap: function () { openModal(); } });
+
+            // 5. drawList 滚动列表
+            const items = [];
+            for (let i = 0; i < 40; i++) items.push('列表项 #' + (i + 1) + (i % 5 === 0 ? ' · 长文本自动省略号效果测试' : ''));
+            R.drawList({
+                id: 'testList',
+                x: 20, y: 320, w: 340, h: 220, itemH: 40, gap: 6,
+                items: items,
+                onTap: function (item, idx) { R.toast('点了 ' + item, 1500, T.warning); },
+                drawItem: function (item, idx, x, y, w, h) {
+                    const bg = idx % 2 === 0 ? T.bgCard : T.bgSecondary;
+                    R.drawRect(x, y, w, h, { fill: bg, radius: 8 });
+                    R.drawText(item, x + 12, y + h / 2, { fontSize: 13, color: T.textPrimary, baseline: 'middle', maxWidth: w - 24, maxLines: 1 });
+                    R.drawText('>' + (idx + 1), x + w - 24, y + h / 2, { fontSize: 12, color: T.textMuted, align: 'right', baseline: 'middle' });
+                }
+            });
+
+            // 6. drawModal（由按钮触发）& toast 由 drawToasts 统一绘制
+        }
+    });
+
+    function openModal() {
+        R.showModal({
+            idPrefix: 'testModal',
+            title: '测试模态框',
+            content: '这是 drawModal 的验证内容。支持多行文本自动换行显示，用于后续所有弹窗的统一绘制。',
+            buttons: [
+                { text: '取消', bg: T.bgCard, color: T.textPrimary, onTap: function () { R.closeModal(); R.toast('已取消'); } },
+                { text: '确定', onTap: function () { R.closeModal(); R.toast('已确定', 1500, T.success); } }
+            ],
+            onClose: function () { R.closeModal(); R.toast('已关闭'); },
+            showClose: true
+        });
+    }
+
+    // 全局测试按钮（模态框开关，用按钮注册表手动注册）
+    window.Input.registerButton({
+        id: 'modalBtn', x: 20, y: 560, w: 340, h: 44,
+        onTap: function () {
+            R.showModal({
+                idPrefix: 'modal2', title: '提示',
+                content: '手动注册按钮触发的模态框',
+                buttons: [{ text: '关闭', onTap: function () { R.closeModal(); } }]
+            });
+        }
+    });
+
+    // 启动：绑定输入 + 主循环 + 进入测试界面
+    window.Input.bind();
+    R.ScreenManager.showScreen('testMain');
+    R.ScreenManager.startLoop();
+
+    // 页面加载后 2 秒提示
+    setTimeout(function () { R.toast('阶段 0 验证页就绪：按钮/列表/弹窗可交互', 2500, T.success); }, 800);
+})();
+</script>
+</body>
+</html>
