@@ -1863,6 +1863,26 @@ const game = {
     //  JSON加载
     // ============================================================
     async loadAllJson() {
+        // TapTap 小游戏环境：部分设备容器禁止 fetch 读取包内相对路径文件，导致 JSON 加载失败白屏。
+        // 优先使用内嵌数据（data.js 注入 window.EMBEDDED_DATA），无内嵌时回退 fetch。
+        const EMB = (typeof window !== 'undefined' && window.EMBEDDED_DATA) ? window.EMBEDDED_DATA : null;
+        if (EMB && EMB.enemies && EMB.maps && EMB.talents_skills) {
+            try {
+                this.data.enemies = EMB.enemies;
+                this.data.maps = EMB.maps;
+                this.data.shop = EMB.shop;
+                this.data.talents = EMB.talents_skills;
+                this.data.symbionts = EMB.symbionts;
+                this.data.talentSets = EMB.talent_sets;
+                console.log("[Data] 使用内嵌数据（EMBEDDED_DATA）");
+                this.initDailyTasks();
+                this.initLeaderboard();
+                this.startNewRun();
+                return;
+            } catch (e) {
+                console.error("[Data] 内嵌数据初始化异常，回退 fetch", e);
+            }
+        }
         try {
             const ts = Date.now();
             const res = await Promise.all([
@@ -3139,7 +3159,8 @@ const game = {
         this.closePop();
         this.refreshGrowthUI();
         
-        const optionName = this.storyData.evolutionChoices.find(ec => ec.chapter === chapter)?.options.find(o => o.id === optionId)?.name || optionId;
+        const ec2 = this.storyData.evolutionChoices.find(ec => ec.chapter === chapter);
+        const optionName = ec2 ? ((ec2.options.find(o => o.id === optionId) || {}).name || optionId) : optionId;
         this.showGameAlert('切换成功', `已切换为「${optionName}」，消耗 ${switchCost} 进化精粹`);
     },
     
@@ -5413,14 +5434,14 @@ const game = {
         
         // 攻击附加Dot（中毒/灼烧）
         bonus.dotOnHit.forEach(dot => {
-            if (Math.random() * 100 >= (dot.chance ?? 100)) return;
+            if (Math.random() * 100 >= (dot.chance == null ? 100 : dot.chance)) return;
             const dotName = this.dotTypes[dot.type] ? this.dotTypes[dot.type].name : dot.type;
             this.addStatus(defender, {id: dot.type, name: dotName, type: 'dot', subtype: dot.type, stacks: dot.stacks, duration: dot.duration || 3, source: 'player'});
             this.appendBattleLog(defender.name + '获得' + dotName + '效果！', 'log-info');
         });
         // 攻击附加Dot（流血）
         bonus.bleedOnHit.forEach(dot => {
-            if (Math.random() * 100 >= (dot.chance ?? 100)) return;
+            if (Math.random() * 100 >= (dot.chance == null ? 100 : dot.chance)) return;
             this.addStatus(defender, {id: 'bleed', name: '流血', type: 'dot', subtype: 'bleed', stacks: dot.stacks, duration: dot.duration || 4, source: 'player'});
             this.appendBattleLog(defender.name + '陷入流血！', 'log-info');
         });
@@ -5434,7 +5455,7 @@ const game = {
             if (Math.random() * 100 < ctrl.chance) {
                 const ctrlName = this.controlTypes[ctrl.type] ? this.controlTypes[ctrl.type].name : ctrl.type;
                 let dur = ctrl.duration;
-                if (isBoss && this.controlTypes[ctrl.type]?.skipAction) dur = Math.max(0, dur - 1);
+                if (isBoss && this.controlTypes[ctrl.type] && this.controlTypes[ctrl.type].skipAction) dur = Math.max(0, dur - 1);
                 if (dur > 0) {
                     this.addStatus(defender, {id: ctrl.type, name: ctrlName, type: 'control', subtype: ctrl.type, duration: dur, source: 'player'});
                     this.appendBattleLog(defender.name + '被' + ctrlName + '！', 'log-info');
@@ -5719,9 +5740,9 @@ const game = {
     },
     tickStatuses(unit, isPlayer, isBoss) {
         const list = this.getStatuses(unit);
-        const uname = isPlayer ? "你" : (this.currentEnemy?.name||"敌人");
-        const unitMaxHp = isPlayer ? unit.maxHp : (unit.stats?.maxHp || unit.stats?.hp || 100);
-        const unitCurrentHp = isPlayer ? unit.hp : (unit.stats?.hp || 100);
+        const uname = isPlayer ? "你" : ((this.currentEnemy && this.currentEnemy.name)||"敌人");
+        const unitMaxHp = isPlayer ? unit.maxHp : ((unit.stats && unit.stats.maxHp) || (unit.stats && unit.stats.hp) || 100);
+        const unitCurrentHp = isPlayer ? unit.hp : ((unit.stats && unit.stats.hp) || 100);
         
         list.forEach(s => {
             if(s.type!=='dot') return;
@@ -5732,7 +5753,7 @@ const game = {
             if(dt.type === "attack_mult") {
                 // 中毒：攻击者攻击力 × 0.2 × 层数
                 const src = s.source==='player' ? this.player : this.currentEnemy;
-                const atk = src ? (src.attack || src.stats?.atk || 10) : 10;
+                const atk = src ? (src.attack || (src.stats && src.stats.atk) || 10) : 10;
                 dmg = Math.floor(atk * dt.value * s.stacks);
             }
             else if(dt.type === "bleed_mix") {
@@ -6076,9 +6097,9 @@ const game = {
         this.showSkillSelect();
     },
     executeSkillEffects(skill, caster, target, isPlayerCaster) {
-        const cName = isPlayerCaster ? "你" : (this.currentEnemy?.name || "敌人");
-        const tName = isPlayerCaster ? (this.currentEnemy?.name || "敌人") : "你";
-        const isTargetBoss = isPlayerCaster && this.currentEnemy?.type === 'boss';
+        const cName = isPlayerCaster ? "你" : ((this.currentEnemy && this.currentEnemy.name) || "敌人");
+        const tName = isPlayerCaster ? ((this.currentEnemy && this.currentEnemy.name) || "敌人") : "你";
+        const isTargetBoss = isPlayerCaster && this.currentEnemy && this.currentEnemy.type === 'boss';
         skill.effects.forEach(effect => {
             switch(effect.type) {
                 case "damage": {
@@ -6086,8 +6107,8 @@ const game = {
                     if (!hit.hit) { this.appendBattleLog(`${cName}的【${skill.name}】被${tName}闪避！`,'log-info'); return; }
                     const crit = this.calcCrit(caster);
                     const critMult = crit.crit ? (caster.critDamage||150)/100 : 1;
-                    const atk = isPlayerCaster ? caster.attack : (caster.stats?.atk||10);
-                    let def = isPlayerCaster ? (target.stats?.def||2) : target.defense;
+                    const atk = isPlayerCaster ? caster.attack : ((caster.stats && caster.stats.atk)||10);
+                    let def = isPlayerCaster ? ((target.stats && target.stats.def)||2) : target.defense;
                     // 进化抉择：无视防御加成（玩家技能攻击时）
                     if (isPlayerCaster && this.player.evoArmorPenetration) {
                         const penPct = this.player.evoArmorPenetration / 100;
@@ -6111,7 +6132,7 @@ const game = {
                     break;
                 }
                 case "heal": {
-                    const maxHp = isPlayerCaster ? caster.maxHp : (caster.stats?.maxHp||100);
+                    const maxHp = isPlayerCaster ? caster.maxHp : ((caster.stats && caster.stats.maxHp)||100);
                     let heal = Math.floor(maxHp * (effect.percent||0.2));
                     // 审计修复：回复效果+X%（生命之源/巨兽之血/无限增殖）
                     if (isPlayerCaster && (this.talentBonus || {}).healEffectPct > 0) heal = Math.floor(heal * (1 + this.talentBonus.healEffectPct));
@@ -6160,12 +6181,12 @@ const game = {
                         // 计算该Dot的单回合伤害
                         const dt = this.dotTypes[s.subtype];
                         if(!dt) continue;
-                        const tMaxHp = isPlayerCaster ? (target.stats?.maxHp || target.stats?.hp || 100) : target.maxHp;
-                        const tCurHp = isPlayerCaster ? (target.stats?.hp || 100) : target.hp;
+                        const tMaxHp = isPlayerCaster ? ((target.stats && target.stats.maxHp) || (target.stats && target.stats.hp) || 100) : target.maxHp;
+                        const tCurHp = isPlayerCaster ? ((target.stats && target.stats.hp) || 100) : target.hp;
                         let dmg = 0;
                         if(dt.type === "attack_mult") {
                             const src = s.source==='player' ? this.player : this.currentEnemy;
-                            const atk = src ? (src.attack || src.stats?.atk || 10) : 10;
+                            const atk = src ? (src.attack || (src.stats && src.stats.atk) || 10) : 10;
                             dmg = Math.floor(atk * dt.value * s.stacks);
                         } else if(dt.type === "bleed_mix") {
                             dmg = Math.floor(dt.base * s.stacks + tMaxHp * dt.hpPercent * s.stacks);
@@ -6201,7 +6222,7 @@ const game = {
                         if(s.type === 'dot' && (!effect.dotType || s.subtype === effect.dotType)) {
                             s.stacks = s.stacks * 2;
                             const dt = this.dotTypes[s.subtype];
-                            this.appendBattleLog(`${tName}的${dt?.name || s.name}层数翻倍！当前${s.stacks}层`,'log-info');
+                            this.appendBattleLog(`${tName}的${(dt && dt.name) || s.name}层数翻倍！当前${s.stacks}层`,'log-info');
                         }
                     });
                     break;
@@ -6737,7 +6758,7 @@ if (e.type === 'boss' && this.player.equippedTalents.includes('tal_devour_evolut
         // 审计修复：近身毒素（毒表皮/蛰毛）——敌人每回合受最大生命%毒伤
         const meleeTb = this.getEquippedTalentBonus();
         if (meleeTb.meleePoisonMaxHpPct > 0 && this.currentEnemy) {
-            const meleeMax = this.currentEnemy.stats?.maxHp || this.currentEnemy.stats?.hp || 100;
+            const meleeMax = (this.currentEnemy.stats && this.currentEnemy.stats.maxHp) || (this.currentEnemy.stats && this.currentEnemy.stats.hp) || 100;
             const meleeDmg = Math.floor(meleeMax * meleeTb.meleePoisonMaxHpPct);
             if (meleeDmg > 0) {
                 this.currentEnemy.stats.hp -= meleeDmg;
