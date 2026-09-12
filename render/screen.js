@@ -56,11 +56,11 @@
             try {
                 if (r && r.onShow) r.onShow();
             } catch (e) { if (typeof console !== 'undefined') console.error('onShow error', screenId, e); }
-        } else if (window.game && typeof window.game.showScreenDOM === 'function') {
+        } else if (typeof game !== 'undefined' && typeof game.showScreenDOM === 'function') {
             // ---- DOM 模式回退 ----
             currentMode = 'dom';
             current = null;
-            window.game.showScreenDOM(screenId);
+            game.showScreenDOM(screenId);
         } else {
             currentMode = 'dom';
             current = null;

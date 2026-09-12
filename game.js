@@ -475,6 +475,28 @@ const game = {
             if (callback) callback();
             return;
         }
+        // Canvas 化主界面：剧情行存入状态，由渲染器绘制剧情卡 + 「下一段」按钮
+        if (this._isCanvasScreen('mainScreen')) {
+            this._storyLines = storyLines;
+            this._storyIdx = 0;
+            this._storyActive = true;
+            this._storyFinalCallback = callback;
+            const self = this;
+            this._storyCallback = () => {
+                self._storyIdx = (self._storyIdx || 0) + 1;
+                if (self._storyIdx >= self._storyLines.length) {
+                    self._storyActive = false;
+                    self._storyLines = null;
+                    self.showRandomStory();
+                    if (self._storyFinalCallback) {
+                        const cb = self._storyFinalCallback;
+                        self._storyFinalCallback = null;
+                        cb();
+                    }
+                }
+            };
+            return;
+        }
         // 如果不在主界面，先切换到主界面
         if (document.getElementById('mainScreen').classList.contains('active')) {
             // 已经在主界面
@@ -881,6 +903,16 @@ const game = {
         this.initTheme();
         // 审计修复（任务10）：设置持久化——启动时加载已保存的设置（此前只存不读，刷新即重置）
         this.loadSettings();
+
+        // Canvas 渲染层启动：绑定输入 + 主循环（阶段 0/1）
+        if (typeof Render !== 'undefined' && Render.ScreenManager) {
+            try {
+                if (window.Input && typeof window.Input.bind === 'function') window.Input.bind();
+                if (typeof Render.ScreenManager.startLoop === 'function') Render.ScreenManager.startLoop();
+            } catch (e) {
+                console.error('[Canvas] 渲染层启动失败', e);
+            }
+        }
         
         // 全局覆盖原生alert/confirm为游戏内弹窗（防止阻塞浏览器）
         const self = this;
@@ -1877,6 +1909,7 @@ const game = {
                 console.log("[Data] 使用内嵌数据（EMBEDDED_DATA）");
                 this.initDailyTasks();
                 this.initLeaderboard();
+                this.enterCanvasMainScreen();
                 this.startNewRun();
                 return;
             } catch (e) {
@@ -1902,6 +1935,7 @@ const game = {
             console.log("所有JSON加载完成");
             this.initDailyTasks();
             this.initLeaderboard();
+            this.enterCanvasMainScreen();
             this.startNewRun();
         } catch (e) {
             this.showGameAlert("加载失败", "配置文件加载失败，请重新下载游戏或检查网络后重试");
@@ -1923,6 +1957,19 @@ const game = {
             return;
         }
         this.showScreenDOM(screenId);
+    },
+
+    // 当前指定界面是否正以 Canvas 模式显示（用于渲染写入短路）
+    _isCanvasScreen(screenId) {
+        return typeof Render !== 'undefined' && Render.ScreenManager &&
+            Render.ScreenManager.mode === 'canvas' && Render.ScreenManager.current === screenId;
+    },
+
+    // 启动时进入 Canvas 化主界面（渲染器已注册时）
+    enterCanvasMainScreen() {
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['mainScreen']) {
+            this.showScreen('mainScreen');
+        }
     },
 
     showScreenDOM(screenId) {
@@ -2503,6 +2550,8 @@ const game = {
     
     // 更新顶部资源栏
     updateTopBar() {
+        // Canvas 化主界面：顶栏由 render/screens/mainScreen.js 每帧绘制
+        if (this._isCanvasScreen('mainScreen')) return;
         const topBar = document.getElementById('topResourceBar');
         if (!topBar) return;
         const gold = this.player.gold || 0;
@@ -2558,6 +2607,12 @@ const game = {
     },
     
     refreshMainUI() {
+        // Canvas 化主界面：渲染器每帧从状态重绘，这里只复位主界面区域状态
+        if (this._isCanvasScreen('mainScreen')) {
+            this.pendingEnemy = null;
+            this._mainAreaState = 'explore';
+            return;
+        }
         const currentMap = this.getCurrentMap();
         const mapName = currentMap ? currentMap.name : '未知区域';
         document.getElementById('floorInfo').innerText = `${mapName} · 第 ${this.currentLayer}${currentMap && currentMap.totalLayers === -1 ? ' 层（无限轮回）' : '/' + (currentMap ? currentMap.totalLayers : '?') + ' 层'}（全局第 ${this.currentFloor} 层）`;
@@ -2688,6 +2743,8 @@ const game = {
     },
 
     showRandomStory() {
+        // Canvas 化主界面：环境法则由渲染器直接读取绘制
+        if (this._isCanvasScreen('mainScreen')) return;
         // 显示当前地图的环境法则作为主界面氛围文本（使用实际生效的效果描述）
         const currentMap = this.getCurrentMap();
         const envEff = this.getEnvironmentEffect();
@@ -3361,6 +3418,13 @@ const game = {
         // 暂存待战敌人
         this.pendingEnemy = enemy;
 
+        // Canvas 化主界面：遭遇信息存入状态，由渲染器绘制敌人卡
+        if (this._isCanvasScreen('mainScreen')) {
+            this._enemyNarrative = this.getEnemyNarrative(enemy);
+            this._mainAreaState = 'enemy';
+            return;
+        }
+
         // 在主界面显示该敌人对应的前置文本
         const narrative = this.getEnemyNarrative(enemy);
         document.getElementById('storyText').innerHTML = narrative.replace(/\n/g, '<br>');
@@ -3417,6 +3481,12 @@ const game = {
         const m = merchantData[Math.floor(Math.random() * merchantData.length)];
         this.currentMerchant = m;
 
+        // Canvas 化主界面：商人卡由渲染器绘制
+        if (this._isCanvasScreen('mainScreen')) {
+            this._mainAreaState = 'merchant';
+            return;
+        }
+
         // 事件模板展示（不再弹窗）
         document.getElementById('eventTitle').innerText = `遇到${m.name}`;
         document.getElementById('eventDesc').innerHTML =
@@ -3435,6 +3505,12 @@ const game = {
     enterMerchantShop() {
         this.merchantMode = true;
         this.closePop();
+        // Canvas 化主界面：商人购物态由渲染器绘制
+        if (this._isCanvasScreen('mainScreen')) {
+            this._mainAreaState = 'shop';
+            setTimeout(() => this.openShop('all'), 100);
+            return;
+        }
         // 显示主界面商人模式区域
         const merchantArea = document.getElementById('merchantArea');
         if (merchantArea) {
@@ -3455,6 +3531,14 @@ const game = {
         this.merchantMode = false;
         this.currentMerchant = null;
         this.closePop();
+        // Canvas 化主界面：回到探索态
+        if (this._isCanvasScreen('mainScreen')) {
+            this.exploreSinceSpecial = 3;
+            this._mainAreaState = 'explore';
+            this.pendingEnemy = null;
+            this.showRandomStory();
+            return;
+        }
         const merchantArea = document.getElementById('merchantArea');
         if (merchantArea) merchantArea.style.display = 'none';
         // 设置标志，防止立即又触发商人事件（软保底保护）
@@ -3471,6 +3555,21 @@ const game = {
     showGachaEvent() {
         const gachaCost = 30; // 抽奖消耗基因精华
         const canAfford = this.player.gold >= gachaCost;
+
+        // Canvas 化主界面：抽奖事件存入状态
+        if (this._isCanvasScreen('mainScreen')) {
+            const self = this;
+            this._eventData = {
+                title: '发现基因提取装置',
+                desc: '"一台古老的基因提取装置还在运转...消耗' + gachaCost + '基因精华启动它，可能获得有用的东西。"\n基因精华：' + this.player.gold + '\n可能获得：普通万能碎片×2~5（50%）/ 稀有万能碎片×1~3（30%）/ 随机消耗品×1（15%）/ 基因精华×20~50（5%）',
+                options: [
+                    { text: '启动装置（' + gachaCost + '精华）', disabled: !canAfford, bg: canAfford ? '#7c3aed' : 'rgba(90,106,101,0.4)', color: canAfford ? '#ffffff' : '#8a9a95', onTap: function () { self.playGachaEvent(); } },
+                    { text: '离开', onTap: function () { self.closeEvent(); } }
+                ]
+            };
+            this._mainAreaState = 'event';
+            return;
+        }
 
         // 事件模板展示（不再弹窗）
         document.getElementById('eventTitle').innerText = '发现基因提取装置';
@@ -3544,6 +3643,20 @@ const game = {
 
         // 轮盘动画 → 结束后显示结果
         this.showGachaWheelAnimation(prizeKey, () => {
+            // Canvas 化主界面：结果更新到事件状态
+            if (this._isCanvasScreen('mainScreen')) {
+                const self = this;
+                const opts = [];
+                if (prizeKey === 'item') opts.push({ text: '立即使用', bg: '#ffb74d', color: '#ffffff', onTap: function () { self.useLastGachaItem(); } });
+                opts.push({ text: '继续抽奖（' + gachaCost + '精华）', bg: '#ab47bc', color: '#ffffff', onTap: function () { self.playGachaEvent(); } });
+                opts.push({ text: '继续探索', bg: '#66bb6a', color: '#ffffff', onTap: function () { self.closeEvent(); } });
+                this._eventData = {
+                    title: '提取结果',
+                    desc: resultText + '\n剩余基因精华：' + this.player.gold,
+                    options: opts
+                };
+                return;
+            }
             document.getElementById('eventTitle').innerText = '提取结果';
             document.getElementById('eventDesc').innerHTML =
                 `<div style="text-align:center;margin:20px 0"><div style="font-size:50px;margin-bottom:12px">${resultIcon}</div><div style="font-size:17px;color:var(--text-primary);font-weight:bold">${resultText}</div></div>` +
@@ -3637,6 +3750,20 @@ const game = {
         const event = events[Math.floor(Math.random() * events.length)];
         this.currentEvent = event;
 
+        // Canvas 化主界面：事件数据存入状态
+        if (this._isCanvasScreen('mainScreen')) {
+            const self = this;
+            this._eventData = {
+                title: event.name || '随机事件',
+                desc: event.description || '',
+                options: event.options.map(function (opt, idx) {
+                    return { text: opt.text, onTap: function () { self.chooseEventOption(idx); } };
+                })
+            };
+            this._mainAreaState = 'event';
+            return;
+        }
+
         document.getElementById('eventTitle').innerText = event.name || '随机事件';
         document.getElementById('eventDesc').innerText = event.description || '';
 
@@ -3681,6 +3808,16 @@ const game = {
             const allEffects = opt.effects || (opt.effect ? opt.effect.split(',') : []);
             resultText = this.getFuzzyEventResult(allEffects);
             if (resultText === '什么也没发生。' && opt.result) resultText = opt.result;
+        }
+        // Canvas 化主界面：结果更新到事件状态
+        if (this._isCanvasScreen('mainScreen')) {
+            const self = this;
+            this._eventData = {
+                title: this._eventData ? this._eventData.title : '随机事件',
+                desc: resultText,
+                options: [{ text: '继续探索', onTap: function () { self.closeEvent(); } }]
+            };
+            return;
         }
         document.getElementById('eventDesc').innerText = resultText;
         document.getElementById('eventOptions').innerHTML = `<button onclick="game.closeEvent()" style="margin-top:10px">继续探索</button>`;
@@ -3858,8 +3995,16 @@ const game = {
 
     // 关闭事件区域
     closeEvent() {
-        document.getElementById('eventArea').style.display = 'none';
         this.currentEvent = null;
+        this._eventData = null;
+        // Canvas 化主界面：回到探索态
+        if (this._isCanvasScreen('mainScreen')) {
+            this._mainAreaState = 'explore';
+            this.pendingEnemy = null;
+            this.showRandomStory();
+            return;
+        }
+        document.getElementById('eventArea').style.display = 'none';
         const eb = document.getElementById('exploreBtn');
         if (eb) eb.disabled = false;
         this.refreshMainUI();
@@ -4757,6 +4902,19 @@ const game = {
     // 显示Boss层休整选项
     showBossRest(map) {
         const options = map.bossRestOptions;
+        // Canvas 化主界面：休整选项存入状态
+        if (this._isCanvasScreen('mainScreen')) {
+            const self = this;
+            const opts = options.map(function (opt, idx) {
+                return { text: opt.text || opt.name || '休整', onTap: function () { self.chooseBossRest(idx); } };
+            });
+            if (map.totalLayers === -1) {
+                opts.push({ text: '离开混沌轮回（进入下一张地图）', color: '#ffb74d', onTap: function () { self.leaveInfiniteMap(); } });
+            }
+            this._bossRestData = { options: opts };
+            this._mainAreaState = 'bossRest';
+            return;
+        }
         let optionsHtml = '';
         options.forEach((opt, idx) => {
             optionsHtml += `<button onclick="game.chooseBossRest(${idx})" style="display:block;width:100%;margin:8px 0;text-align:left;padding:12px;font-size:14px">${opt.text || opt.name || '休整'}</button>`;

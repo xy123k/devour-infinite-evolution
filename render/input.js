@@ -150,6 +150,16 @@
     }
 
     // ============================================================
+    //  页面级滚动（整页可滚动的 canvas 界面用，如主界面）
+    // ============================================================
+    let _pageScroll = null;   // { get(): 当前 offsetY, set(v), max(): 最大滚动 }
+    let _pageMode = false;   // 本次手势是否处于页面滚动
+
+    function setPageScroll(handler) {
+        _pageScroll = handler || null;
+    }
+
+    // ============================================================
     //  事件处理
     // ============================================================
     function onStart(x, y) {
@@ -158,6 +168,7 @@
         _startY = _lastY = y;
         _moved = false;
         _dragging = false;
+        _pageMode = false;
         _scrollVel = 0;
         stopInertia();
 
@@ -169,6 +180,7 @@
             _pressedId = null;
             const st = hitList(x, y);
             _hitListId = st ? st.id : null;
+            if (!_hitListId && _pageScroll) _pageMode = true;
         }
     }
 
@@ -182,6 +194,9 @@
             if (st) {
                 _dragging = true;
                 _pressedId = null;
+                _pageMode = false;
+            } else if (_pageMode) {
+                _pressedId = null;
             }
         }
         if (_dragging && _hitListId) {
@@ -192,6 +207,11 @@
                 // 记录速度（用于惯性）
                 _scrollVel = -dy2;
             }
+        } else if (_pageMode && _pageScroll) {
+            const dy2 = y - _lastY;
+            const cur = _pageScroll.get() || 0;
+            _pageScroll.set(cur - dy2);
+            _scrollVel = -dy2;
         }
         _lastX = x; _lastY = y;
     }
@@ -204,6 +224,10 @@
             if (st && Math.abs(_scrollVel) > 2) {
                 startInertia(_hitListId);
             }
+        } else if (_pageMode && _pageScroll) {
+            // 页面惯性滚动
+            if (Math.abs(_scrollVel) > 2) startPageInertia();
+            else clampPage();
         } else if (!_moved) {
             // 未发生位移 → 点击
             if (_pressedId) {
@@ -259,6 +283,33 @@
         }
     }
 
+    // ---- 页面惯性滚动 ----
+    function clampPage() {
+        if (!_pageScroll) return;
+        const cur = _pageScroll.get() || 0;
+        const max = _pageScroll.max ? _pageScroll.max() : 0;
+        _pageScroll.set(Math.min(max, Math.max(0, cur)));
+    }
+    function startPageInertia() {
+        stopInertia();
+        if (!_pageScroll) return;
+        let vel = _scrollVel;
+        const max = _pageScroll.max ? _pageScroll.max() : 0;
+        const step = function () {
+            if (Math.abs(vel) < 0.6) {
+                clampPage();
+                _rafId = null;
+                return;
+            }
+            vel *= 0.94;
+            _scrollVel = vel;
+            const cur = _pageScroll.get() || 0;
+            _pageScroll.set(Math.min(max, Math.max(0, cur - vel)));
+            _rafId = _rafFn(step);
+        };
+        _rafId = _rafFn(step);
+    }
+
     // ============================================================
     //  事件源绑定
     // ============================================================
@@ -307,6 +358,15 @@
             canvas.addEventListener('mousedown', function (e) { onStart(e.clientX, e.clientY); });
             canvas.addEventListener('mousemove', function (e) { if (_active) onMove(e.clientX, e.clientY); });
             window.addEventListener('mouseup', function () { onEnd(); });
+            // 滚轮滚动（桌面浏览器调试：模拟页面滚动）
+            canvas.addEventListener('wheel', function (e) {
+                e.preventDefault();
+                if (_pageScroll) {
+                    const cur = _pageScroll.get() || 0;
+                    const max = _pageScroll.max ? _pageScroll.max() : 0;
+                    _pageScroll.set(Math.min(max, Math.max(0, cur + e.deltaY)));
+                }
+            }, { passive: false });
         }
     }
 
@@ -322,6 +382,7 @@
         registerList: registerList,
         getListState: getListState,
         setListOffset: setListOffset,
+        setPageScroll: setPageScroll,
         hitButton: hitButton,
         hitList: hitList,
         bind: bind,
