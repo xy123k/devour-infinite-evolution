@@ -68,14 +68,26 @@
         updateBottomNav(screenId);
     }
 
-    // 单帧绘制：清屏 + 当前 canvas 屏 + 模态框 + toast
+    // 单帧绘制：清屏 + 当前 canvas 屏 + 模态框 + 弹窗层 + tooltip + toast
     function draw() {
         Render.clear();
         if (currentMode === 'canvas' && current && screens[current]) {
             const r = screens[current];
             if (r && r.render) r.render();
         }
+        // 阶段 4：通用弹窗层（showPopup/showGameAlert/Confirm 的 canvas 渲染）
+        if (window.Render.Popup && window.Render.Popup.isVisible && window.Render.Popup.isVisible()) {
+            window.Render.Popup.drawModal();
+        }
         if (Render.drawModalLayer) Render.drawModalLayer();
+        // 阶段 4：新手引导覆盖层
+        if (window.Render.Tutorial && window.Render.Tutorial.isVisible && window.Render.Tutorial.isVisible()) {
+            window.Render.Tutorial.draw();
+        }
+        // 阶段 4：tooltip 悬浮提示
+        if (window.Render.Tooltip && window.Render.Tooltip.draw && window.Render.Tooltip.isVisible && window.Render.Tooltip.isVisible()) {
+            window.Render.Tooltip.draw();
+        }
         Render.drawToasts();
     }
 

@@ -81,6 +81,13 @@
         _buttonIndex.clear();
     }
 
+    // 按 id 前缀批量注销（弹窗/浮层专用，避免每帧注册导致 _buttons 无限增长）
+    function unregisterByPrefix(prefix) {
+        const keys = [];
+        _buttons.forEach(function (v, k) { if (k.indexOf(prefix) === 0) keys.push(k); });
+        keys.forEach(function (k) { unregisterButton(k); });
+    }
+
     function getButton(id) { return _buttons.get(id) || null; }
     function isPressed(id) { return _active && _pressedId === id; }
 
@@ -377,6 +384,7 @@
         registerButton: registerButton,
         unregisterButton: unregisterButton,
         unregisterAllButtons: unregisterAllButtons,
+        unregisterByPrefix: unregisterByPrefix,
         getButton: getButton,
         isPressed: isPressed,
         registerList: registerList,

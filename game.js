@@ -7586,6 +7586,10 @@ ${transition.buff.desc}`);
     renderDeathSettlementUI() {
         const ui = this._deathUI;
         if (!ui) return;
+        // Canvas 模式：死亡结算渲染器直读 _deathUI（阶段 4），跳过 DOM 写入
+        if (typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.mode === 'canvas') {
+            return;
+        }
         const p = ui.p;
         const ratePct = Math.round(ui.rate * 100);
 
@@ -8770,6 +8774,11 @@ ${transition.buff.desc}`);
     
     // 显示Tooltip
     showTooltip(dataKey, event) {
+        // Canvas 模式：tooltip 走 canvas 渲染层（阶段 4）
+        if (typeof Render !== 'undefined' && Render.Tooltip && Render.ScreenManager && Render.ScreenManager.mode === 'canvas') {
+            Render.Tooltip.show(dataKey);
+            return;
+        }
         const tooltipBox = document.getElementById('tooltipBox');
         const data = this.tooltipData[dataKey];
         if (!tooltipBox || !data) return;
@@ -8821,6 +8830,10 @@ ${transition.buff.desc}`);
     
     // 隐藏Tooltip
     hideTooltip() {
+        // Canvas 模式：关闭 canvas tooltip（阶段 4）
+        if (typeof Render !== 'undefined' && Render.Tooltip) {
+            Render.Tooltip.hide();
+        }
         const tooltipBox = document.getElementById('tooltipBox');
         if (tooltipBox) {
             tooltipBox.classList.remove('show');
@@ -13337,6 +13350,11 @@ ${transition.buff.desc}`);
     //  通用弹窗
     // ============================================================
     showPopup(html) {
+        // Canvas 模式：弹窗走 canvas 渲染层（阶段 4）
+        if (typeof Render !== 'undefined' && Render.Popup && Render.ScreenManager && Render.ScreenManager.mode === 'canvas') {
+            Render.Popup.show(html);
+            return;
+        }
         // 先关闭其他弹窗，避免叠加
         this.closeKillDropPopup();
         const settingsPanel = document.getElementById('settingsPanel');
@@ -13350,6 +13368,11 @@ ${transition.buff.desc}`);
     },
 
     closePop() {
+        // Canvas 模式：关闭 canvas 弹窗（阶段 4）
+        if (typeof Render !== 'undefined' && Render.Popup) {
+            Render.Popup.close();
+        }
+        if (typeof document === 'undefined') return;
         document.getElementById('popBox').style.display = 'none';
         document.getElementById('overlay').classList.remove('active');
         // 关闭所有tooltip（防止关闭弹窗后tooltip残留）
@@ -13561,10 +13584,19 @@ ${transition.buff.desc}`);
     startTutorial() {
         this.currentTutorialStep = 0;
         this.showTutorialStep();
+        // Canvas 模式：引导覆盖层走 canvas 渲染（阶段 4）
+        if (typeof Render !== 'undefined' && Render.Tutorial && Render.ScreenManager && Render.ScreenManager.mode === 'canvas') {
+            Render.Tutorial.show();
+            return;
+        }
         document.getElementById('tutorialOverlay').classList.add('active');
     },
 
     showTutorialStep() {
+        // Canvas 模式：渲染器直读 tutorialSteps/currentTutorialStep（阶段 4）
+        if (typeof Render !== 'undefined' && Render.Tutorial && Render.ScreenManager && Render.ScreenManager.mode === 'canvas') {
+            return;
+        }
         const step = this.tutorialSteps[this.currentTutorialStep];
         document.getElementById('tutorialTitle').textContent = step.title;
         document.getElementById('tutorialContent').innerHTML = step.content + 
@@ -13603,19 +13635,37 @@ ${transition.buff.desc}`);
     skipTutorial() {
         const self = this;
         // 先隐藏新手教程，避免确认弹窗被覆盖
-        document.getElementById('tutorialOverlay').classList.remove('active');
+        if (typeof Render !== 'undefined' && Render.Tutorial) {
+            Render.Tutorial.hide();
+        }
+        if (typeof document !== 'undefined') {
+            const ov = document.getElementById('tutorialOverlay');
+            if (ov) ov.classList.remove('active');
+        }
         this.showGameConfirm('跳过新手引导', '确定要跳过新手引导吗？', () => {
             self.completeTutorial();
         }, () => {
             // 取消时重新显示新手教程
-            document.getElementById('tutorialOverlay').classList.add('active');
+            if (typeof Render !== 'undefined' && Render.Tutorial) {
+                Render.Tutorial.show();
+            }
+            if (typeof document !== 'undefined') {
+                const ov2 = document.getElementById('tutorialOverlay');
+                if (ov2) ov2.classList.add('active');
+            }
         });
     },
 
     completeTutorial() {
         this.permanent.tutorialCompleted = true;
         this.savePermanent();
-        document.getElementById('tutorialOverlay').classList.remove('active');
+        if (typeof Render !== 'undefined' && Render.Tutorial) {
+            Render.Tutorial.hide();
+        }
+        if (typeof document !== 'undefined') {
+            const ov = document.getElementById('tutorialOverlay');
+            if (ov) ov.classList.remove('active');
+        }
     }
 };
 
