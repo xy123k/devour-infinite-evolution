@@ -223,14 +223,41 @@
         }
     }
 
-    function measureText(text, fontSize, bold) {
-        setFont(fontSize, bold);
-        return ctx.measureText(String(text)).width;
+    // ---- 文本测量/换行缓存（性能：主循环每帧重复绘制，避免重复 measureText）----
+    const _measureCache = new Map();
+    const _wrapCache = new Map();
+    const _MEASURE_MAX = 4000;
+    const _WRAP_MAX = 3000;
+
+    // 缓存淘汰：超上限时只删最早一半（整表 clear 会引发一次性大 GC 卡顿）
+    function trimCache(map, max) {
+        if (map.size <= max) return;
+        const toRemove = Math.floor(map.size / 2);
+        let i = 0;
+        for (const k of map.keys()) {
+            if (i >= toRemove) break;
+            map.delete(k);
+            i++;
+        }
     }
 
-    // 自动换行：优先空格断词，超宽再按字符断；返回行数组
+    function measureText(text, fontSize, bold) {
+        const key = (bold ? 'b' : 'n') + fontSize + '|' + String(text);
+        const hit = _measureCache.get(key);
+        setFont(fontSize, bold);   // 保持 ctx.font 状态一致（_fontCache 同 font 时零开销）
+        if (hit !== undefined) return hit;
+        trimCache(_measureCache, _MEASURE_MAX);
+        const w = ctx.measureText(String(text)).width;
+        _measureCache.set(key, w);
+        return w;
+    }
+
+    // 自动换行：优先空格断词，超宽再按字符断；返回行数组（带缓存）
     function wrapText(text, maxWidth, fontSize, bold) {
         const str = String(text == null ? '' : text);
+        const key = (bold ? 'b' : 'n') + fontSize + '|' + maxWidth + '|' + str;
+        const hit = _wrapCache.get(key);
+        if (hit) return hit;
         const lines = [];
         // 先按显式换行符分段
         const paragraphs = str.split('\n');
@@ -267,6 +294,8 @@
             }
             if (line) lines.push(line);
         }
+        trimCache(_wrapCache, _WRAP_MAX);
+        _wrapCache.set(key, lines);
         return lines;
     }
 
@@ -320,8 +349,8 @@
 
         for (let i = 0; i < lines.length; i++) {
             let tx = x;
-            if (align === 'center') tx = x - ctx.measureText(lines[i]).width / 2;
-            else if (align === 'right') tx = x - ctx.measureText(lines[i]).width;
+            if (align === 'center') tx = x - measureText(lines[i], fontSize, bold) / 2;
+            else if (align === 'right') tx = x - measureText(lines[i], fontSize, bold);
             ctx.fillText(lines[i], tx, startY + i * lineHeight);
         }
         return lines.length;

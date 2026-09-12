@@ -351,6 +351,8 @@
 
     function isVisible() { return state.visible; }
 
+    let _cacheHtml = null, _cacheRoot = null, _cacheLayout = null;
+
     // 每帧在弹窗容器内布局并绘制
     function drawModal() {
         if (!state.visible || !R.ctx) return;
@@ -362,9 +364,26 @@
         state.buttons = [];
 
         // 布局（同一棵节点树，避免引用不一致）
-        const root = parseHTML(state.html);
-        animateGacha(root);
-        const lay = layout(root, maxW);
+        // 性能：html 未变时复用 parse 树与布局；仅抽奖动画期间每帧重布局（进度条宽度变化）
+        const animating = !!(state.openedAt && !state.gachaDone);
+        let root, lay;
+        if (state.html === _cacheHtml && _cacheRoot) {
+            root = _cacheRoot;
+            if (animating) {
+                animateGacha(root);
+                lay = layout(root, maxW);
+                _cacheLayout = lay;
+            } else {
+                lay = _cacheLayout;
+            }
+        } else {
+            root = parseHTML(state.html);
+            animateGacha(root);
+            lay = layout(root, maxW);
+            _cacheHtml = state.html;
+            _cacheRoot = root;
+            _cacheLayout = lay;
+        }
         resultLayout = lay;
         const h = Math.min(lay.height, R.SCREEN_H - 120);
         const x = (R.SCREEN_W - maxW) / 2;
