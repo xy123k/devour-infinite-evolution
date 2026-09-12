@@ -5018,6 +5018,8 @@ const game = {
     // 玩家确认进入战斗
     enterBattle() {
         if (!this.pendingEnemy) return;
+        // Canvas 化主界面：复位探索状态
+        this._mainAreaState = 'explore';
         document.getElementById('encounterArea').style.display = 'none';
         this.startBattle(this.pendingEnemy);
         this.pendingEnemy = null;
@@ -5098,9 +5100,13 @@ const game = {
         this.battleEnding = false;
         this.currentEnemy = enemy;
         this.battleLog = [];
-        // 清空战斗日志DOM元素
-        const logDiv = document.getElementById('battleLog');
-        if (logDiv) logDiv.innerHTML = '';
+        // Canvas 化战斗界面：battleLog 由渲染器直接读取
+        const canvasBattle = typeof Render !== 'undefined' && Render.ScreenManager && Render.ScreenManager.screens['battleScreen'];
+        if (!canvasBattle) {
+            // 清空战斗日志DOM元素
+            const logDiv = document.getElementById('battleLog');
+            if (logDiv) logDiv.innerHTML = '';
+        }
         this.clearStatuses(this.player);
         this.clearStatuses(enemy);
         this.player.skillCooldowns = {};
@@ -5140,7 +5146,9 @@ const game = {
         this.showScreen('battleScreen');
         const map = this.getCurrentMap();
         const envName = envEff ? ` | 环境：${envEff.name}` : '';
-        document.getElementById('battleFloorInfo').innerText = `${map ? map.name : ''} · 第 ${this.currentLayer} 层${envName}`;
+        if (!this._isCanvasScreen('battleScreen')) {
+            document.getElementById('battleFloorInfo').innerText = `${map ? map.name : ''} · 第 ${this.currentLayer} 层${envName}`;
+        }
         if (envEff) this.appendBattleLog(`【环境法则】${envEff.name}：${envEff.desc}`, 'log-info');
         this.appendBattleLog(`遭遇了 ${enemy.name}！`, 'log-info');
         if (enemy.description) this.appendBattleLog(enemy.description, 'log-info');
@@ -5174,24 +5182,33 @@ const game = {
         }
 
         this.refreshBattleUI();
-        // 快速狩猎：玩家攻击力 > 敌人最大生命 × 1.5 时显示
-        const quickBtn = document.getElementById('quickHuntBtn');
-        if (quickBtn) {
-            if (this.player.attack > enemy.stats.maxHp * 1.5 && enemy.type !== 'boss') {
-                quickBtn.style.display = 'block';
-            } else {
-                quickBtn.style.display = 'none';
+        // Canvas 化战斗界面：快速狩猎按钮与敌人回合按钮禁用由渲染器处理
+        if (!this._isCanvasScreen('battleScreen')) {
+            // 快速狩猎：玩家攻击力 > 敌人最大生命 × 1.5 时显示
+            const quickBtn = document.getElementById('quickHuntBtn');
+            if (quickBtn) {
+                if (this.player.attack > enemy.stats.maxHp * 1.5 && enemy.type !== 'boss') {
+                    quickBtn.style.display = 'block';
+                } else {
+                    quickBtn.style.display = 'none';
+                }
             }
-        }
-        if (!this.playerTurn) {
-            document.querySelectorAll('#battleActions button').forEach(b => b.disabled = true);
-            setTimeout(() => this.enemyTurn(), this.getBattleDelay(500));
+            if (!this.playerTurn) {
+                document.querySelectorAll('#battleActions button').forEach(b => b.disabled = true);
+                setTimeout(() => this.enemyTurn(), this.getBattleDelay(500));
+            }
+        } else {
+            if (!this.playerTurn) {
+                setTimeout(() => this.enemyTurn(), this.getBattleDelay(500));
+            }
         }
     },
 
     refreshBattleUI() {
         const e = this.currentEnemy;
         const p = this.player;
+        // Canvas 化战斗界面：渲染器每帧直接读取 game 状态
+        if (this._isCanvasScreen('battleScreen')) return;
         document.getElementById('enemyName').innerText = e.name + (e.type === 'boss' ? '（首领）' : '');
         document.getElementById('enemyHpFill').style.width = Math.max(0, e.stats.hp/e.stats.maxHp*100) + '%';
         // HP条数值显示
@@ -5239,6 +5256,8 @@ const game = {
 
     appendBattleLog(text, className='') {
         this.battleLog.push({text, className});
+        // Canvas 化战斗界面：渲染器直接读 battleLog
+        if (this._isCanvasScreen('battleScreen')) return;
         const logDiv = document.getElementById('battleLog');
         const p = document.createElement('p');
         p.className = className;
