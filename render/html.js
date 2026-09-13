@@ -196,6 +196,40 @@
         result.nodes.push(item);
     }
 
+    // flex 布局辅助：无 flex 声明的子项按内容自然宽度（修复：图标/标签不再被平分整行而撑爆/截断）
+    function naturalWidth(node) {
+        const pad = paddingOf(node);
+        const ml = parseFloat(node.style['margin-left'] || '0') || 0;
+        const mr = parseFloat(node.style['margin-right'] || '0') || 0;
+        function textW(t, fs) {
+            try { R.ctx.font = fs + 'px "PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif'; } catch (e) {}
+            return R.ctx.measureText(t).width;
+        }
+        let tw = 0;
+        (function walk(n, parentFs) {
+            if (!n) return;
+            n.style = n.style || {};
+            const fs = fontSizeOf(n, parentFs);
+            if (n.tag === '#text') {
+                const t = n.text || '';
+                if (t.trim()) tw = Math.max(tw, textW(t, fs));
+                return;
+            }
+            if (n.tag === 'svgtext') {
+                const t = n.text || '';
+                if (n.svg) { const size = svgSize(n.svg, fs); tw = Math.max(tw, size.w + 5 + textW(t, fs)); }
+                else tw = Math.max(tw, textW(t, fs));
+                return;
+            }
+            if (n.tag === 'svg') {
+                tw = Math.max(tw, svgSize(n, fs).w);
+                return;
+            }
+            (n.children || []).forEach(function (c) { walk(c, fs); });
+        })(node, fontSizeOf(node, 13));
+        return tw + pad.left + pad.right + ml + mr;
+    }
+
     function layoutBlock(node, x, y, w, result) {
         node.style = node.style || {};
         node.attrs = node.attrs || {};
@@ -254,23 +288,38 @@
             const gap = parseFloat(node.style.gap || '0') || 0;
             node.children.forEach(function (cc) { cc.style = cc.style || {}; cc.attrs = cc.attrs || {}; });
             const items = node.children.filter(function (c) { return !(c.tag === '#text' && !c.text.trim()); });
-            const flexCount = items.filter(function (c) { return c.style.flex || c.style['flex:1'] || c.style.flex === '1'; }).length;
-            const fixedTotal = items.reduce(function (sum, c) { const f = c.style.flex; if (f && f !== '1') return sum + parseFloat(f); return sum; }, 0);
-            const autoW = (innerW - (items.length - 1) * gap - fixedTotal) / Math.max(1, flexCount || items.length);
+            // 仅显式 flex:1 的子项平分剩余空间；数值 flex 按比例；无 flex 按内容自然宽度（修复：图标/标签不再撑满整行）
+            const flexOnes = items.filter(function (c) { return c.style.flex === '1' || c.style['flex:1']; });
+            const flexNums = items.filter(function (c) { return c.style.flex && c.style.flex !== '1'; });
+            const naturals = items.filter(function (c) { return !c.style.flex; });
+            const fixedTotal = flexNums.reduce(function (sum, c) { return sum + (parseFloat(c.style.flex) || 0); }, 0);
+            const naturalTotal = naturals.reduce(function (sum, c) { return sum + naturalWidth(c); }, 0);
+            const gapTotal = (items.length - 1) * gap;
+            const remain = Math.max(0, innerW - naturalTotal - fixedTotal - gapTotal);
+            const flexW = remain / Math.max(1, flexOnes.length);
             let cx = x + pad.left;
+            let rowY = cursorY;
             let maxH = 0;
             items.forEach(function (child) {
-                let cw = autoW;
-                if (child.style.flex && child.style.flex !== '1') cw = parseFloat(child.style.flex) || autoW;
+                let cw;
+                if (child.style.flex === '1' || child.style['flex:1']) cw = flexW;
+                else if (child.style.flex) cw = parseFloat(child.style.flex) || flexW;
+                else cw = naturalWidth(child);
                 if (child.style.width) { const v = child.style.width; const n = parseFloat(v); if (!isNaN(n)) cw = (v.indexOf('%') >= 0) ? innerW * n / 100 : n; }
                 if (child.style['min-width']) { const n = parseFloat(child.style['min-width']); if (!isNaN(n)) cw = Math.max(cw, n); }
-                const ch = layoutBlock(child, cx, cursorY, cw, result);
-                maxH = Math.max(maxH, ch - cursorY);
+                // flex-wrap：放不下则换行（行首不强制换行，超宽内容允许溢出）
+                if (cx + cw > x + w - pad.right && cx > x + pad.left) {
+                    rowY += maxH + gap;
+                    maxH = 0;
+                    cx = x + pad.left;
+                }
+                const ch = layoutBlock(child, cx, rowY, cw, result);
+                maxH = Math.max(maxH, ch - rowY);
                 cx += cw + gap;
             });
-            const h = maxH + pad.bottom + marginBottom(node);
+            const h = (rowY - cursorY) + maxH + pad.bottom + marginBottom(node);
             pushItem(node, x, y, w, h, result);
-            return cursorY + h;
+            return rowY + maxH + pad.bottom + marginBottom(node);
         }
 
         if (grid) {
@@ -757,6 +806,8 @@
         state.popScrollMax = 0;
         setNavInteractive(false);
         Input.unregisterAllButtons();
+        // 打开弹窗时强制关闭 tooltip，避免叠层残留（P3-x）
+        try { hideTooltip(); } catch (e) {}
         // 延迟到下一帧绘制时布局（需要 ctx 测量）
     }
 

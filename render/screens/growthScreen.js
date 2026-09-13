@@ -153,7 +153,10 @@
             text: '🧩 碎片管理（标签专属碎片合成/兑换）', fontSize: 11, bg: t.info, color: '#ffffff',
             onTap: function () { try { game.openFragmentManager(); } catch (e) {} }
         });
-        y += 40;
+        y += 34;
+        // 天赋进化说明（DOM 原版 fragmentsDisplay 尾部提示）
+        R.drawText('天赋进化：有进化路线的天赋可在图鉴中点击"进化"按钮，消耗1个该天赋+高阶碎片进化成指定高阶天赋', x + 8, y, { fontSize: 10, color: t.warning, maxWidth: w - 16 });
+        y += 24;
 
         // 进化抉择
         if (game.storyData && game.storyData.evolutionChoices) {

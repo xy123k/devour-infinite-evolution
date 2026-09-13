@@ -542,7 +542,7 @@
         R.ctx.translate(0, -_scrollY);
         if (window.Input && Input.setScrollOffset) Input.setScrollOffset(_scrollY);
 
-        R.drawText('👤 角色', PX + MAX_W / 2, 24, { fontSize: 18, color: t.textPrimary, align: 'center', bold: true });
+        R.drawText('👤 人物状态', PX + MAX_W / 2, 24, { fontSize: 18, color: t.textPrimary, align: 'center', bold: true });
         R.drawButton({ id: 'charBack', x: PX + 12, y: 10, w: 74, h: 28, text: '← 返回', fontSize: 12, bg: t.bgCard, color: t.textSecondary, border: t.borderSoft, onTap: function () { try { game.goBack(); } catch (e) {} } });
         drawTabs(52);
 

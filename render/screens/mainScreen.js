@@ -107,6 +107,9 @@
         R.drawRect(PX, y, MAX_W, 1, { fill: t.borderSoft });
 
         let yy = y + 12;
+        // 玩家信息标题（DOM 原版 h3 对齐）
+        R.drawText('玩家信息', x, yy, { fontSize: 14, color: t.textPrimary, bold: true });
+        yy += 22;
         // 行1：HP / 攻击 / 防御
         R.drawText('❤ ' + p.hp + '/' + p.maxHp, x, yy, { fontSize: 16, color: t.danger, bold: true });
         R.drawText('⚔ ' + Math.floor(p.attack), x + w / 2, yy, { fontSize: 15, color: t.orange, bold: true });
@@ -114,15 +117,15 @@
         // 注册 tooltip
         bindStatTooltip('❤', 'hp', x, yy, w / 2, 20);
         yy += 24;
-        // 行2：暴击/命中/闪避/先手
+        // 行2：暴击/命中/闪避/先手（DOM 原版：基础命中/闪避（基础））
         R.drawText('暴击 ' + p.crit + '%', x, yy, { fontSize: 13, color: t.textMuted });
-        R.drawText('命中 ' + p.hit + '%', x + w * 0.38, yy, { fontSize: 13, color: t.textMuted });
-        R.drawText('闪避 ' + (p.dodgeRate || 0) + '%', x + w * 0.62, yy, { fontSize: 13, color: t.textMuted });
+        R.drawText('基础命中 ' + p.hit + '%', x + w * 0.36, yy, { fontSize: 13, color: t.textMuted });
+        R.drawText('闪避 ' + (p.dodgeRate || 0) + '%（基础）', x + w * 0.58, yy, { fontSize: 13, color: t.textMuted });
         R.drawText('先手 ' + p.speed, x + w, yy, { fontSize: 13, color: t.textMuted, align: 'right' });
-        bindStatTooltip('', 'crit', x, yy, w * 0.38, 20);
-        bindStatTooltip('', 'hit', x + w * 0.38, yy, w * 0.24, 20);
-        bindStatTooltip('', 'dodgeRate', x + w * 0.62, yy, w * 0.22, 20);
-        bindStatTooltip('', 'speed', x + w * 0.84, yy, w * 0.16, 20);
+        bindStatTooltip('', 'crit', x, yy, w * 0.36, 20);
+        bindStatTooltip('', 'hit', x + w * 0.36, yy, w * 0.22, 20);
+        bindStatTooltip('', 'dodgeRate', x + w * 0.58, yy, w * 0.24, 20);
+        bindStatTooltip('', 'speed', x + w * 0.82, yy, w * 0.18, 20);
         yy += 22;
         // 行3：暴伤 + 提示
         R.drawText('暴伤 ' + p.critDamage + '%', x, yy, { fontSize: 12, color: t.textMuted });
@@ -131,7 +134,7 @@
         yy += 20;
         // 行4：等级/精华/天赋
         R.drawText(p.level + '级 (' + p.exp + '/' + p.expToNext + ')', x, yy, { fontSize: 13, color: t.textFaint });
-        R.drawText('精华 ' + p.gold, x + w / 2, yy, { fontSize: 13, color: t.textFaint });
+        R.drawText('基因精华 ' + p.gold, x + w / 2, yy, { fontSize: 13, color: t.textFaint });
         R.drawText('天赋 ' + (p.equippedTalents || []).length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 0), x + w, yy, { fontSize: 13, color: t.textFaint, align: 'right' });
         bindStatTooltip('', 'level', x, yy, w * 0.3, 20);
         bindStatTooltip('', 'essence', x + w * 0.3, yy, w * 0.3, 20);
@@ -502,6 +505,8 @@
             onTap: (function (yy) {
                 return function () {
                     _moreOpen = !_moreOpen;
+                    // 展开菜单时关闭 tooltip，避免遮挡菜单项（P3-x）
+                    try { if (game && game.hideTooltip) game.hideTooltip(); } catch (e) {}
                     if (_moreOpen) {
                         const areaH = 4 * (44 + 8) + 10;
                         const menuBottom = yy + h + areaH - _scrollY; // 菜单底部（屏幕坐标，yy 为未滚动坐标）

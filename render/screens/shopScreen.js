@@ -133,19 +133,24 @@
             const limit = item.limitPerRun || 99;
             const purchased = (game.shopPurchaseCount && game.shopPurchaseCount[item.id]) || 0;
             const remaining = limit - purchased;
+            // 游商 8 折：显示与实扣一致（DOM 原版 displayPrice）
+            const displayPrice = game.merchantMode ? Math.floor(price * 0.8) : price;
             let canBuy = remaining > 0;
-            if (currency === 'gold') canBuy = canBuy && game.player.gold >= price;
-            else if (currency === 'essence') canBuy = canBuy && (game.permanent.essence || 0) >= price;
+            if (currency === 'gold') canBuy = canBuy && game.player.gold >= displayPrice;
+            else if (currency === 'essence') canBuy = canBuy && (game.permanent.essence || 0) >= displayPrice;
             else {
                 const q = parseInt(currency.replace('fragments_', ''), 10);
-                canBuy = canBuy && (game.permanent.universalFragments[q] || 0) >= price;
+                canBuy = canBuy && (game.permanent.universalFragments[q] || 0) >= displayPrice;
             }
             const lines = [];
             lines.push(item.name + (remaining <= 0 ? '（已售罄）' : ''));
             if (item.description) lines.push(stripHtml(item.description));
             const eff = effectText(item, game);
             if (eff) lines.push(eff);
-            lines.push('价格：' + price + ' ' + currName + '（本局剩余 ' + remaining + '）');
+            let priceLine = (game.merchantMode && displayPrice !== price) ? '8折 原价' + price + '→' + displayPrice : String(displayPrice);
+            priceLine += ' ' + currName;
+            if (limit < 99) priceLine += ' · 每局限购' + limit + '个，剩' + remaining + '个';
+            lines.push(priceLine);
             const cardH = 26 + lines.length * 16 + 8;
             box(x, y, w, cardH, canBuy ? t.bgSecondary : t.bgPrimary, 8);
             if (!canBuy) R.ctx.globalAlpha = 0.55;

@@ -206,6 +206,12 @@
             const st = hitList(x, y);
             _hitListId = st ? st.id : null;
             if (!_hitListId) {
+                // 点击空白/非按钮区域：关闭 tooltip（P3-x）
+                try {
+                    if (window.Render && window.Render.Tooltip && window.Render.Tooltip.isVisible && window.Render.Tooltip.isVisible()) {
+                        window.Render.Tooltip.hide();
+                    }
+                } catch (e) {}
                 // P3-4/P3-8：弹窗内容超界时可拖拽滚动（弹窗可视区内、未命中内容按钮）
                 if (_popScroll && _popScroll.max() > 0
                     && x >= _popScroll.x && x <= _popScroll.x + _popScroll.w

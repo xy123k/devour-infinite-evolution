@@ -49,6 +49,8 @@
         if (screens[screenId]) {
             // ---- canvas 模式 ----
             hideDomScreens();
+            // 切换界面时关闭 tooltip，防止残留叠层（P3-x）
+            try { if (window.Render && window.Render.Tooltip) window.Render.Tooltip.hide(); } catch (e) {}
             // 清空按钮/列表注册，防止上个界面的残留
             if (window.Input && window.Input.unregisterAllButtons) window.Input.unregisterAllButtons();
             // 清空页面滚动与滚动补偿（各界面每帧自行注册）

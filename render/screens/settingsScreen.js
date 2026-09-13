@@ -63,13 +63,13 @@
         iy += 26;
         const hw = (w - 30) / 2;
         toggleBtn({ id: 'setEventDetail', t: t, x: x + 8, y: iy, w: hw, h: 34, text: '显示具体数值', selected: s.eventDetail, onTap: function () { try { game.toggleEventDetail(true); } catch (e) {} } });
-        toggleBtn({ id: 'setEventHide', t: t, x: x + 16 + hw, y: iy, w: hw, h: 34, text: '隐藏数值', selected: !s.eventDetail, onTap: function () { try { game.toggleEventDetail(false); } catch (e) {} } });
+        toggleBtn({ id: 'setEventHide', t: t, x: x + 16 + hw, y: iy, w: hw, h: 34, text: '隐藏数值（模糊描述）', selected: !s.eventDetail, onTap: function () { try { game.toggleEventDetail(false); } catch (e) {} } });
         iy += 44;
         R.drawText('战斗速度', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
         iy += 26;
         const sw = (w - 30 - 16) / 3;
         const speeds = [
-            { k: 'slow', label: '慢速 0.5x' }, { k: 'normal', label: '正常 1.0x' }, { k: 'fast', label: '快速 2.0x' }
+            { k: 'slow', label: '慢速 0.5x速度' }, { k: 'normal', label: '正常 1.0x速度' }, { k: 'fast', label: '快速 2.0x速度' }
         ];
         speeds.forEach(function (sp, i) {
             toggleBtn({ id: 'setSpeed_' + sp.k, t: t, x: x + 8 + i * (sw + 8), y: iy, w: sw, h: 34, text: sp.label, fontSize: 12, selected: s.battleSpeed === sp.k, onTap: (function (k) { return function () { try { game.setBattleSpeed(k); } catch (e) {} }; })(sp.k) });
@@ -83,7 +83,7 @@
         y = sectionTitle(y, '音频设置');
         box(x, y, w, 78, t.bgCard, 10);
         R.drawText('音效', x + 8, y + 22, { fontSize: 13, color: t.textMuted });
-        toggleBtn({ id: 'setSfx', t: t, x: x + w - 70, y: y + 12, w: 62, h: 30, text: s.sfx ? '开启' : '关闭', selected: s.sfx, onTap: function () { try { game.toggleSfx(); } catch (e) {} } });
+        toggleBtn({ id: 'setSfx', t: t, x: x + w - 70, y: y + 12, w: 62, h: 30, text: (s.sfx !== false) ? '开启' : '关闭', selected: s.sfx !== false, onTap: function () { try { game.toggleSfx(); } catch (e) {} } });
         R.drawText('背景音乐功能即将上线', x + 8, y + 62, { fontSize: 11, color: t.textFaint });
         y += 88;
 
@@ -92,7 +92,7 @@
         box(x, y, w, 188, t.bgCard, 10);
         iy = y + 12;
         R.drawText('显示伤害数字', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
-        toggleBtn({ id: 'setDamageNums', t: t, x: x + w - 70, y: iy, w: 62, h: 30, text: s.damageNumbers ? '开启' : '关闭', selected: s.damageNumbers, onTap: function () { try { game.toggleDamageNumbers(); } catch (e) {} } });
+        toggleBtn({ id: 'setDamageNums', t: t, x: x + w - 70, y: iy, w: 62, h: 30, text: (s.damageNumbers !== false) ? '开启' : '关闭', selected: s.damageNumbers !== false, onTap: function () { try { game.toggleDamageNumbers(); } catch (e) {} } });
         iy += 40;
         R.drawText('简化战斗日志', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
         toggleBtn({ id: 'setSimpleLog', t: t, x: x + w - 70, y: iy, w: 62, h: 30, text: s.simpleLog ? '开启' : '关闭', selected: s.simpleLog, onTap: function () { try { game.toggleSimpleLog(); } catch (e) {} } });

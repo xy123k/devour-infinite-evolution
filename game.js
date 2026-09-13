@@ -1327,6 +1327,18 @@ const game = {
         storage.set(user.saveKey(), JSON.stringify(this.permanent));
     },
 
+    // Canvas 版 tooltip：转发到渲染层 Render.Tooltip（DOM 原版 showTooltip/hideTooltip 的迁移）
+    showTooltip(key) {
+        try {
+            if (typeof Render !== 'undefined' && Render.Tooltip) Render.Tooltip.show(key);
+        } catch (e) {}
+    },
+    hideTooltip() {
+        try {
+            if (typeof Render !== 'undefined' && Render.Tooltip) Render.Tooltip.hide();
+        } catch (e) {}
+    },
+
     // ========== 成就系统 ==========
     achievements: [
         {id: 'first_battle', name: '初出茅庐', desc: '完成第一次战斗', category: '战斗', reward: {talentPoints: 2}, icon: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"14.5 17.5 3 6 3 3 6 3 17.5 14.5\"/><line x1=\"13\" y1=\"19\" x2=\"19\" y2=\"13\"/><line x1=\"16\" y1=\"16\" x2=\"20\" y2=\"20\"/><line x1=\"19\" y1=\"21\" x2=\"21\" y2=\"19\"/></svg>'},
