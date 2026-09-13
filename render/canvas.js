@@ -292,8 +292,26 @@
             // 按空格分词
             const words = para.split(' ');
             let line = '';
+            // 首词超宽判定：中文长句无空格时首个词即整句，必须按字符硬断（否则整行溢出）
+            let firstWord = true;
             for (let i = 0; i < words.length; i++) {
                 const word = words[i];
+                if (firstWord && measureText(word, fontSize, bold) > maxWidth) {
+                    // 首词即超宽：逐字符硬断
+                    let chunk = '';
+                    for (const ch of word) {
+                        if (measureText(chunk + ch, fontSize, bold) <= maxWidth) {
+                            chunk += ch;
+                        } else {
+                            if (chunk) lines.push(chunk);
+                            chunk = ch;
+                        }
+                    }
+                    line = chunk;
+                    firstWord = false;
+                    continue;
+                }
+                firstWord = false;
                 const test = line ? line + ' ' + word : word;
                 if (measureText(test, fontSize, bold) <= maxWidth || !line) {
                     line = test;
@@ -307,7 +325,7 @@
                             if (measureText(chunk + ch, fontSize, bold) <= maxWidth) {
                                 chunk += ch;
                             } else {
-                                lines.push(chunk);
+                                if (chunk) lines.push(chunk);
                                 chunk = ch;
                             }
                         }
@@ -457,20 +475,35 @@
             lineWidth: opt.borderWidth || 1,
             radius: radius
         });
-        // 主文字
+        // 主文字（支持左侧图标，DOM 原版样式：icon + 文字并排居中）
         if (opt.text != null) {
             const fs = opt.fontSize || 15;
+            const iconSize = opt.iconSize || (opt.subText ? 14 : 16);
+            let textX = opt.x + opt.w / 2;
+            let iconX = null;
+            let textAlign = 'center';
+            if (opt.icon) {
+                const tw = measureText(opt.text, fs, true);
+                const total = tw + 8 + iconSize;
+                const startX = opt.x + (opt.w - total) / 2;
+                iconX = startX;
+                textX = startX + iconSize + 8;
+                textAlign = 'left';
+            }
             if (opt.subText) {
-                drawText(opt.text, opt.x + opt.w / 2, opt.y + opt.h / 2 - (opt.fontSize || 15) * 0.45, {
-                    fontSize: fs, color: color, align: 'center', baseline: 'middle', bold: true
+                drawText(opt.text, textX, opt.y + opt.h / 2 - (opt.fontSize || 15) * 0.45, {
+                    fontSize: fs, color: color, align: textAlign, baseline: 'middle', bold: true
                 });
-                drawText(opt.subText, opt.x + opt.w / 2, opt.y + opt.h / 2 + (opt.fontSize || 15) * 0.55, {
-                    fontSize: Math.max(10, fs - 3), color: color, align: 'center', baseline: 'middle'
+                drawText(opt.subText, textX, opt.y + opt.h / 2 + (opt.fontSize || 15) * 0.55, {
+                    fontSize: Math.max(10, fs - 3), color: color, align: textAlign, baseline: 'middle'
                 });
             } else {
-                drawText(opt.text, opt.x + opt.w / 2, opt.y + opt.h / 2, {
-                    fontSize: fs, color: color, align: 'center', baseline: 'middle', bold: true
+                drawText(opt.text, textX, opt.y + opt.h / 2, {
+                    fontSize: fs, color: color, align: textAlign, baseline: 'middle', bold: true
                 });
+            }
+            if (iconX != null) {
+                drawIcon(opt.icon, iconX, opt.y + (opt.h - iconSize) / 2, iconSize, color);
             }
         }
         return id;

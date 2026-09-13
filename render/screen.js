@@ -51,6 +51,9 @@
             hideDomScreens();
             // 清空按钮/列表注册，防止上个界面的残留
             if (window.Input && window.Input.unregisterAllButtons) window.Input.unregisterAllButtons();
+            // 清空页面滚动与滚动补偿（各界面每帧自行注册）
+            if (window.Input && window.Input.setScrollOffset) window.Input.setScrollOffset(0);
+            if (window.Input && window.Input.setPageScroll) window.Input.setPageScroll(null);
             current = screenId;
             currentMode = 'canvas';
             const r = screens[screenId];

@@ -457,7 +457,7 @@
         const game = g();
         R.drawButton({
             id: 'exploreBtn', x: PX + 14, y: y, w: MAX_W - 28, h: 54,
-            text: '⚑ 探索前进', fontSize: 18, bg: t.success, color: '#ffffff',
+            text: '探索前进', icon: 'map', fontSize: 18, bg: t.success, color: '#ffffff',
             onTap: function () { try { game.goExplore(); } catch (e) {} }
         });
         return 66;
@@ -471,17 +471,17 @@
         const h = 50;
         const x0 = PX + 14;
         const feats = [
-            { id: 'feat_talent', text: '天赋', onTap: function () { game.openInRunTalentPanel(); } },
-            { id: 'feat_status', text: '状态', onTap: function () { game.openStatus(); } },
-            { id: 'feat_inv', text: '背包', onTap: function () { game.openInventory(); } },
-            { id: 'feat_sym', text: '共生体', onTap: function () { game.openSymbiontPanel(); } }
+            { id: 'feat_talent', text: '天赋', icon: 'seedling', onTap: function () { game.openInRunTalentPanel(); } },
+            { id: 'feat_status', text: '状态', icon: 'user', onTap: function () { game.openStatus(); } },
+            { id: 'feat_inv', text: '背包', icon: 'bag', onTap: function () { game.openInventory(); } },
+            { id: 'feat_sym', text: '共生体', icon: 'target', onTap: function () { game.openSymbiontPanel(); } }
         ];
         box(PX, y, MAX_W, h * 2 + gap + 20, t.bgCard, 12);
         feats.forEach(function (f, i) {
             const col = i % 2, row = Math.floor(i / 2);
             R.drawButton({
                 id: f.id, x: x0 + col * (w + gap), y: y + 10 + row * (h + gap), w: w, h: h,
-                text: f.text, fontSize: 15, bg: t.bgHover, color: t.textPrimary, border: t.borderSoft,
+                text: f.text, icon: f.icon, fontSize: 15, bg: t.bgHover, color: t.textPrimary, border: t.borderSoft,
                 onTap: f.onTap
             });
         });
@@ -498,7 +498,7 @@
         R.drawButton({
             id: 'moreToggle', x: PX, y: y, w: MAX_W, h: h,
             text: '更多功能 ' + (_moreOpen ? '▲' : '▼'),
-            fontSize: 15, bg: t.borderPrimary, color: t.textPrimary,
+            icon: 'bolt', iconSize: 15, fontSize: 15, bg: t.borderPrimary, color: t.textPrimary,
             onTap: (function (yy) {
                 return function () {
                     _moreOpen = !_moreOpen;
@@ -517,14 +517,14 @@
             const w = (MAX_W - 28 - gap) / 2;
             const bh = 44;
             const items = [
-                { id: 'more_guide', text: '效果图鉴', onTap: function () { game.openStatusGuide(); } },
-                { id: 'more_shop', text: '商店', onTap: function () { game.openShop(); } },
-                { id: 'more_tcodex', text: '天赋图鉴', onTap: function () { game.openTalentCodex(); } },
-                { id: 'more_scodex', text: '共生体图鉴', onTap: function () { game.openSymbiontCodex(); } },
-                { id: 'more_achv', text: '成就', onTap: function () { game.openAchievementPanel(); } },
-                { id: 'more_task', text: '任务', onTap: function () { game.openDailyTaskPanel(); } },
-                { id: 'more_rank', text: '排行', onTap: function () { game.openLeaderboardPanel(); } },
-                { id: 'more_set', text: '设置', onTap: function () { game.openSettings(); } }
+                { id: 'more_guide', text: '效果图鉴', icon: 'book', onTap: function () { game.openStatusGuide(); } },
+                { id: 'more_shop', text: '商店', icon: 'shop', onTap: function () { game.openShop(); } },
+                { id: 'more_tcodex', text: '天赋图鉴', icon: 'list', onTap: function () { game.openTalentCodex(); } },
+                { id: 'more_scodex', text: '共生体图鉴', icon: 'dna', onTap: function () { game.openSymbiontCodex(); } },
+                { id: 'more_achv', text: '成就', icon: 'trophy', onTap: function () { game.openAchievementPanel(); } },
+                { id: 'more_task', text: '任务', icon: 'clipboard', onTap: function () { game.openDailyTaskPanel(); } },
+                { id: 'more_rank', text: '排行', icon: 'trendUp', onTap: function () { game.openLeaderboardPanel(); } },
+                { id: 'more_set', text: '设置', icon: 'settings', onTap: function () { game.openSettings(); } }
             ];
             const rows = 4;
             const areaH = rows * (bh + gap) + 10;
@@ -533,7 +533,7 @@
                 const col = i % 2, row = Math.floor(i / 2);
                 R.drawButton({
                     id: it.id, x: PX + 14 + col * (w + gap), y: y + h + 8 + row * (bh + gap), w: w, h: bh,
-                    text: it.text, fontSize: 14, bg: t.bgHover, color: t.textPrimary,
+                    text: it.text, icon: it.icon, iconSize: 14, fontSize: 14, bg: t.bgHover, color: t.textPrimary,
                     onTap: it.onTap
                 });
             });
@@ -559,7 +559,7 @@
         if (blocked) {
             R.drawButton({
                 id: 'suicideBtn', x: PX + 14, y: y + 58, w: MAX_W - 28, h: 38,
-                text: '结束轮回（自杀）', fontSize: 14, bg: t.danger, color: '#ffffff',
+                text: '结束轮回（自杀）', icon: 'shield', iconSize: 14, fontSize: 14, bg: t.danger, color: '#ffffff',
                 onTap: function () { try { game.suicide(); } catch (e) {} }
             });
             R.drawText('轮回空间仅在死亡后可进入，当前探索进度将保留', PX + MAX_W / 2, y + 104, { fontSize: 11, color: t.textMuted, align: 'center' });
@@ -598,7 +598,7 @@
 
         _contentH = y;
         ctx.restore();
-        Input.setScrollOffset(0);
+        // 滚动偏移保持到下一帧（与其它界面一致），点击命中时由 Input 补偿
 
         // 滚动范围
         const maxScroll = Math.max(0, _contentH - R.SCREEN_H);
