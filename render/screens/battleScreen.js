@@ -161,10 +161,26 @@
         R.drawText(line1, x, y + 56, { fontSize: 11, color: t.textMuted, maxWidth: w });
         R.drawText(line2, x, y + 72, { fontSize: 11, color: t.textMuted, maxWidth: w });
 
-        // 状态
-        const statusText = game.formatStatuses ? stripHtml(game.formatStatuses(unit)) : '';
-        if (statusText && !game.battleEnding) {
-            R.drawText(statusText, x, y + 88, { fontSize: 11, color: t.purple, maxWidth: w });
+        // 状态（逐状态绘制 + tooltip，对齐 DOM 原版 status-tag）
+        let statusList = [];
+        try { statusList = (game.getStatuses && game.getStatuses(unit)) || []; } catch (e) {}
+        if (statusList.length && !game.battleEnding) {
+            const smap = { '中毒': 'poison', '灼烧': 'burn', '流血': 'bleed', '凋零': 'wither', '眩晕': 'stun', '束缚': 'stun', '麻痹': 'stun', '冻结': 'stun', '减速': 'slow', '沉默': 'silence' };
+            let cx = x;
+            statusList.forEach(function (s, i) {
+                const key = smap[s.name] || (s.type === 'buff' ? 'buff' : 'debuff');
+                const txt = s.name + '×' + s.stacks + '（' + s.duration + '回合）';
+                const tw = (R.ctx && R.ctx.measureText) ? Math.min(R.ctx.measureText(txt).width + 12, w - cx + x) : txt.length * 12;
+                const sc = s.type === 'dot' ? t.danger : (s.type === 'control' ? t.warning : (s.type === 'buff' ? t.success : t.purple));
+                R.drawText(txt, cx, y + 88, { fontSize: 11, color: sc, maxWidth: Math.max(40, w - (cx - x)) });
+                try {
+                    window.Input.registerButton({
+                        id: 'battleStatus_' + side + '_' + i, x: cx, y: y + 76, w: tw, h: 18,
+                        onTap: (function (k) { return function () { try { game.showTooltip(k); } catch (e) {} }; })(key)
+                    });
+                } catch (e) {}
+                cx += tw + 8;
+            });
         }
         return y + cardH + 8;
     }

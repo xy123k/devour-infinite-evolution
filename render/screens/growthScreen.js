@@ -40,6 +40,10 @@
         box(x, y, w, 40, t.bgCard, 10);
         R.drawText('前世记忆', x + 8, y + 13, { fontSize: 14, color: t.textPrimary, bold: true });
         R.drawText('可用前世记忆：' + (game.permanent.freePoints || 0), x + MAX_W / 2, y + 13, { fontSize: 12, color: t.warning, bold: true, align: 'center' });
+        // 前世记忆 tooltip（DOM 原版 freePoints）
+        try {
+            window.Input.registerButton({ id: 'growFreePoints', x: x + MAX_W / 2 - 80, y: y + 2, w: 160, h: 32, onTap: function () { try { game.showTooltip('freePoints'); } catch (e) {} } });
+        } catch (e) {}
         y += 46;
         const rows = [
             ['力量加成', '+' + b.strength + '（每点+2攻击）'], ['敏捷加成', '+' + b.agility + '（每点+1先手）'],
@@ -50,6 +54,10 @@
             box(x, y, w, 26, t.bgSecondary, 6);
             R.drawText(r[0], x + 8, y + 8, { fontSize: 12, color: t.textMuted });
             R.drawText(r[1], x + 150, y + 8, { fontSize: 12, color: t.textPrimary, maxWidth: w - 160 });
+            // 永久属性行 tooltip（DOM 原版 permanentStats）
+            try {
+                window.Input.registerButton({ id: 'growPerm_' + r[0], x: x, y: y, w: w, h: 26, onTap: function () { try { game.showTooltip('permanentStats'); } catch (e) {} } });
+            } catch (e) {}
             y += 30;
         });
         // 分配按钮
@@ -72,6 +80,10 @@
         box(x, y, w, 40, t.bgCard, 10);
         R.drawText('进化残留强化', x + 8, y + 13, { fontSize: 14, color: t.textPrimary, bold: true });
         R.drawText('💜 进化精粹：' + (game.permanent.essence || 0), x + MAX_W / 2, y + 13, { fontSize: 12, color: t.purple, bold: true, align: 'center' });
+        // 进化精粹 tooltip（DOM 原版 essence）
+        try {
+            window.Input.registerButton({ id: 'growEssence', x: x + MAX_W / 2 - 80, y: y + 2, w: 160, h: 32, onTap: function () { try { game.showTooltip('essence'); } catch (e) {} } });
+        } catch (e) {}
         y += 44;
         R.drawText('死亡时剩余基因精华30%转化（需击杀≥5敌人）', x + 8, y, { fontSize: 10, color: t.textFaint });
         y += 18;
@@ -128,6 +140,13 @@
         for (let q = 1; q <= 5; q++) {
             const label = QNAMES[q] + '：' + (game.permanent.universalFragments[q] || 0);
             R.drawText(label, fx, y, { fontSize: 12, color: t.quality ? (t.quality[QNAMES[q].toLowerCase()] || t.textSecondary) : t.textSecondary });
+            // 碎片 tooltip（DOM 原版 universalFragments）
+            try {
+                window.Input.registerButton({
+                    id: 'growFrag_' + q, x: fx, y: y - 12, w: (R.ctx && R.ctx.measureText) ? R.ctx.measureText(label).width + 8 : 64, h: 18,
+                    onTap: function () { try { game.showTooltip('universalFragments'); } catch (e) {} }
+                });
+            } catch (e) {}
             fx += R.ctx.measureText ? R.ctx.measureText(label).width + 14 : 80;
         }
         y += 22;

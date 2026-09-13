@@ -911,6 +911,19 @@
         drawNodesRecursive(root, lay, x, y - state.popScroll);
         R.ctx.restore();
 
+        // 技能名 tooltip 注册（data-skill-id，对齐 DOM 原版 showSkillTooltip）
+        // 文字基线在 it.y，向上扩 12px 使整行文字都可点（修复点击区偏下 miss）
+        lay.nodes.forEach(function (it) {
+            const sid = it.node && it.node.attrs && it.node.attrs['data-skill-id'];
+            if (!sid) return;
+            const bx = it.x + x, by = it.y + (y - state.popScroll) - 12, bh = Math.max(22, it.h + 12);
+            if (!insideClip(bx, by, it.w, bh)) return;
+            Input.registerButton({
+                id: 'popSkill_' + sid, x: bx, y: by, w: it.w, h: bh,
+                disabled: false, onTap: (function (id) { return function () { try { if (typeof game !== 'undefined') game.showSkillTooltip(id); } catch (e) {} }; })(sid)
+            });
+        });
+
         // 右上角关闭按钮 ×（P1-1）：点击关闭弹窗
         const cx = x + maxW + 10 - 14, cy = y - 10 + 14;
         R.ctx.strokeStyle = t.textMuted;
