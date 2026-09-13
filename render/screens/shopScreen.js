@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  render/screens/shopScreen.js — 阶段 3：商店界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
@@ -9,8 +9,12 @@
     const R = window.Render;
     const Input = window.Input;
     const g = function () { return (typeof game !== 'undefined') ? game : null; };
-    const MAX_W = Math.min(R.SCREEN_W, 520);
-    const PX = (R.SCREEN_W - MAX_W) / 2;
+    let MAX_W = Math.min(R.SCREEN_W, 520);
+    let PX = (R.SCREEN_W - MAX_W) / 2;
+    function refreshLayout() {
+        MAX_W = Math.min(R.SCREEN_W, 520);
+        PX = (R.SCREEN_W - MAX_W) / 2;
+    }
 
     function box(x, y, w, h, fill, radius) {
         R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
@@ -56,6 +60,7 @@
     }
 
     function render() {
+        refreshLayout();
         const game = g();
         if (!game || !game.data || !game.data.shop) return;
         const t = R.Theme.get();
@@ -144,9 +149,12 @@
             const cardH = 26 + lines.length * 16 + 8;
             box(x, y, w, cardH, canBuy ? t.bgSecondary : t.bgPrimary, 8);
             if (!canBuy) R.ctx.globalAlpha = 0.55;
+            // P2-2：商品图标（与 DOM 原版一致：item.icon 或回退 'box'，28px）
+            const ic = (item.icon && game.icons && game.icons[item.icon]) ? item.icon : 'box';
+            R.drawIcon(ic, x + 10, y + 10, 26, canBuy ? t.accent : t.textMuted);
             let iy = y + 10;
             lines.forEach(function (ln, i) {
-                R.drawText(ln, x + 10, iy, { fontSize: i === 0 ? 13 : 10, color: i === 0 ? t.textPrimary : (i === 1 ? t.textSecondary : (i === 2 ? t.accent : t.warning)), bold: i === 0, maxWidth: w - 96 });
+                R.drawText(ln, x + 44, iy, { fontSize: i === 0 ? 13 : 10, color: i === 0 ? t.textPrimary : (i === 1 ? t.textSecondary : (i === 2 ? t.accent : t.warning)), bold: i === 0, maxWidth: w - 130 });
                 iy += 16;
             });
             R.ctx.globalAlpha = 1;
@@ -170,10 +178,12 @@
     }
 
     function draw() {
+        refreshLayout();
         const game = g();
         if (!game || !game.data || !game.data.shop) return;
         R.ctx.save();
         R.ctx.translate(0, -_scrollY);
+        if (window.Input && Input.setScrollOffset) Input.setScrollOffset(_scrollY);
         render();
         R.ctx.restore();
     }

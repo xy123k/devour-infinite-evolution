@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  render/screens/inventoryScreen.js — 阶段 3：背包界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
@@ -9,8 +9,12 @@
     const R = window.Render;
     const Input = window.Input;
     const g = function () { return (typeof game !== 'undefined') ? game : null; };
-    const MAX_W = Math.min(R.SCREEN_W, 520);
-    const PX = (R.SCREEN_W - MAX_W) / 2;
+    let MAX_W = Math.min(R.SCREEN_W, 520);
+    let PX = (R.SCREEN_W - MAX_W) / 2;
+    function refreshLayout() {
+        MAX_W = Math.min(R.SCREEN_W, 520);
+        PX = (R.SCREEN_W - MAX_W) / 2;
+    }
 
     function box(x, y, w, h, fill, radius) {
         R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
@@ -49,6 +53,7 @@
     }
 
     function render() {
+        refreshLayout();
         const game = g();
         if (!game || !game.player) return;
         const t = R.Theme.get();
@@ -141,10 +146,12 @@
     }
 
     function draw() {
+        refreshLayout();
         const game = g();
         if (!game || !game.player) return;
         R.ctx.save();
         R.ctx.translate(0, -_scrollY);
+        if (window.Input && Input.setScrollOffset) Input.setScrollOffset(_scrollY);
         render();
         R.ctx.restore();
     }

@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  render/screens/deathScreen.js — 阶段 4：死亡结算界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
@@ -10,8 +10,12 @@
     const R = window.Render;
     const Input = window.Input;
     const g = function () { return (typeof game !== 'undefined') ? game : null; };
-    const MAX_W = Math.min(R.SCREEN_W, 520);
-    const PX = (R.SCREEN_W - MAX_W) / 2;
+    let MAX_W = Math.min(R.SCREEN_W, 520);
+    let PX = (R.SCREEN_W - MAX_W) / 2;
+    function refreshLayout() {
+        MAX_W = Math.min(R.SCREEN_W, 520);
+        PX = (R.SCREEN_W - MAX_W) / 2;
+    }
 
     function box(x, y, w, h, fill, radius) {
         R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
@@ -28,6 +32,7 @@
     function onShow() { _scrollY = 0; }
 
     function draw() {
+        refreshLayout();
         const game = g();
         if (!game || !game._deathUI) return;
         const t = R.Theme.get();
@@ -38,6 +43,7 @@
 
         R.ctx.save();
         R.ctx.translate(0, -_scrollY);
+        if (window.Input && Input.setScrollOffset) Input.setScrollOffset(_scrollY);
 
         R.drawText('☠ 你死了', PX + MAX_W / 2, 30, { fontSize: 22, color: t.danger, align: 'center', bold: true });
         let y = 52;

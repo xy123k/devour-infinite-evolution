@@ -13,8 +13,12 @@
     const R = window.Render;
     const Input = window.Input;
     const g = function () { return (typeof game !== 'undefined') ? game : null; };
-    const MAX_W = Math.min(R.SCREEN_W, 520);
-    const PX = (R.SCREEN_W - MAX_W) / 2;
+    let MAX_W = Math.min(R.SCREEN_W, 520);
+    let PX = (R.SCREEN_W - MAX_W) / 2;
+    function refreshLayout() {
+        MAX_W = Math.min(R.SCREEN_W, 520);
+        PX = (R.SCREEN_W - MAX_W) / 2;
+    }
 
     function box(x, y, w, h, fill, radius) {
         R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
@@ -234,6 +238,7 @@
     //  主渲染
     // ============================================================
     function render() {
+        refreshLayout();
         const game = g();
         if (!game || !game.player) return;
         const t = R.Theme.get();

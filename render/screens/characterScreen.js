@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  render/screens/characterScreen.js — 阶段 3：角色界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
@@ -11,8 +11,12 @@
     const R = window.Render;
     const Input = window.Input;
     const g = function () { return (typeof game !== 'undefined') ? game : null; };
-    const MAX_W = Math.min(R.SCREEN_W, 520);
-    const PX = (R.SCREEN_W - MAX_W) / 2;
+    let MAX_W = Math.min(R.SCREEN_W, 520);
+    let PX = (R.SCREEN_W - MAX_W) / 2;
+    function refreshLayout() {
+        MAX_W = Math.min(R.SCREEN_W, 520);
+        PX = (R.SCREEN_W - MAX_W) / 2;
+    }
 
     function box(x, y, w, h, fill, radius) {
         R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
@@ -54,6 +58,140 @@
                 onTap: (function (k) { return function () { try { game.setCharacterTab(k); } catch (e) {} }; })(tab.k)
             });
         });
+    }
+
+    // ============ 状态页 ============
+    // P3-1：槽位扩充区块（对照 DOM 原版角色状态页）
+    function renderSlotUpgrade(y) {
+        const game = g();
+        const t = R.Theme.get();
+        const x = PX + 12, w = MAX_W - 24;
+        const p = game.player;
+        const equippedTalents = p.equippedTalents || [];
+        let h = 40;
+
+        // 被动槽
+        const passiveSlots = game.getPassiveSlots ? game.getPassiveSlots() : 0;
+        const passiveAuto = game.getPassiveSlotAutoProgress ? game.getPassiveSlotAutoProgress() : null;
+        const passiveManual = game.getPassiveSlotManualProgress ? game.getPassiveSlotManualProgress() : null;
+        let passiveLines = [];
+        if (passiveAuto) {
+            if (passiveAuto.isMaxAuto) passiveLines.push('自动扩充：已达上限（' + passiveAuto.autoSlots + '/' + passiveAuto.maxAutoSlots + '）');
+            else passiveLines.push('自动扩充：已花天赋点' + passiveAuto.totalSpent + '/' + passiveAuto.nextAutoSlot + '（再花' + passiveAuto.remainingToNext + '点+1槽，上限' + passiveAuto.maxAutoSlots + '）');
+        }
+        if (passiveManual) {
+            if (passiveManual.isMaxManual) passiveLines.push('手动扩充已达上限（' + passiveManual.manualSlots + '/' + passiveManual.maxManualSlots + '）');
+            else passiveLines.push('手动扩充：消耗' + passiveManual.cost + '精粹（当前' + passiveManual.essence + '）');
+        }
+        h += 26 + passiveLines.length * 18 + 8;
+
+        // 技能槽
+        const activeSlots = game.getActiveSlots ? game.getActiveSlots() : 3;
+        const activeAuto = game.getActiveSlotAutoProgress ? game.getActiveSlotAutoProgress() : null;
+        const activeManual = game.getActiveSlotManualProgress ? game.getActiveSlotManualProgress() : null;
+        let activeLines = [];
+        if (activeAuto) {
+            if (activeAuto.isMaxAuto) activeLines.push('自动扩充：已达上限（' + activeAuto.autoSlots + '/' + activeAuto.maxAutoSlots + '）');
+            else activeLines.push('自动扩充：当前等级' + activeAuto.level + '/' + activeAuto.nextLevel + '（再升' + activeAuto.remainingToNext + '级+1槽，上限' + activeAuto.maxAutoSlots + '）');
+        }
+        activeLines.push('默认3个基础技能不占槽，始终可用');
+        if (activeManual) {
+            if (activeManual.isMaxManual) activeLines.push('手动扩充已达上限（' + activeManual.manualSlots + '/' + activeManual.maxManualSlots + '）');
+            else activeLines.push('手动扩充：消耗' + activeManual.cost + '精粹（当前' + activeManual.essence + '）');
+        }
+        h += 26 + activeLines.length * 18 + 8;
+
+        box(x, y, w, h, t.bgCard, 10);
+        R.drawText('槽位扩充', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
+        let iy = y + 36;
+        // 被动槽
+        R.drawText('天赋槽（被动）：' + equippedTalents.length + '/' + passiveSlots, x + 8, iy, { fontSize: 12, color: t.success, bold: true });
+        if (passiveAuto) R.drawText('初始4 + 自动' + passiveAuto.autoSlots + ' + 手动' + (passiveManual ? passiveManual.manualSlots : 0), x + w / 2, iy, { fontSize: 10, color: t.textFaint });
+        iy += 18;
+        passiveLines.forEach(function (ln) {
+            R.drawText(ln, x + 16, iy, { fontSize: 11, color: ln.indexOf('上限') >= 0 ? t.textMuted : t.textSecondary });
+            iy += 18;
+        });
+        // 手动扩充按钮
+        if (passiveManual && !passiveManual.isMaxManual) {
+            R.drawButton({
+                id: 'charExpandPassive', x: x + 8, y: iy, w: w - 16, h: 26,
+                text: '手动扩充天赋槽（消耗' + passiveManual.cost + '精粹）',
+                fontSize: 11, bg: passiveManual.canAfford ? t.success : t.textFaint, color: '#ffffff',
+                disabled: !passiveManual.canAfford,
+                onTap: function () { try { game.expandPassiveSlot(); } catch (e) {} }
+            });
+            iy += 34;
+        }
+        iy += 6;
+        // 技能槽
+        R.drawText('技能槽（主动）：' + activeSlots + '/6（可扩充）', x + 8, iy, { fontSize: 12, color: t.info, bold: true });
+        if (activeAuto) R.drawText('初始3 + 自动' + activeAuto.autoSlots + ' + 手动' + (activeManual ? activeManual.manualSlots : 0), x + w / 2, iy, { fontSize: 10, color: t.textFaint });
+        iy += 18;
+        activeLines.forEach(function (ln) {
+            R.drawText(ln, x + 16, iy, { fontSize: 11, color: ln.indexOf('上限') >= 0 || ln.indexOf('默认') >= 0 ? t.textMuted : t.textSecondary });
+            iy += 18;
+        });
+        if (activeManual && !activeManual.isMaxManual) {
+            R.drawButton({
+                id: 'charExpandActive', x: x + 8, y: iy, w: w - 16, h: 26,
+                text: '手动扩充技能槽（消耗' + activeManual.cost + '精粹）',
+                fontSize: 11, bg: activeManual.canAfford ? t.info : t.textFaint, color: '#ffffff',
+                disabled: !activeManual.canAfford,
+                onTap: function () { try { game.expandActiveSlot(); } catch (e) {} }
+            });
+            iy += 34;
+        }
+        return y + h + 10;
+    }
+
+    // P3-1：天赋套装区块（对照 DOM 原版角色状态页）
+    function renderTalentSets(y) {
+        const game = g();
+        const t = R.Theme.get();
+        const x = PX + 12, w = MAX_W - 24;
+        let progress = null;
+        try { progress = game.getTalentSetProgress ? game.getTalentSetProgress() : null; } catch (e) {}
+        const activeSets = (progress && progress.sets || []).filter(function (s) { return s.activeThresholds && s.activeThresholds.length > 0; });
+        const activeCross = (progress && progress.crossSets || []).filter(function (c) { return c.active; });
+        const activeCombos = (progress && progress.combos || []).filter(function (c) { return c.active; });
+        const sections = activeSets.length + activeCross.length + activeCombos.length;
+        const emptyH = sections === 0 ? 70 : activeSets.length * (40 + activeSets.reduce(function (a, s) { return a + (s.activeThresholds ? s.activeThresholds.length : 0) * 16; }, 0))
+            + activeCross.length * (44 + 16 * 1)
+            + activeCombos.length * (44 + 16 * 1) + 30;
+        const h = Math.max(emptyH, 60);
+        box(x, y, w, h, t.bgCard, 10);
+        R.drawText('天赋套装', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
+        let iy = y + 36;
+        if (sections === 0) {
+            R.drawText('暂无激活的天赋套装', x + 8, iy, { fontSize: 12, color: t.textMuted, bold: true });
+            R.drawText('装备同体系天赋可触发套装效果', x + 8, iy + 22, { fontSize: 11, color: t.textFaint });
+        } else {
+            activeSets.forEach(function (set) {
+                R.drawText('✓ ' + set.name + '（' + set.count + '件）', x + 8, iy, { fontSize: 12, color: t.success, bold: true });
+                iy += 18;
+                (set.activeThresholds || []).forEach(function (th) {
+                    R.drawText('    ' + th.count + '件：' + th.effect, x + 8, iy, { fontSize: 11, color: t.textSecondary });
+                    iy += 16;
+                });
+                iy += 4;
+            });
+            activeCross.forEach(function (c) {
+                const reqNames = (c.requires || []).map(function (tag) { return (game.tagNames && game.tagNames[tag]) || ('体系' + tag); }).join(' + ');
+                R.drawText('🔀 跨体系：' + c.name + '（' + reqNames + '）', x + 8, iy, { fontSize: 12, color: t.purple, bold: true });
+                iy += 18;
+                R.drawText('    ' + c.effect, x + 8, iy, { fontSize: 11, color: t.textSecondary });
+                iy += 20;
+            });
+            activeCombos.forEach(function (c) {
+                const reqNames = (c.requires || []).map(function (tag) { return (game.tagNames && game.tagNames[tag]) || ('体系' + tag); }).join(' + ');
+                R.drawText('🔗 联动：' + c.name + '（共生体+' + reqNames + '）', x + 8, iy, { fontSize: 12, color: t.warning, bold: true });
+                iy += 18;
+                R.drawText('    ' + c.effect, x + 8, iy, { fontSize: 11, color: t.textSecondary });
+                iy += 20;
+            });
+        }
+        return y + h + 10;
     }
 
     // ============ 状态页 ============
@@ -112,13 +250,14 @@
         }
         y += 118;
 
-        // 战斗属性
-        box(x, y, w, 96, t.bgCard, 10);
+        // 战斗属性（P3-1：补回"闪避率"）
+        box(x, y, w, 120, t.bgCard, 10);
         R.drawText('战斗属性（基础 + 永久成长）', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
         const bStats = [
             ['攻击', Math.floor(p.attack), t.orange], ['防御', Math.floor(p.defense * 10) / 10, t.info],
             ['暴击', p.crit + '%', t.warning], ['暴伤', p.critDamage + '%', t.danger],
-            ['命中', p.hit + '%', t.success], ['先手', p.speed, t.purple]
+            ['命中', p.hit + '%', t.success], ['闪避', (p.dodgeRate || 0) + '%', t.purple],
+            ['先手', p.speed, t.info]
         ];
         bStats.forEach(function (bs, i) {
             const cx = x + 8 + (i % 2) * (w / 2 - 8);
@@ -126,7 +265,12 @@
             R.drawText(bs[0] + '：', cx, cy, { fontSize: 12, color: t.textMuted });
             R.drawText(String(bs[1]), cx + 48, cy, { fontSize: 12, color: bs[2], bold: true });
         });
-        y += 104;
+        y += 128;
+
+        // P3-1：槽位扩充区块
+        y = renderSlotUpgrade(y);
+        // P3-1：天赋套装区块
+        y = renderTalentSets(y);
 
         // 状态效果
         const statusText = game.formatStatuses ? stripHtml(game.formatStatuses(p)) : '';
@@ -390,11 +534,13 @@
 
     // ============ 主渲染 ============
     function draw() {
+        refreshLayout();
         const game = g();
         if (!game || !game.player) return;
         const t = R.Theme.get();
         R.ctx.save();
         R.ctx.translate(0, -_scrollY);
+        if (window.Input && Input.setScrollOffset) Input.setScrollOffset(_scrollY);
 
         R.drawText('👤 角色', PX + MAX_W / 2, 24, { fontSize: 18, color: t.textPrimary, align: 'center', bold: true });
         R.drawButton({ id: 'charBack', x: PX + 12, y: 10, w: 74, h: 28, text: '← 返回', fontSize: 12, bg: t.bgCard, color: t.textSecondary, border: t.borderSoft, onTap: function () { try { game.goBack(); } catch (e) {} } });

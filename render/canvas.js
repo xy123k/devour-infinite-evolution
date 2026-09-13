@@ -40,8 +40,8 @@
     }
 
     const size = getScreenSize();
-    const SCREEN_W = size.w;
-    const SCREEN_H = size.h;
+    let SCREEN_W = size.w;
+    let SCREEN_H = size.h;
 
     // 创建 canvas：容器环境用 tt.createCanvas，浏览器用 DOM
     let canvas;
@@ -73,6 +73,32 @@
 
     const ctx = canvas.getContext('2d');
     ctx.scale(DPR, DPR);
+
+    // ============================================================
+    //  resize 适配（P1-4）：监听视口变化，重算画布尺寸（含 DPR）并触发当前界面重绘
+    // ============================================================
+    function handleResize() {
+        const s = getScreenSize();
+        if (!s.w || !s.h) return;
+        SCREEN_W = s.w;
+        SCREEN_H = s.h;
+        canvas.width = Math.round(SCREEN_W * DPR);
+        canvas.height = Math.round(SCREEN_H * DPR);
+        if (canvas.style) {
+            canvas.style.width = SCREEN_W + 'px';
+            canvas.style.height = SCREEN_H + 'px';
+        }
+        // 重置变换后再按新 DPR 缩放（canvas 尺寸变化会重置画布状态）
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        // 清空文本测量/换行缓存（尺寸变化影响换行结果）
+        if (typeof _measureCache !== 'undefined' && _measureCache.clear) _measureCache.clear();
+        if (typeof _wrapCache !== 'undefined' && _wrapCache.clear) _wrapCache.clear();
+        // 触发重绘（下一帧主循环自然重绘；这里显式清屏避免残影）
+        clear();
+    }
+    if (typeof window !== 'undefined' && window.addEventListener) {
+        window.addEventListener('resize', handleResize);
+    }
 
     // ============================================================
     //  主题系统（对应 index.html 的 dark / warm / light 三套 CSS 变量）
@@ -408,9 +434,12 @@
         const Input = window.Input;
         const id = opt.id || ('btn_' + (drawButton._seq = (drawButton._seq || 0) + 1));
         const pressed = Input && Input.isPressed(id) && !opt.disabled;
+        // P3-5：桌面悬停反馈（按钮悬停提亮）
+        const hovered = !opt.disabled && !pressed && Input && Input._hoverId === id;
 
         const bg = opt.disabled ? (opt.bgDisabled || 'rgba(90,106,101,0.35)')
-            : (pressed ? (opt.bgPressed || shade(opt.bg || t.accent, -0.2)) : (opt.bg || t.accent));
+            : (pressed ? (opt.bgPressed || shade(opt.bg || t.accent, -0.2))
+                : (hovered ? shade(opt.bg || t.accent, 0.14) : (opt.bg || t.accent)));
         const color = opt.disabled ? (opt.colorDisabled || '#8a9a95') : (opt.color || '#0a0e17');
         const radius = opt.radius == null ? 8 : opt.radius;
 
@@ -627,13 +656,63 @@
     }
 
     // ============================================================
+    //  SVG 图标绘制（P2-2）：把 game.icons 的 SVG 字符串缓存为 Image(data:image/svg+xml)
+    //  供 Canvas 直绘界面（顶栏/商店/按钮等）使用；图标异步加载，主循环重绘后自然显示。
+    // ============================================================
+    const iconCache = new Map();
+    function drawIcon(name, x, y, size, color) {
+        if (!ctx) return false;
+        const g = (typeof game !== 'undefined') ? game : null;
+        const svg = g && g.icons ? g.icons[name] : null;
+        if (!svg) return false;
+        const key = name + '|' + (color || '#ffffff') + '|' + size;
+        let img = iconCache.get(key);
+        if (!img) {
+            // P2-2：SVG 字符串缺 xmlns/width/height 时浏览器拒绝加载或尺寸为 0，补全后再编码
+            const colored = svg
+                .replace(/currentColor/g, color || '#ffffff')
+                .replace(/<svg /, '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" ');
+            img = new Image();
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(colored);
+            iconCache.set(key, img);
+        }
+        if (img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, x, y, size, size);
+            return true;
+        }
+        return false;
+    }
+    function clearIconCache() { iconCache.clear(); }
+
+    // ============================================================
+    //  性能管理（P0-2）：低性能环境（软件渲染/低端机）自动降低特效复杂度
+    //  quality: 'high' | 'low'；由 ScreenManager 主循环帧耗时统计自动切换，
+    //  也可按硬件信号（低核数/小内存）初始降级。
+    // ============================================================
+    let _quality = 'high';
+    (function detectLowPerf() {
+        try {
+            if (typeof navigator !== 'undefined') {
+                const hc = navigator.hardwareConcurrency;
+                if (hc && hc <= 2) { _quality = 'low'; return; }
+                const dm = navigator.deviceMemory;
+                if (dm && dm <= 2) { _quality = 'low'; return; }
+            }
+        } catch (e) {}
+    })();
+    function setQuality(q) {
+        if (q === 'high' || q === 'low') _quality = q;
+    }
+    function isLowQuality() { return _quality === 'low'; }
+
+    // ============================================================
     //  导出
     // ============================================================
     window.Render = {
         canvas: canvas,
         ctx: ctx,
-        SCREEN_W: SCREEN_W,
-        SCREEN_H: SCREEN_H,
+        get SCREEN_W() { return SCREEN_W; },
+        get SCREEN_H() { return SCREEN_H; },
         DPR: DPR,
         isTTEnv: isTTEnv,
         Theme: Theme,
@@ -656,6 +735,13 @@
         linearGrad: linearGrad,
         shade: shade,
         setFont: setFont,
-        roundRectPath: roundRectPath
+        roundRectPath: roundRectPath,
+        // SVG 图标（P2-2）
+        drawIcon: drawIcon,
+        clearIconCache: clearIconCache,
+        // 性能管理（P0-2）
+        get quality() { return _quality; },
+        setQuality: setQuality,
+        get isLowQuality() { return isLowQuality(); }
     };
 })();

@@ -126,12 +126,20 @@
     // ============================================================
     //  命中检测
     // ============================================================
+    // P3-3：界面滚动偏移补偿 —— 渲染器以"未滚动坐标"注册按钮/列表
+    //（draw 内 ctx.translate(0,-_scrollY)），点击坐标为屏幕坐标，
+    // 命中时把滚动量加回，保证滚动后点击仍命中正确元素。
+    let _scrollOffset = 0;
+    function setScrollOffset(v) { _scrollOffset = v || 0; }
+    function hy(y) { return y + (_scrollOffset || 0); }
+
     function hitButton(x, y) {
+        const yy = hy(y);
         // 后注册的按钮优先（模拟 DOM 层叠）
         for (let i = _buttonStack.length - 1; i >= 0; i--) {
             const btn = _buttons.get(_buttonStack[i]);
             if (!btn || btn.disabled) continue;
-            if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
+            if (x >= btn.x && x <= btn.x + btn.w && yy >= btn.y && yy <= btn.y + btn.h) {
                 return btn;
             }
         }
@@ -139,11 +147,12 @@
     }
 
     function hitList(x, y) {
+        const yy = hy(y);
         // 后注册的列表优先
         for (let i = _listStack.length - 1; i >= 0; i--) {
             const st = _lists.get(_listStack[i]);
             if (!st) continue;
-            if (x >= st.x && x <= st.x + st.w && y >= st.y && y <= st.y + st.h) {
+            if (x >= st.x && x <= st.x + st.w && yy >= st.y && yy <= st.y + st.h) {
                 return st;
             }
         }
@@ -161,9 +170,17 @@
     // ============================================================
     let _pageScroll = null;   // { get(): 当前 offsetY, set(v), max(): 最大滚动 }
     let _pageMode = false;   // 本次手势是否处于页面滚动
+    let _hoverId = null;     // P3-5：当前悬停按钮 id
+    let _popScroll = null;   // P3-4/P3-8：弹窗内滚动 {x,y,w,h,get,set,max}（弹窗内容超界时）
+    let _popMode = false;    // 本次手势是否处于弹窗内容滚动
 
     function setPageScroll(handler) {
         _pageScroll = handler || null;
+    }
+
+    // P3-4/P3-8：弹窗内滚动注册（弹窗可见时优先于页面滚动）
+    function setPopupScroll(handler) {
+        _popScroll = handler || null;
     }
 
     // ============================================================
@@ -176,6 +193,7 @@
         _moved = false;
         _dragging = false;
         _pageMode = false;
+        _popMode = false;
         _scrollVel = 0;
         stopInertia();
 
@@ -187,7 +205,16 @@
             _pressedId = null;
             const st = hitList(x, y);
             _hitListId = st ? st.id : null;
-            if (!_hitListId && _pageScroll) _pageMode = true;
+            if (!_hitListId) {
+                // P3-4/P3-8：弹窗内容超界时可拖拽滚动（弹窗可视区内、未命中内容按钮）
+                if (_popScroll && _popScroll.max() > 0
+                    && x >= _popScroll.x && x <= _popScroll.x + _popScroll.w
+                    && y >= _popScroll.y && y <= _popScroll.y + _popScroll.h) {
+                    _popMode = true;
+                } else if (_pageScroll) {
+                    _pageMode = true;
+                }
+            }
         }
     }
 
@@ -214,6 +241,11 @@
                 // 记录速度（用于惯性）
                 _scrollVel = -dy2;
             }
+        } else if (_popMode && _popScroll) {
+            const dy2 = y - _lastY;
+            const cur = _popScroll.get() || 0;
+            _popScroll.set(cur - dy2);
+            _scrollVel = -dy2;
         } else if (_pageMode && _pageScroll) {
             const dy2 = y - _lastY;
             const cur = _pageScroll.get() || 0;
@@ -231,6 +263,10 @@
             if (st && Math.abs(_scrollVel) > 2) {
                 startInertia(_hitListId);
             }
+        } else if (_popMode && _popScroll) {
+            // 弹窗惯性滚动
+            if (Math.abs(_scrollVel) > 2) startPopInertia();
+            else clampPop();
         } else if (_pageMode && _pageScroll) {
             // 页面惯性滚动
             if (Math.abs(_scrollVel) > 2) startPageInertia();
@@ -245,7 +281,7 @@
             } else if (_hitListId) {
                 const st = _lists.get(_hitListId);
                 if (st && st.onTap) {
-                    const idx = itemIndexAt(st, _startY);
+                    const idx = itemIndexAt(st, hy(_startY));
                     const item = st.items[idx];
                     if (item && idx >= 0 && idx < st.items.length) {
                         try { st.onTap(item, idx); } catch (e) { if (typeof console !== 'undefined') console.error(e); }
@@ -288,6 +324,31 @@
             _cafFn(_rafId);
             _rafId = null;
         }
+    }
+
+    // ---- 弹窗惯性滚动（P3-4/P3-8）----
+    function clampPop() {
+        if (!_popScroll) return;
+        const cur = _popScroll.get() || 0;
+        _popScroll.set(Math.min(_popScroll.max(), Math.max(0, cur)));
+    }
+    function startPopInertia() {
+        stopInertia();
+        if (!_popScroll) return;
+        let vel = _scrollVel;
+        const step = function () {
+            if (Math.abs(vel) < 0.6) {
+                clampPop();
+                _rafId = null;
+                return;
+            }
+            vel *= 0.94;
+            _scrollVel = vel;
+            const cur = _popScroll.get() || 0;
+            _popScroll.set(Math.min(_popScroll.max(), Math.max(0, cur - vel)));
+            _rafId = _rafFn(step);
+        };
+        _rafId = _rafFn(step);
     }
 
     // ---- 页面惯性滚动 ----
@@ -363,11 +424,39 @@
             }
             // 鼠标降级（桌面浏览器调试）
             canvas.addEventListener('mousedown', function (e) { onStart(e.clientX, e.clientY); });
-            canvas.addEventListener('mousemove', function (e) { if (_active) onMove(e.clientX, e.clientY); });
+            canvas.addEventListener('mousemove', function (e) {
+                if (_active) { onMove(e.clientX, e.clientY); return; }
+                // P3-5：悬停检测（桌面端 hover 反馈）
+                const btn = hitButton(e.clientX, e.clientY);
+                _hoverId = btn ? btn.id : null;
+            });
             window.addEventListener('mouseup', function () { onEnd(); });
-            // 滚轮滚动（桌面浏览器调试：模拟页面滚动）
+            // ESC 键关闭（P1-1）：优先关闭 tooltip → canvas 弹窗 → 模态框
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                    try {
+                        const R2 = window.Render;
+                        if (R2 && R2.Tooltip && R2.Tooltip.isVisible && R2.Tooltip.isVisible()) {
+                            R2.Tooltip.hide();
+                            return;
+                        }
+                        if (R2 && R2.Popup && R2.Popup.isVisible && R2.Popup.isVisible()) {
+                            if (typeof game !== 'undefined' && game.closePop) game.closePop();
+                            else if (R2.Popup.close) R2.Popup.close();
+                            return;
+                        }
+                        if (R2 && typeof R2.closeModal === 'function') R2.closeModal();
+                    } catch (e2) { if (typeof console !== 'undefined') console.error(e2); }
+                }
+            });
+            // 滚轮滚动（桌面浏览器调试：弹窗内容优先，其次模拟页面滚动）
             canvas.addEventListener('wheel', function (e) {
                 e.preventDefault();
+                if (_popScroll && _popScroll.max() > 0) {
+                    const cur = _popScroll.get() || 0;
+                    _popScroll.set(Math.min(_popScroll.max(), Math.max(0, cur + e.deltaY)));
+                    return;
+                }
                 if (_pageScroll) {
                     const cur = _pageScroll.get() || 0;
                     const max = _pageScroll.max ? _pageScroll.max() : 0;
@@ -391,12 +480,15 @@
         getListState: getListState,
         setListOffset: setListOffset,
         setPageScroll: setPageScroll,
+        setPopupScroll: setPopupScroll,
+        setScrollOffset: setScrollOffset,
         hitButton: hitButton,
         hitList: hitList,
         bind: bind,
         // 调试
         _buttons: _buttons,
         _lists: _lists,
-        get pressedId() { return _pressedId; }
+        get pressedId() { return _pressedId; },
+        get _hoverId() { return _hoverId; }
     };
 })();

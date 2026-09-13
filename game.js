@@ -968,11 +968,12 @@ const game = {
                 if (!this.permanent.tagFragments) this.permanent.tagFragments = {};
                 // universal碎片：universalFragments[quality]
                 if (!this.permanent.universalFragments) this.permanent.universalFragments = {1:0,2:0,3:0,4:0,5:0};
-                // 兼容旧数据：把旧的通用碎片转换为universal碎片
+                // 兼容旧数据：把旧的通用碎片转换为universal碎片（P3-2：从旧 fragments 取值，而非自己加自己）
                 if (this.permanent.fragments && Array.isArray(this.permanent.fragments)) {
                     for (let q=1; q<=5; q++) {
-                        if (this.permanent.universalFragments[q]) {
-                            this.permanent.universalFragments[q] = (this.permanent.universalFragments[q] || 0) + this.permanent.universalFragments[q];
+                        const oldN = this.permanent.fragments[q] || 0;
+                        if (oldN > 0) {
+                            this.permanent.universalFragments[q] = (this.permanent.universalFragments[q] || 0) + oldN;
                         }
                     }
                     delete this.permanent.fragments;
@@ -981,8 +982,9 @@ const game = {
                     // 旧格式fragments是{1:count,2:count,...}，转换为universal碎片
                     let hasOld = false;
                     for (let q=1; q<=5; q++) {
-                        if (this.permanent.universalFragments[q] && typeof this.permanent.universalFragments[q] === 'number') {
-                            this.permanent.universalFragments[q] = (this.permanent.universalFragments[q] || 0) + this.permanent.universalFragments[q];
+                        const oldN = this.permanent.fragments[q] || 0;
+                        if (oldN > 0) {
+                            this.permanent.universalFragments[q] = (this.permanent.universalFragments[q] || 0) + oldN;
                             hasOld = true;
                         }
                     }
@@ -991,6 +993,8 @@ const game = {
                         delete this.permanent.fragments;
                     }
                 }
+                // P3-2：旧档缺失 tutorialCompleted 时不重放新手引导（老玩家已熟悉流程）
+                if (this.permanent.tutorialCompleted === undefined) this.permanent.tutorialCompleted = true;
                 if (!this.permanent.unlockedTalents) this.permanent.unlockedTalents = [];
                 // 过滤天赋等级残留：等级必须为 1~5 整数，其余剪回 1（防旧档异常残留）
                 if (this.permanent.talentLevels) {
@@ -1421,9 +1425,11 @@ const game = {
                 }
             });
             setTimeout(() => {
-                // 若击杀奖励弹窗仍在显示，等它关闭后再展示成就，避免顶掉击杀奖励
+                // 若击杀奖励弹窗仍在显示，等它关闭后再展示成就，避免顶掉击杀奖励（P2-5）
                 const showWhenReady = () => {
-                    if (__gid('killDropPopup')) {
+                    const canvasPopupBusy = (typeof Render !== 'undefined' && Render.Popup && Render.Popup.isVisible && Render.Popup.isVisible());
+                    const domPopupBusy = (typeof __gid === 'function' && __gid('killDropPopup'));
+                    if (canvasPopupBusy || domPopupBusy) {
                         setTimeout(showWhenReady, 300);
                     } else {
                         this.showGameAlert('成就解锁', msg);
@@ -1943,7 +1949,7 @@ const game = {
                 this.initDailyTasks();
                 this.initLeaderboard();
                 this.enterCanvasMainScreen();
-                this.startNewRun();
+                this.startNewRun({silent:true});
                 return;
             } catch (e) {
                 console.error("[Data] 内嵌数据初始化异常，回退 fetch", e);
@@ -1969,7 +1975,7 @@ const game = {
             this.initDailyTasks();
             this.initLeaderboard();
             this.enterCanvasMainScreen();
-            this.startNewRun();
+            this.startNewRun({silent:true});
         } catch (e) {
             this.showGameAlert("加载失败", "配置文件加载失败，请重新下载游戏或检查网络后重试");
             console.error(e);
@@ -2112,7 +2118,10 @@ const game = {
     // ============================================================
     //  开始新轮回
     // ============================================================
-    startNewRun() {
+    startNewRun(opts) {
+        // silent（页面加载恢复路径）：只恢复当前轮状态（重建局内数据 + 渲染主界面），
+        // 不触发轮回计数 / 开场剧情 / 成长总览 / 新手引导。轮回启动只由玩家主动触发（默认行为）。
+        const silent = !!(opts && opts.silent);
         // 广告频控：新局/轮回重置局内广告计数与场次标记
         this._adRunCounts = {};
         this._killDropDoubled = false;
@@ -2121,14 +2130,14 @@ const game = {
         const b = this.permanent.bonusStats;
         // 显示开场剧情（每次开始新轮回都显示，第一次完整版，后续简化版）
         const isFirstRun = !this.permanent.achievementStats || this.permanent.achievementStats.battlesCompleted === 0;
-        if (this.storyData && this.storyData.opening) {
+        if (!silent && this.storyData && this.storyData.opening) {
             const openingLines = isFirstRun ? this.storyData.opening : this.storyData.opening.slice(-2); // 后续轮回只显示最后两段
             setTimeout(() => {
                 this.showStory(openingLines);
             }, 300);
         }
         // 成就统计：轮回次数（不是第一次开始）
-        if (this.permanent.achievementStats && this.permanent.achievementStats.battlesCompleted > 0) {
+        if (!silent && this.permanent.achievementStats && this.permanent.achievementStats.battlesCompleted > 0) {
             this.permanent.achievementStats.reincarnations++;
             this.checkAchievements();
             // 日常任务：轮回
@@ -2202,25 +2211,27 @@ const game = {
         
         // 新轮回开局"成长总览"（非第一次轮回时显示）
         const reincarnationCount = this.permanent.achievementStats ? (this.permanent.achievementStats.reincarnations || 0) : 0;
-        if (reincarnationCount > 0) {
+        if (!silent && reincarnationCount > 0) {
             setTimeout(() => {
                 this.showReincarnationOverview();
             }, 500);
         }
         this.showScreen('mainScreen');
-        this.refreshMainUI();
-        this.showRandomStory();
-        // 自动装备提示
-        if (autoEquipInfo.equipped.length > 0) {
-            let autoEquipMsg = '已自动装备 ' + autoEquipInfo.equipped.length + ' 个天赋';
-            if (autoEquipInfo.fromPreset) autoEquipMsg += '（预构筑）';
-            else if (autoEquipInfo.fromLast) autoEquipMsg += '（继承上局装备）';
-            else autoEquipMsg += '（已解锁按品质）';
-            this.appendBattleLog(autoEquipMsg);
-        }
-        // 新手引导检查
-        if (!this.permanent.tutorialCompleted) {
-            setTimeout(() => this.startTutorial(), 500);
+        if (!silent) {
+            this.refreshMainUI();
+            this.showRandomStory();
+            // 自动装备提示
+            if (autoEquipInfo.equipped.length > 0) {
+                let autoEquipMsg = '已自动装备 ' + autoEquipInfo.equipped.length + ' 个天赋';
+                if (autoEquipInfo.fromPreset) autoEquipMsg += '（预构筑）';
+                else if (autoEquipInfo.fromLast) autoEquipMsg += '（继承上局装备）';
+                else autoEquipMsg += '（已解锁按品质）';
+                this.appendBattleLog(autoEquipMsg);
+            }
+            // 新手引导检查
+            if (!this.permanent.tutorialCompleted) {
+                setTimeout(() => this.startTutorial(), 500);
+            }
         }
     },
 
@@ -4367,8 +4378,9 @@ const game = {
                 if (t.advanceTo && advanceNames[t.advanceTo]) {
                     html += '<div style="color:var(--accent-warning);font-size:11px;margin-top:2px">⬇ 进化：' + advanceNames[t.advanceTo] + '</div>';
                 }
-                // 展开详情：全部等级 + 组合/联动
-                html += '<div id="codexDetail_' + t.id + '" style="display:none;margin-top:5px;padding-top:5px;border-top:1px dashed var(--text-faint)">';
+                // 展开详情：全部等级 + 组合/联动（Canvas 状态化展开 —— P2-4）
+                const expanded = !!(this._codexExpanded && this._codexExpanded[t.id]);
+                html += '<div id="codexDetail_' + t.id + '" style="display:' + (expanded ? 'block' : 'none') + ';margin-top:5px;padding-top:5px;border-top:1px dashed var(--text-faint)">';
                 if (t.maxLevel === 1) {
                     html += '<div style="font-size:11px;color:var(--accent-warning)">★ 终极天赋，解锁即为满级，不可升级</div>';
                 } else if (t.maxLevel === -1) {
@@ -4416,8 +4428,10 @@ const game = {
     },
 
     toggleTalentCodexDetail(id) {
-        const el = __gid('codexDetail_' + id);
-        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        // Canvas 模式：__gid 恒 null。改为状态化展开 + 重渲染（P2-4）
+        if (!this._codexExpanded) this._codexExpanded = {};
+        this._codexExpanded[id] = !this._codexExpanded[id];
+        this.openTalentCodex();
     },
 
     // 共生体联动详情 tooltip（图鉴内点击联动条目）
@@ -4689,9 +4703,20 @@ const game = {
 
     // 提交兑换码
     submitRedeemCode() {
-        const input = __gid('redeemCodeInput');
-        const code = input ? input.value : '';
+        let code = '';
+        // Canvas 模式：从输入框状态读取（__gid 在 Canvas 下恒 null —— P1-3）
+        if (typeof Render !== 'undefined' && Render.Popup && Render.Popup.getInputValue) {
+            code = Render.Popup.getInputValue('redeemCodeInput');
+        }
+        if (!code) {
+            const input = __gid('redeemCodeInput');
+            code = input ? input.value : '';
+        }
         const result = this.redeemCode(code);
+        if (typeof Render !== 'undefined' && Render.toast) {
+            Render.toast(result.success ? result.msg : result.msg, 2200, result.success ? null : '#ef5350');
+            return;
+        }
         const resultDiv = __gid('redeemResult');
         if (resultDiv) {
             if (result.success) {
@@ -4863,19 +4888,35 @@ const game = {
             navigator.clipboard.writeText(saveStr).then(() => {
                 this.showGameAlert('成功', '存档已复制到剪贴板！');
             }).catch(() => {
-                prompt('复制以下存档代码：', saveStr);
+                this.showGameAlert('导出失败', '复制失败，请手动复制以下存档代码：\n\n' + saveStr);
             });
         } else {
-            prompt('复制以下存档代码：', saveStr);
+            this.showGameAlert('导出失败', '复制失败，请手动复制以下存档代码：\n\n' + saveStr);
         }
     },
 
-    // 导入存档
+    // 导入存档（Canvas 输入弹窗，替换原生 prompt —— P1-3）
     importSave() {
-        const saveStr = prompt('请粘贴存档代码：');
-        if (!saveStr) return;
+        this._importSaveText = '';
+        const html = '<h3>📥 导入存档</h3>'
+            + '<p style="color:var(--text-muted);font-size:13px;margin:8px 0">请粘贴存档代码（可从导出存档处复制）：</p>'
+            + '<input id="importSaveInput" placeholder="粘贴存档代码..." style="width:100%;padding:10px;font-size:13px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:6px;color:var(--text-primary)" oninput="game._importSaveText=this.value">'
+            + '<div style="display:flex;gap:8px;margin-top:12px">'
+            + '<button onclick="game.doImportSave()" style="flex:1;padding:10px;font-size:14px;border-radius:6px;background:var(--accent-primary)">导入</button>'
+            + '<button onclick="game.closePop()" style="flex:1;padding:10px;font-size:14px;border-radius:6px;background:var(--bg-secondary)">取消</button>'
+            + '</div>';
+        this.showPopup(html);
+    },
+
+    // 执行导入
+    doImportSave() {
+        const saveStr = String(this._importSaveText || '').trim();
+        if (!saveStr) {
+            this.showGameAlert('提示', '请先粘贴存档代码');
+            return;
+        }
         try {
-            const saveData = JSON.parse(decodeURIComponent(escape(atob(saveStr.trim()))));
+            const saveData = JSON.parse(decodeURIComponent(escape(atob(saveStr))));
             if (saveData.permanent) {
                 this.permanent = saveData.permanent;
                 this.savePermanent();

@@ -12,8 +12,12 @@
     const R = window.Render;
     const Input = window.Input;
 
-    const MAX_W = Math.min(R.SCREEN_W, 520);
-    const PX = (R.SCREEN_W - MAX_W) / 2;   // 水平留白
+    let MAX_W = Math.min(R.SCREEN_W, 520);
+    let PX = (R.SCREEN_W - MAX_W) / 2;
+    function refreshLayout() {
+        MAX_W = Math.min(R.SCREEN_W, 520);
+        PX = (R.SCREEN_W - MAX_W) / 2;
+    }   // 水平留白
     const BOTTOM_PAD = 150;                 // 底部导航栏预留
 
     let _scrollY = 0;
@@ -47,11 +51,11 @@
         const currentLayer = game.currentLayer || 1;
 
         const items = [
-            { icon: '◆', color: t.accent, value: gold, tip: '基因精华' },
-            { icon: '★', color: t.warning, value: talentPoints, tip: '天赋点' },
-            { icon: '⬢', color: t.info, value: equippedCount + '/' + passiveSlots, tip: '被动槽' },
-            { icon: '✚', color: t.purple, value: totalUniversal, tip: '万能碎片' },
-            { icon: '▤', color: t.success, value: currentFloor + '-' + currentLayer + '层', tip: '楼层' }
+            { icon: 'gene', color: t.accent, value: gold, tip: 'geneEssence' },
+            { icon: 'star', color: t.warning, value: talentPoints, tip: 'talentPoints' },
+            { icon: 'shield', color: t.info, value: equippedCount + '/' + passiveSlots, tip: 'passiveSlots' },
+            { icon: 'spark', color: t.purple, value: totalUniversal, tip: 'universalFragment' },
+            { icon: 'map', color: t.success, value: currentFloor + '-' + currentLayer + '层', tip: 'currentFloor' }
         ];
         const itemW = MAX_W / items.length;
         const h = 46;
@@ -59,7 +63,8 @@
         R.drawRect(PX, y + h - 1, MAX_W, 1, { fill: t.borderSoft });
         items.forEach((it, i) => {
             const ix = PX + i * itemW;
-            R.drawText(it.icon, ix + itemW / 2, y + 13, { fontSize: 15, color: it.color, align: 'center', bold: true });
+            // SVG 图标（P2-2：与 DOM 原版一致）
+            R.drawIcon(it.icon, ix + itemW / 2 - 8, y + 7, 15, it.color);
             R.drawText(String(it.value), ix + itemW / 2, y + 30, { fontSize: 12, color: t.textPrimary, align: 'center', bold: true });
             // tooltip 点击
             if (game.showTooltip) {
@@ -114,15 +119,23 @@
         R.drawText('命中 ' + p.hit + '%', x + w * 0.38, yy, { fontSize: 13, color: t.textMuted });
         R.drawText('闪避 ' + (p.dodgeRate || 0) + '%', x + w * 0.62, yy, { fontSize: 13, color: t.textMuted });
         R.drawText('先手 ' + p.speed, x + w, yy, { fontSize: 13, color: t.textMuted, align: 'right' });
+        bindStatTooltip('', 'crit', x, yy, w * 0.38, 20);
+        bindStatTooltip('', 'hit', x + w * 0.38, yy, w * 0.24, 20);
+        bindStatTooltip('', 'dodgeRate', x + w * 0.62, yy, w * 0.22, 20);
+        bindStatTooltip('', 'speed', x + w * 0.84, yy, w * 0.16, 20);
         yy += 22;
         // 行3：暴伤 + 提示
         R.drawText('暴伤 ' + p.critDamage + '%', x, yy, { fontSize: 12, color: t.textMuted });
         R.drawText('实际命中/闪避受双方敏捷影响', x + w, yy, { fontSize: 11, color: t.textFaint, align: 'right' });
+        bindStatTooltip('', 'critDamage', x, yy, w * 0.38, 20);
         yy += 20;
         // 行4：等级/精华/天赋
         R.drawText(p.level + '级 (' + p.exp + '/' + p.expToNext + ')', x, yy, { fontSize: 13, color: t.textFaint });
         R.drawText('精华 ' + p.gold, x + w / 2, yy, { fontSize: 13, color: t.textFaint });
         R.drawText('天赋 ' + (p.equippedTalents || []).length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 0), x + w, yy, { fontSize: 13, color: t.textFaint, align: 'right' });
+        bindStatTooltip('', 'level', x, yy, w * 0.3, 20);
+        bindStatTooltip('', 'essence', x + w * 0.3, yy, w * 0.3, 20);
+        bindStatTooltip('', 'passiveSlots', x + w * 0.6, yy, w * 0.4, 20);
         yy += 22;
         // 分割线
         R.drawRect(x, yy, w, 1, { fill: t.borderPrimary });
@@ -135,6 +148,7 @@
         stats.forEach((s, i) => {
             const sx = x + i * (w / 5);
             R.drawText(s.name + ' ' + p[s.k], sx + (w / 5) / 2, yy, { fontSize: 13, color: t.textSecondary, align: 'center' });
+            bindStatTooltip('', s.k, sx, yy, w / 5, 20);
         });
         yy += 20;
 
@@ -479,11 +493,23 @@
         const game = g();
         const h = 48;
         box(PX, y, MAX_W, h, t.bgCard, 12);
+        // P2-3：展开菜单时若底部超出底栏遮挡区（排行/设置不可见），自动滚动到可见
+        const NAV_H = 76; // 底部导航高度（含安全区）
         R.drawButton({
             id: 'moreToggle', x: PX, y: y, w: MAX_W, h: h,
             text: '更多功能 ' + (_moreOpen ? '▲' : '▼'),
             fontSize: 15, bg: t.borderPrimary, color: t.textPrimary,
-            onTap: function () { _moreOpen = !_moreOpen; }
+            onTap: (function (yy) {
+                return function () {
+                    _moreOpen = !_moreOpen;
+                    if (_moreOpen) {
+                        const areaH = 4 * (44 + 8) + 10;
+                        const menuBottom = yy + h + areaH - _scrollY; // 菜单底部（屏幕坐标，yy 为未滚动坐标）
+                        const need = menuBottom - (R.SCREEN_H - NAV_H);
+                        if (need > _scrollY) _scrollY = need;
+                    }
+                };
+            })(y)
         });
         let ret = h;
         if (_moreOpen) {
@@ -546,6 +572,7 @@
     //  渲染主函数
     // ============================================================
     function render() {
+        refreshLayout();
         const game = g();
         if (!game || !game.player) return;
         R.clear();
@@ -554,8 +581,11 @@
         ctx.beginPath();
         ctx.rect(0, 0, R.SCREEN_W, R.SCREEN_H);
         ctx.clip();
+        // P3-3：与其它界面统一 —— 内容用未滚动坐标绘制，滚动偏移交给 Input 命中补偿
+        ctx.translate(0, -_scrollY);
+        Input.setScrollOffset(_scrollY);
 
-        let y = -_scrollY;
+        let y = 0;
         y += drawTopBar(y);
         y += drawTitle(y);
         y += drawPlayerCard(y);
@@ -566,8 +596,9 @@
         y += drawGrowth(y);
         y += BOTTOM_PAD;
 
-        _contentH = y + _scrollY;
+        _contentH = y;
         ctx.restore();
+        Input.setScrollOffset(0);
 
         // 滚动范围
         const maxScroll = Math.max(0, _contentH - R.SCREEN_H);

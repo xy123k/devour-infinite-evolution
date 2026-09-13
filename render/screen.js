@@ -26,7 +26,8 @@
     }
 
     // 底部导航状态（DOM 底栏在迁移完成前继续使用）
-    const NAV_SCREENS = ['mainScreen', 'battleScreen', 'settingsScreen', 'talentScreen', 'inventoryScreen', 'shopScreen', 'characterScreen'];
+    // P3-7：轮回空间（growthScreen）原版有底部导航，补回
+    const NAV_SCREENS = ['mainScreen', 'battleScreen', 'settingsScreen', 'talentScreen', 'inventoryScreen', 'shopScreen', 'characterScreen', 'growthScreen'];
     function updateBottomNav(screenId) {
         if (typeof document === 'undefined') return;
         const bottomNav = window.__gid('bottomNav');
@@ -92,11 +93,39 @@
     }
 
     // 主循环（持续重绘：支持按压态/飘字/滚动动画）
+    // P0-2：帧率自适应——目标 60fps，低性能（软件渲染/低端机）自动降级 30/20fps，
+    // 避免全屏重绘阻塞主线程；恢复流畅后自动回升。降级同时通知 Render 降低特效复杂度。
     function startLoop() {
-        const loop = function () {
-            try { draw(); } catch (e) { if (typeof console !== 'undefined') console.error('render loop error', e); }
+        let last = 0;
+        let frameCount = 0;
+        let skipEvery = 1;              // 每 N 个 rAF 帧绘制 1 次（1=60fps, 2=30fps, 3=20fps）
+        const frameTimes = [];          // 最近 30 帧耗时（ms）
+        const FRAME_WINDOW = 30;
+        const LOOP_MAX = 0;             // 无帧数上限
+
+        function loop(ts) {
+            if (last) {
+                const dt = ts - last;
+                frameTimes.push(dt);
+                if (frameTimes.length > FRAME_WINDOW) frameTimes.shift();
+                let sum = 0;
+                for (let i = 0; i < frameTimes.length; i++) sum += frameTimes[i];
+                const avg = sum / frameTimes.length;
+                // 自适应：平均耗时持续偏高 → 降帧；明显流畅 → 回升
+                if (avg > 70) skipEvery = 3;          // <~14fps 时再降
+                else if (avg > 42) skipEvery = 2;     // ~24fps 以下 → 30fps
+                else if (avg < 20 && skipEvery > 1) skipEvery = 1;  // 60fps 稳定 → 恢复
+                if (Render && Render.setQuality) {
+                    Render.setQuality(skipEvery > 1 ? 'low' : 'high');
+                }
+            }
+            last = ts;
+            frameCount++;
+            if (frameCount % skipEvery === 0) {
+                try { draw(); } catch (e) { if (typeof console !== 'undefined') console.error('render loop error', e); }
+            }
             requestAnimationFrame(loop);
-        };
+        }
         requestAnimationFrame(loop);
     }
 

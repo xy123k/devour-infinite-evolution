@@ -237,6 +237,14 @@
             return cursorY + size.h + pad.bottom + marginBottom(node);
         }
 
+        // 文本输入框（P1-3）
+        if (node.tag === 'input') {
+            const fs = parseFloat(node.style['font-size']) || 12;
+            const ih = Math.max(30, fs + 20);
+            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: ih });
+            return cursorY + ih + pad.bottom + marginBottom(node);
+        }
+
         // 计算子元素
         const display = node.style.display || '';
         const flex = display === 'flex' || display === 'inline-flex';
@@ -331,6 +339,7 @@
         const node = n.node;
         if (node.tag === 'svgtext') { drawSVGText(n, x, y, w, h); return; }
         if (node.tag === 'svg') { drawSVG(node, x, y, (n.svgSize ? n.svgSize.w : w), (n.svgSize ? n.svgSize.h : h)); return; }
+        if (node.tag === 'input') { drawInputBox(n, x, y, w, h); return; }
         if (node.tag === '#text') {
             const align = node.style['text-align'] || 'left';
             let ax = x;
@@ -588,8 +597,155 @@
         x: 0, y: 0,
         buttons: [], // {x,y,w,h,onTap,disabled}
         openedAt: 0,
-        gachaDone: false
+        gachaDone: false,
+        popScroll: 0,      // P3-8：弹窗内容滚动偏移
+        popScrollMax: 0
     };
+
+    // ---------------- 文本输入状态（P1-3：Canvas 输入框） ----------------
+    // 浏览器用隐藏 <input> 作为 IME 输入通道（Canvas 无原生输入法），
+    // 渲染仍全部在 Canvas 完成；无 DOM 容器（TapTap）时仅绘制输入框并直接提交回调。
+    const inputState = {
+        activeId: null,      // 当前聚焦的 input id（弹窗内 attrs.id）
+        node: null,          // 对应 parse 节点
+        text: '',            // 当前输入文本
+        seq: 0,              // 输入框按钮 id 自增
+        el: null,            // 隐藏 input 元素（浏览器）
+        values: {}           // id -> 最近输入文本（blur 后仍保留，供提交读取）
+    };
+
+    // 读取弹窗内输入框当前值（Canvas 模式替代 __gid('xxx').value —— P1-3）
+    function getInputValue(id) {
+        if (inputState.values && Object.prototype.hasOwnProperty.call(inputState.values, id)) {
+            return inputState.values[id];
+        }
+        return '';
+    }
+
+    function ensureHiddenInput() {
+        if (typeof document === 'undefined') return null;
+        if (inputState.el && inputState.el.parentNode) return inputState.el;
+        const el = document.createElement('input');
+        el.type = 'text';
+        el.style.position = 'fixed';
+        el.style.left = '-9999px';
+        el.style.top = '0';
+        el.style.width = '2px';
+        el.style.height = '2px';
+        el.style.opacity = '0';
+        el.style.border = 'none';
+        el.style.outline = 'none';
+        el.style.background = 'transparent';
+        el.style.zIndex = '-1';
+        el.setAttribute('autocomplete', 'off');
+        el.setAttribute('autocorrect', 'off');
+        el.setAttribute('autocapitalize', 'off');
+        el.addEventListener('input', function () {
+            inputState.text = el.value;
+            if (el._inputId) inputState.values[el._inputId] = el.value;
+            if (inputState.node) applyInputAttr(inputState.node.attrs.oninput || inputState.node.attrs.onchange || '', el.value);
+        });
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+            e.stopPropagation();
+        });
+        el.addEventListener('blur', function () {
+            if (inputState.activeId) { inputState.activeId = null; inputState.node = null; }
+        });
+        if (document.body) document.body.appendChild(el);
+        inputState.el = el;
+        return el;
+    }
+
+    function focusInput(id, node) {
+        inputState.activeId = id;
+        inputState.node = node;
+        const cur = String(node.attrs.value || '');
+        inputState.text = cur;
+        if (id) inputState.values[id] = cur;
+        const el = ensureHiddenInput();
+        if (el) {
+            el._inputId = id;
+            el.value = cur;
+            el.focus();
+            try { el.select(); } catch (e) {}
+        }
+        applyInputAttr(node.attrs.oninput || node.attrs.onchange || '', cur);
+    }
+
+    function blurInput() {
+        if (inputState.el && typeof inputState.el.blur === 'function') {
+            try { inputState.el.blur(); } catch (e) {}
+        }
+        inputState.activeId = null;
+        inputState.node = null;
+        inputState.text = '';
+    }
+
+    // 执行 input 属性回调：支持 game.xxx.yyy = this.value 与 game.fn(this.value)
+    function applyInputAttr(expr, value) {
+        if (!expr) return;
+        const clean = String(expr).replace(/\s+/g, '');
+        const assign = /^game(\.[A-Za-z_$][\w$]*)+=this\.value$/.exec(clean);
+        if (assign) {
+            const parts = clean.replace(/^game\./, '').split('=')[0].split('.');
+            let obj = (typeof game !== 'undefined') ? game : null;
+            if (!obj) return;
+            for (let i = 0; i < parts.length - 1; i++) {
+                if (obj && obj[parts[i]] != null) obj = obj[parts[i]]; else return;
+            }
+            obj[parts[parts.length - 1]] = String(value);
+            return;
+        }
+        const withVal = String(expr).replace(/this\.value/g, JSON.stringify(String(value)));
+        const fn = parseOnClick(withVal);
+        if (fn) fn();
+    }
+
+    // 绘制 Canvas 输入框（聚焦态/占位符/光标闪烁）
+    function drawInputBox(n, x, y, w, h) {
+        const t = R.Theme.get();
+        const node = n.node;
+        const id = node.attrs.id || '';
+        const isActive = inputState.activeId === id;
+        R.drawRect(x, y, w, h, {
+            fill: t.bgSecondary,
+            radius: 4,
+            stroke: isActive ? t.accent : t.border,
+            lineWidth: isActive ? 1.5 : 1
+        });
+        let text = String(node.attrs.value || '');
+        if (isActive && inputState.text != null) text = inputState.text;
+        const fs = 12;
+        if (text) {
+            const tw = R.measureText(text, fs, false);
+            const clipW = Math.max(0, w - 20);
+            let show = text;
+            while (R.measureText(show, fs, false) > clipW && show.length > 1) show = show.slice(1);
+            R.drawText(show, x + 8, y + h / 2, { fontSize: fs, color: t.textPrimary, baseline: 'middle', maxWidth: clipW });
+            if (isActive && Math.floor(Date.now() / 500) % 2 === 0) {
+                const cx = x + 8 + R.measureText(show, fs, false) + 1;
+                R.drawRect(cx, y + h / 2 - 8, 1.5, 16, { fill: t.accent });
+            }
+        } else {
+            R.drawText(node.attrs.placeholder || '', x + 8, y + h / 2, { fontSize: fs, color: t.textFaint, baseline: 'middle', maxWidth: Math.max(0, w - 20) });
+        }
+        // 点击聚焦（id 固定：drawModal 每帧注销重注册，引用必须稳定，否则 mouseup 取不到 onTap）
+        Input.registerButton({
+            id: 'popInput_' + (id || ('x' + (inputState.seq++))),
+            x: x, y: y, w: w, h: h,
+            onTap: (function (iid, nd) { return function () { focusInput(iid, nd); }; })(id, node)
+        });
+    }
+
+    // P1-2：弹窗打开期间禁用 DOM 底栏交互（DOM 底栏在 canvas 之上，点击会穿透触发底层导航）
+    function setNavInteractive(on) {
+        try {
+            if (typeof document === 'undefined') return;
+            const nav = document.getElementById('bottomNav');
+            if (nav) nav.style.pointerEvents = on ? '' : 'none';
+        } catch (e) {}
+    }
 
     function show(html) {
         state.visible = true;
@@ -597,6 +753,9 @@
         state.buttons = [];
         state.openedAt = 0;
         state.gachaDone = false;
+        state.popScroll = 0;
+        state.popScrollMax = 0;
+        setNavInteractive(false);
         Input.unregisterAllButtons();
         // 延迟到下一帧绘制时布局（需要 ctx 测量）
     }
@@ -606,6 +765,10 @@
         state.html = '';
         state.layout = null;
         state.buttons = [];
+        state.popScroll = 0;
+        state.popScrollMax = 0;
+        blurInput();
+        setNavInteractive(true);
         Input.unregisterAllButtons();
     }
 
@@ -613,14 +776,25 @@
 
     let _cacheHtml = null, _cacheRoot = null, _cacheLayout = null;
 
+    function closePopup() {
+        const g = (typeof game !== 'undefined') ? game : null;
+        if (g && typeof g.closePop === 'function') { try { g.closePop(); } catch (e) { close(); } }
+        else close();
+    }
+
     // 每帧在弹窗容器内布局并绘制
     function drawModal() {
         if (!state.visible || !R.ctx) return;
         const t = R.Theme.get();
         const maxW = Math.min(R.SCREEN_W - 40, 360);
 
+        // 弹窗按钮以屏幕坐标注册（界面层滚动偏移不适用于弹窗，P3-3 需清 0）
+        Input.setScrollOffset(0);
+
         // 注销上一帧弹窗按钮（防 _buttons 无限增长），重置按钮计数
         Input.unregisterByPrefix('popBtn_');
+        Input.unregisterByPrefix('popMask_');
+        Input.unregisterByPrefix('popInput_');
         state.buttons = [];
 
         // 布局（同一棵节点树，避免引用不一致）
@@ -648,6 +822,26 @@
         const h = Math.min(lay.height, R.SCREEN_H - 120);
         const x = (R.SCREEN_W - maxW) / 2;
         const y = Math.max(40, (R.SCREEN_H - h) / 2 - 20);
+        // 弹窗可视区（P1-2/P3-8）：超出此区的按钮不注册，防止误命中底层
+        state.clipRect = { x: x, y: y, w: maxW, h: h };
+
+        // P3-8：内容超界时弹窗内滚动（含列表底部元素）
+        state.popScrollMax = Math.max(0, lay.height - h);
+        if (state.popScrollMax <= 0) state.popScroll = 0;
+        else state.popScroll = Math.min(state.popScrollMax, Math.max(0, state.popScroll));
+        Input.setPopupScroll({
+            x: x, y: y, w: maxW, h: h,
+            get: function () { return state.popScroll; },
+            set: function (v) { state.popScroll = Math.min(state.popScrollMax, Math.max(0, v)); },
+            max: function () { return state.popScrollMax; }
+        });
+
+        // 遮罩拦截（P1-2）：全屏按钮先注册（栈底），内容按钮后注册优先命中；
+        // 弹窗打开期间任何未命中内容按钮的点击都落在遮罩上（关闭弹窗），不穿透到底层。
+        Input.registerButton({
+            id: 'popMask_0', x: 0, y: 0, w: R.SCREEN_W, h: R.SCREEN_H,
+            disabled: false, onTap: function () { blurInput(); closePopup(); }
+        });
 
         // 背景遮罩
         R.ctx.globalAlpha = 0.6;
@@ -657,13 +851,28 @@
         // 弹窗卡片
         R.drawRect(x - 10, y - 10, maxW + 20, h + 20, { fill: t.bgCard, radius: 14, stroke: t.borderSoft });
 
-        // 内容（顶部裁剪）
+        // 内容（顶部裁剪 + P3-8 弹窗内滚动偏移）
         R.ctx.save();
         R.ctx.beginPath();
         R.ctx.rect(x, y, maxW, h);
         R.ctx.clip();
-        drawNodesRecursive(root, lay, x, y);
+        R.ctx.translate(0, -state.popScroll);
+        drawNodesRecursive(root, lay, x, y - state.popScroll);
         R.ctx.restore();
+
+        // 右上角关闭按钮 ×（P1-1）：点击关闭弹窗
+        const cx = x + maxW + 10 - 14, cy = y - 10 + 14;
+        R.ctx.strokeStyle = t.textMuted;
+        R.ctx.lineWidth = 1.8;
+        R.ctx.lineCap = 'round';
+        R.ctx.beginPath();
+        R.ctx.moveTo(cx - 5, cy - 5); R.ctx.lineTo(cx + 5, cy + 5);
+        R.ctx.moveTo(cx + 5, cy - 5); R.ctx.lineTo(cx - 5, cy + 5);
+        R.ctx.stroke();
+        Input.registerButton({
+            id: 'popBtn_close', x: cx - 12, y: cy - 12, w: 24, h: 24,
+            disabled: false, onTap: function () { blurInput(); closePopup(); }
+        });
     }
 
     function drawNodesRecursive(root, lay, ox, oy) {
@@ -679,17 +888,28 @@
         });
     }
 
+    // 注册按钮前的可视区裁剪检查（P3-8/P1-2）：中心点超出弹窗可视区的按钮不注册，
+    // 避免被高度裁剪的底部内容按钮拦截遮罩点击
+    function insideClip(x, y, w, h) {
+        const cr = state.clipRect;
+        if (!cr) return true;
+        const cxx = x + w / 2, cyy = y + h / 2;
+        return cxx >= cr.x && cxx <= cr.x + cr.w && cyy >= cr.y && cyy <= cr.y + cr.h;
+    }
+
     // 为带 onclick 的非 button 节点注册点击区域（如 killDrop 物品行/遮罩）
     function registerNodeTap(node, item, ox, oy) {
         const onclick = node.attrs.onclick || '';
         const cb = parseOnClick(onclick);
         if (!cb) return;
+        const bx = item.x + ox, by = item.y + oy, bw = item.w, bh = item.h;
+        if (!insideClip(bx, by, bw, bh)) return;
         Input.registerButton({
             id: 'popBtn_' + (state.buttons.length),
-            x: item.x + ox, y: item.y + oy, w: item.w, h: item.h,
+            x: bx, y: by, w: bw, h: bh,
             disabled: false, onTap: function () { if (cb) cb(); }
         });
-        state.buttons.push({ x: item.x + ox, y: item.y + oy, w: item.w, h: item.h, disabled: false });
+        state.buttons.push({ x: bx, y: by, w: bw, h: bh, disabled: false });
     }
 
     // 收集按钮所有后代文本（含子 span），按按钮宽换行
@@ -723,6 +943,7 @@
         // 注册点击
         const onclick = node.attrs.onclick || '';
         const cb = parseOnClick(onclick);
+        if (!insideClip(x, y, w, h)) return;
         Input.registerButton({
             id: 'popBtn_' + (state.buttons.length), x: x, y: y, w: w, h: h,
             disabled: disabled, onTap: function () { if (cb) cb(); }
@@ -758,6 +979,7 @@
         close: close,
         isVisible: isVisible,
         drawModal: drawModal,
+        getInputValue: getInputValue,
         _parse: parseHTML,   // 临时调试
         _layout: layout
     };
@@ -788,6 +1010,19 @@
 
     function tooltipIsVisible() { return !!tooltipState.data; }
 
+    // 纯文本化标题（P2-2）：剥离 <svg> 源码与内联标签，避免玩家可见内部字段
+    function cleanTitleText(s) {
+        return String(s)
+            .replace(/<svg[\s\S]*?<\/svg>/gi, '')
+            .replace(/<[^>]+>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/[\uFEFF\u200B]/g, '')
+            .trim();
+    }
+
     function drawTooltip() {
         const data = tooltipState.data;
         if (!data || !R.ctx) return;
@@ -795,7 +1030,7 @@
         const maxW = Math.min(R.SCREEN_W - 40, 330);
         // 计算内容行
         const rows = [];
-        if (data.title) rows.push({ text: String(data.title), fs: 14, color: t.warning, bold: true });
+        if (data.title) rows.push({ text: cleanTitleText(data.title), fs: 14, color: t.warning, bold: true });
         if (data.sections) {
             data.sections.forEach(function (sec) {
                 if (sec.label) rows.push({ text: String(sec.label), fs: 12, color: t.textSecondary, bold: true });
