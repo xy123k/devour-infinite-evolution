@@ -1463,7 +1463,7 @@ const game = {
         html += `<p style="color:var(--text-muted);font-size:13px;margin-bottom:10px">已解锁 ${unlocked.length}/${this.achievements.length} 个成就</p>`;
         html += '<div style="margin-bottom:15px;padding:10px;background:var(--bg-card);border-radius:6px;font-size:12px;color:var(--text-secondary)">';
         html += `战斗：${stats.battlesCompleted}场 | 击杀：${stats.enemiesKilled} | 首领：${stats.bossesKilled} | 死亡：${stats.deaths}<br>`;
-        html += `碎片：${stats.totalFragments} | 天赋：${stats.talentsUnlocked} | 进化：${stats.evolutionsCompleted} | 融合：${stats.fusionsCompleted}<br>`;
+        html += `碎片：${stats.totalFragments || 0} | 天赋：${stats.talentsUnlocked || 0} | 进化：${stats.evolutionsCompleted || 0} | 融合：${stats.fusionsCompleted || 0}<br>`;
         html += `最高等级：${stats.maxLevel} | 地图：${stats.mapsExplored.length}/${this.getPlayableMaps().length} | 最高基因精华：${stats.maxGold}`;
         html += '</div>';
 
@@ -2240,10 +2240,10 @@ const game = {
                 else autoEquipMsg += '（已解锁按品质）';
                 this.appendBattleLog(autoEquipMsg);
             }
-            // 新手引导检查
-            if (!this.permanent.tutorialCompleted) {
-                setTimeout(() => this.startTutorial(), 500);
-            }
+        }
+        // 新手引导检查（不受 silent 影响：老玩家已 completed 自然不触发，新玩家必须看到引导）
+        if (!this.permanent.tutorialCompleted) {
+            setTimeout(() => this.startTutorial(), 500);
         }
     },
 

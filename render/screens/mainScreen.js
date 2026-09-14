@@ -29,8 +29,17 @@
     // ============================================================
     //  布局辅助
     // ============================================================
+    // DOM .box 背景 = linear-gradient(145deg, rgba(18,30,40,.85), rgba(12,22,30,.9))
+    // 半透明叠加 bg-primary #0a0e17 后的近似不透明色：#111c26 → #0c151d
+    const BOX_G_FROM = '#111c26';
+    const BOX_G_TO = '#0c151d';
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        if (fill === t.bgCard) {
+            R.drawRect(x, y, w, h, { gradient: { from: BOX_G_FROM, to: BOX_G_TO }, radius: radius == null ? 10 : radius });
+        } else {
+            R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        }
     }
 
     // 返回下一 y
@@ -58,14 +67,16 @@
             { icon: 'map', color: t.success, value: currentFloor + '-' + currentLayer + '层', tip: 'currentFloor' }
         ];
         const itemW = MAX_W / items.length;
-        const h = 46;
-        box(PX, y, MAX_W, h, t.bgCard, 0);
+        const h = 51;   // DOM .top-resource-bar 实测高 51（padding 10 + 内容 + 边框）
+        // DOM --gradient-top-bar：180° #1a2332 → rgba(10,14,23,.95)，用垂直渐变近似
+        R.drawRect(PX, y, MAX_W, h, { gradient: { from: t.navGrad1, to: t.bgPrimary }, radius: 0 });
         R.drawRect(PX, y + h - 1, MAX_W, 1, { fill: t.borderSoft });
         items.forEach((it, i) => {
             const ix = PX + i * itemW;
-            // SVG 图标（P2-2：与 DOM 原版一致）
-            R.drawIcon(it.icon, ix + itemW / 2 - 8, y + 7, 15, it.color);
-            R.drawText(String(it.value), ix + itemW / 2, y + 30, { fontSize: 12, color: t.textPrimary, align: 'center', bold: true });
+            // SVG 图标（P2-2：与 DOM 原版一致，18px）
+            R.drawIcon(it.icon, ix + itemW / 2 - 9, y + (h - 18) / 2, 18, it.color);
+            // 数值统一 accent-warning（DOM .top-bar-value {color: var(--accent-warning)}）
+            R.drawText(String(it.value), ix + itemW / 2 + 11, y + h / 2 + 1, { fontSize: 14, color: t.warning, align: 'left', bold: true, baseline: 'middle' });
             // tooltip 点击
             if (game.showTooltip) {
                 Input.registerButton({
@@ -80,16 +91,16 @@
 
     function drawTitle(y) {
         const t = R.Theme.get();
-        R.drawText('吞噬·无限进化', PX + MAX_W / 2, y + 4, { fontSize: 18, color: t.textPrimary, align: 'center', bold: true });
-        // 地图信息
+        // DOM h2：22px 居中（高 45，mb 20 与 floorInfo mt 折叠）
+        R.drawText('吞噬·无限进化', PX + MAX_W / 2, y + 22, { fontSize: 20, color: t.textPrimary, align: 'center', bold: true, baseline: 'middle' });
+        // DOM .floor-info：20px bold accent-warning，margin 12px 0
         const game = g();
         const currentMap = game.getCurrentMap ? game.getCurrentMap() : null;
         const mapName = currentMap ? currentMap.name : '未知区域';
-        const layerText = (currentMap && currentMap.totalLayers === -1 ? '层（无限轮回）' : '/' + (currentMap ? currentMap.totalLayers : '?') + ' 层');
-        R.drawText(mapName + ' · 第 ' + (game.currentLayer || 1) + layerText + '（全局第 ' + (game.currentFloor || 1) + ' 层）', PX + MAX_W / 2, y + 30, {
-            fontSize: 12, color: t.textMuted, align: 'center'
-        });
-        return 48;
+        const layerText = (currentMap && currentMap.totalLayers === -1 ? ' 层（无限轮回）' : '/' + (currentMap ? currentMap.totalLayers : '?') + ' 层');
+        R.drawText(mapName + ' · 第 ' + (game.currentLayer || 1) + layerText + '（全局第 ' + (game.currentFloor || 1) + ' 层）', PX + MAX_W / 2, y + 81, { fontSize: 20, color: t.warning, align: 'center', bold: true, baseline: 'middle' });
+        // h2 45 + mb 20 + floorInfo 32 + mb 12（与下一 box 的间距）
+        return 109;
     }
 
     function drawPlayerCard(y) {
@@ -99,70 +110,96 @@
         const pad = 14;
         const w = MAX_W - pad * 2;
         const x = PX + pad;
-        const h0 = 150;
+        // DOM 玩家卡 box 实测高 205 = pad14 + h3(25+mb12) + playerInfo(139) + pad14
+        const h3H = 25, h3Mb = 12, contentH = 139;
         const statAllocH = p.statPoints > 0 ? 96 : 0;
-        const totalH = h0 + statAllocH + 22;
+        const totalH = pad + h3H + h3Mb + contentH + statAllocH + pad + 1;   // +1 边框，实测 DOM=205
 
         box(PX, y, MAX_W, totalH, t.bgCard, 12);
         R.drawRect(PX, y, MAX_W, 1, { fill: t.borderSoft });
+        // DOM .box 1px 全边框 var(--border-primary)
+        R.drawRect(PX, y, MAX_W, totalH, { stroke: t.border, lineWidth: 1, radius: 12 });
 
-        let yy = y + 12;
-        // 玩家信息标题（DOM 原版 h3 对齐）
-        R.drawText('玩家信息', x, yy, { fontSize: 14, color: t.textPrimary, bold: true });
-        yy += 22;
-        // 行1：HP / 攻击 / 防御
-        R.drawText('❤ ' + p.hp + '/' + p.maxHp, x, yy, { fontSize: 16, color: t.danger, bold: true });
-        R.drawText('⚔ ' + Math.floor(p.attack), x + w / 2, yy, { fontSize: 15, color: t.orange, bold: true });
-        R.drawText('🛡 ' + Math.floor(p.defense), x + w, yy, { fontSize: 15, color: t.info, align: 'right', bold: true });
-        // 注册 tooltip
-        bindStatTooltip('❤', 'hp', x, yy, w / 2, 20);
-        yy += 24;
-        // 行2：暴击/命中/闪避/先手（DOM 原版：基础命中/闪避（基础））
-        R.drawText('暴击 ' + p.crit + '%', x, yy, { fontSize: 13, color: t.textMuted });
-        R.drawText('基础命中 ' + p.hit + '%', x + w * 0.36, yy, { fontSize: 13, color: t.textMuted });
-        R.drawText('闪避 ' + (p.dodgeRate || 0) + '%（基础）', x + w * 0.58, yy, { fontSize: 13, color: t.textMuted });
-        R.drawText('先手 ' + p.speed, x + w, yy, { fontSize: 13, color: t.textMuted, align: 'right' });
-        bindStatTooltip('', 'crit', x, yy, w * 0.36, 20);
-        bindStatTooltip('', 'hit', x + w * 0.36, yy, w * 0.22, 20);
-        bindStatTooltip('', 'dodgeRate', x + w * 0.58, yy, w * 0.24, 20);
-        bindStatTooltip('', 'speed', x + w * 0.82, yy, w * 0.18, 20);
-        yy += 22;
-        // 行3：暴伤 + 提示
-        R.drawText('暴伤 ' + p.critDamage + '%', x, yy, { fontSize: 12, color: t.textMuted });
-        R.drawText('实际命中/闪避受双方敏捷影响', x + w, yy, { fontSize: 11, color: t.textFaint, align: 'right' });
-        bindStatTooltip('', 'critDamage', x, yy, w * 0.38, 20);
-        yy += 20;
-        // 行4：等级/精华/天赋
-        R.drawText(p.level + '级 (' + p.exp + '/' + p.expToNext + ')', x, yy, { fontSize: 13, color: t.textFaint });
-        R.drawText('基因精华 ' + p.gold, x + w / 2, yy, { fontSize: 13, color: t.textFaint });
-        R.drawText('天赋 ' + (p.equippedTalents || []).length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 0), x + w, yy, { fontSize: 13, color: t.textFaint, align: 'right' });
-        bindStatTooltip('', 'level', x, yy, w * 0.3, 20);
-        bindStatTooltip('', 'essence', x + w * 0.3, yy, w * 0.3, 20);
-        bindStatTooltip('', 'passiveSlots', x + w * 0.6, yy, w * 0.4, 20);
-        yy += 22;
-        // 分割线
-        R.drawRect(x, yy, w, 1, { fill: t.borderPrimary });
-        yy += 8;
-        // 行5：五维
-        const stats = [
-            { k: 'strength', name: '力' }, { k: 'agility', name: '敏' }, { k: 'vitality', name: '体' },
-            { k: 'perception', name: '感' }, { k: 'evolution', name: '进' }
-        ];
-        stats.forEach((s, i) => {
-            const sx = x + i * (w / 5);
-            R.drawText(s.name + ' ' + p[s.k], sx + (w / 5) / 2, yy, { fontSize: 13, color: t.textSecondary, align: 'center' });
-            bindStatTooltip('', s.k, sx, yy, w / 5, 20);
+        let yy = y + pad;
+        // 玩家信息标题（DOM h3 16px bold，实测 glyph 顶 = box+pad）
+        R.drawText('玩家信息', x, yy, { fontSize: 16, color: t.textPrimary, bold: true });
+        yy += h3H + h3Mb;
+        // flex space-between 分布助手（DOM playerInfo 全部是 justify-content:space-between）
+        function flexRow(x0, y0, w0, items, bind) {
+            const widths = items.map(function (it) { return R.measureText(it.text, it.fontSize || 13, it.bold); });
+            const total = widths.reduce(function (a, b) { return a + b; }, 0);
+            const gap = items.length > 1 ? (w0 - total) / (items.length - 1) : 0;
+            let cx = x0;
+            items.forEach(function (it, i) {
+                R.drawText(it.text, cx, y0, { fontSize: it.fontSize || 13, color: it.color, bold: it.bold, baseline: 'top' });
+                if (bind) bind(it, cx, widths[i]);
+                cx += widths[i] + gap;
+            });
+        }
+        // 行0：HP / 攻击 / 防御（DOM：16px bold danger / 15px orange / 15px info）
+        flexRow(x, yy, w, [
+            { text: '❤ ' + p.hp + '/' + p.maxHp, fontSize: 16, color: t.danger, bold: true },
+            { text: '⚔ ' + Math.floor(p.attack), fontSize: 15, color: t.orange },
+            { text: '🛡 ' + Math.floor(p.defense), fontSize: 15, color: t.info }
+        ], function (it, cx, cw) { if (it.text.indexOf('❤') === 0) bindStatTooltip('', 'hp', cx, yy, cw + 40, 26); });
+        yy += 32;
+        // 行1：暴击/基础命中/闪避/先手（DOM 13px text-muted，space-between）
+        flexRow(x, yy, w, [
+            { text: '暴击 ' + p.crit + '%', fontSize: 13, color: t.textMuted },
+            { text: '基础命中 ' + p.hit + '%', fontSize: 13, color: t.textMuted },
+            { text: '闪避 ' + (p.dodgeRate || 0) + '%（基础）', fontSize: 13, color: t.textMuted },
+            { text: '先手 ' + p.speed, fontSize: 13, color: t.textMuted }
+        ], function (it, cx, cw) {
+            if (it.text.indexOf('暴击') === 0) bindStatTooltip('', 'crit', cx, yy, cw, 22);
+            else if (it.text.indexOf('基础命中') === 0) bindStatTooltip('', 'hit', cx, yy, cw, 22);
+            else if (it.text.indexOf('闪避') === 0) bindStatTooltip('', 'dodgeRate', cx, yy, cw, 22);
+            else bindStatTooltip('', 'speed', cx, yy, cw, 22);
         });
-        yy += 20;
-
+        yy += 25;
+        // 行2：暴伤 + 提示（DOM 12px，hint text-faint 右对齐）
+        flexRow(x, yy, w, [
+            { text: '暴伤 ' + p.critDamage + '%', fontSize: 13, color: t.textMuted },
+            { text: '实际命中/闪避受双方敏捷影响', fontSize: 12, color: t.textFaint }
+        ], function (it, cx, cw) { if (it.text.indexOf('暴伤') === 0) bindStatTooltip('', 'critDamage', cx, yy, cw, 20); });
+        yy += 25;
+        // 行3：等级/精华/天赋（DOM 13px text-faint）
+        flexRow(x, yy, w, [
+            { text: p.level + '级 (' + p.exp + '/' + p.expToNext + ')', fontSize: 13, color: t.textFaint },
+            { text: '基因精华 ' + p.gold, fontSize: 13, color: t.textFaint },
+            { text: '天赋 ' + (p.equippedTalents || []).length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 3), fontSize: 13, color: t.textFaint }
+        ], function (it, cx, cw) {
+            if (it.text.indexOf('级 (') >= 0) bindStatTooltip('', 'level', cx, yy, cw, 21);
+            else if (it.text.indexOf('基因精华') === 0) bindStatTooltip('', 'essence', cx, yy, cw, 21);
+            else bindStatTooltip('', 'passiveSlots', cx, yy, cw, 21);
+        });
+        yy += 29;
+        // 分割线（DOM border-top 位于 321）
+        R.drawRect(x, yy, w, 1, { fill: t.border });
+        yy += 7;
+        // 行4：五维（DOM 13px text-secondary，space-between）
+        flexRow(x, yy, w, [
+            { text: '力 ' + p.strength, fontSize: 13, color: t.textSecondary },
+            { text: '敏 ' + p.agility, fontSize: 13, color: t.textSecondary },
+            { text: '体 ' + p.vitality, fontSize: 13, color: t.textSecondary },
+            { text: '感 ' + p.perception, fontSize: 13, color: t.textSecondary },
+            { text: '进 ' + p.evolution, fontSize: 13, color: t.textSecondary }
+        ], function (it, cx, cw) {
+            const map = { 力: 'strength', 敏: 'agility', 体: 'vitality', 感: 'perception', 进: 'evolution' };
+            const k = map[it.text.charAt(0)];
+            if (k) bindStatTooltip('', k, cx, yy, cw + 25, 29);
+        });
         // 属性点分配
         if (p.statPoints > 0) {
-            yy += 4;
-            box(x, yy, w, 72, t.bgSecondary, 8);
-            R.drawText('可用属性点：' + p.statPoints + '（点击分配）', x + 10, yy + 8, { fontSize: 13, color: t.warning, bold: true });
+            const stats = [
+                { k: 'strength', name: '力' }, { k: 'agility', name: '敏' }, { k: 'vitality', name: '体' },
+                { k: 'perception', name: '感' }, { k: 'evolution', name: '进' }
+            ];
+            const ay = y + pad + h3H + h3Mb + contentH + 4;
+            box(x, ay, w, 72, t.bgSecondary, 8);
+            R.drawText('可用属性点：' + p.statPoints + '（点击分配）', x + 10, ay + 8, { fontSize: 13, color: t.warning, bold: true });
             const btnW = (w - 20 - 8 * 4) / 5;
             stats.forEach((s, i) => {
-                const by = yy + 32;
+                const by = ay + 32;
                 R.drawButton({
                     id: 'statalloc_' + s.k,
                     x: x + 10 + i * (btnW + 8), y: by, w: btnW, h: 32,
@@ -171,9 +208,8 @@
                     onTap: (function (k) { return function () { try { game.allocateStat(k); } catch (e) {} }; })(s.k)
                 });
             });
-            yy += 80;
         }
-        return totalH;
+        return totalH + 10;   // +10 = DOM .box margin-bottom
     }
 
     // 属性 tooltip（虚线文本点击显示）
@@ -218,33 +254,34 @@
         return drawEnvironmentCard(x, y, w);
     }
 
-    // 环境法则
+    // 环境法则（DOM storyText：16px text-secondary，纯文本 + br 分行；box pad 14）
     function drawEnvironmentCard(x, y, w) {
         const game = g();
         const t = R.Theme.get();
         const currentMap = game.getCurrentMap ? game.getCurrentMap() : null;
         const envEff = game.getEnvironmentEffect ? game.getEnvironmentEffect() : null;
 
-        let title = '探索', body = '继续探索，寻找更强的猎物...', color = t.accent;
+        let title = '探索', body = '继续探索，寻找更强的猎物...';
         if (currentMap && envEff) {
             const isBossFloor = currentMap.totalLayers === -1 ? ((game.currentLayer || 1) % 5 === 0) : ((game.currentLayer || 1) >= (currentMap.totalLayers || 3));
             title = '【' + currentMap.name + '】';
             body = '环境法则：' + envEff.name + '\n' + envEff.desc + (isBossFloor ? '\n⚠ 前方是首领层，做好准备！' : '');
-            color = isBossFloor ? t.danger : t.accent;
         } else if (currentMap && currentMap.environmentLaw) {
             title = '【' + currentMap.name + '】';
             body = '环境法则：' + currentMap.environmentLaw.name + '\n' + currentMap.environmentLaw.effect;
         }
-        const lines = R.wrapText(body, w - 24, 13, false);
-        const h = 40 + lines.length * 20 + 12;
+        // 16px lh1.6 对齐 DOM storyText（22.4 → 用 26 取整）
+        const fs = 16, lh = 26;
+        const lines = R.wrapText(title + '\n' + body, w - 28, fs, false);
+        const h = 28 + lines.length * lh;   // 28 = box pad 14×2
         box(x - 14, y, w + 28, h, t.bgCard, 10);
-        R.drawRect(x - 14, y, 4, h, { fill: color, radius: 2 });
-        R.drawText(title, x, y + 10, { fontSize: 14, color: color, bold: true });
-        R.drawText(body, x, y + 34, { fontSize: 13, color: t.textSecondary, maxWidth: w - 24, lineHeight: 20 });
-        return h;
+        R.drawRect(x - 14, y, w + 28, h, { stroke: t.border, lineWidth: 1, radius: 10 });
+        // 左侧彩色竖条（DOM 主屏环境卡没有，删除）
+        R.drawText(title + '\n' + body, x, y + 20, { fontSize: fs, color: t.textSecondary, maxWidth: w - 28, lineHeight: lh });
+        return h + 10;   // +10 = DOM .box margin-bottom
     }
 
-    // 剧情卡
+    // 剧情卡（DOM 实测：外层 box 375-597 h222，绿色卡 storyText 400-572 h172）
     function drawStoryCard(x, y, w) {
         const game = g();
         const t = R.Theme.get();
@@ -253,23 +290,28 @@
         const isLast = game._storyIdx >= totalLines - 1;
         const lineNum = (game._storyIdx || 0) + 1;
 
-        const lines = R.wrapText(line, w - 24, 14, false);
-        const h = 50 + lines.length * 24 + 52;
-        box(x - 14, y, w + 28, h, 'rgba(0,60,50,0.55)', 10);
-        R.drawRect(x - 14, y, 4, h, { fill: t.accent, radius: 2 });
-        R.drawText('剧情', x, y + 10, { fontSize: 15, color: t.accent, bold: true });
-        R.drawText(lineNum + '/' + totalLines, x + w, y + 10, { fontSize: 12, color: t.textFaint, align: 'right' });
-        R.drawText(line, x, y + 36, { fontSize: 14, color: t.textSecondary, maxWidth: w - 24, lineHeight: 24 });
-        // 下一段按钮
+        const h = 222;
+        // 外层 box（与其它卡片一致，pad14）
+        box(PX, y, MAX_W, h, t.bgCard, 10);
+        R.drawRect(PX, y, MAX_W, h, { stroke: t.border, lineWidth: 1, radius: 10 });
+        // 内侧绿色渐变卡（storyText = y+25 起，h172）
+        const gx = PX + 14, gy = y + 25, gw = MAX_W - 28;
+        R.drawRect(gx, gy, gw, 172, { gradient: { from: 'rgba(0,60,50,0.6)', to: 'rgba(0,30,40,0.55)' }, radius: 8 });
+        // 标题行：剧情 16px bold accent + x/y 12px faint 右对齐
+        R.drawText('剧情', gx + 15, gy + 15, { fontSize: 16, color: t.accent, bold: true });
+        R.drawText(lineNum + '/' + totalLines, gx + gw - 15, gy + 19, { fontSize: 12, color: t.textFaint, align: 'right' });
+        // 内容 14px lh25（DOM 14px lh1.8 = 25.2）
+        R.drawText(line, gx + 15, gy + 51, { fontSize: 14, color: t.textSecondary, maxWidth: gw - 30, lineHeight: 25 });
+        // 按钮行（DOM y+138 起，按钮 36 高）
         R.drawButton({
             id: 'storyNext',
-            x: x, y: y + h - 46, w: 120, h: 36,
+            x: gx + 15, y: gy + 113, w: 120, h: 36,
             text: isLast ? '完成' : '下一段',
-            fontSize: 14, bg: t.accent, color: '#0a0e17',
+            fontSize: 14, bg: t.accent, color: '#ffffff',
             onTap: function () { try { game._storyNext(); } catch (e) {} }
         });
-        R.drawText('点击继续阅读，或直接探索跳过', x + 130, y + h - 28, { fontSize: 11, color: t.textFaint });
-        return h;
+        R.drawText('点击继续阅读，或直接探索跳过', gx + 145, gy + 126, { fontSize: 12, color: t.textFaint });
+        return h + 10;   // +10 = DOM .box margin-bottom
     }
 
     // 遭遇敌人卡
@@ -348,7 +390,7 @@
         }
         // 抗性
         if (resistLines.length) {
-            R.drawRect(x, yy, w - 20, 1, { fill: t.borderPrimary });
+            R.drawRect(x, yy, w - 20, 1, { fill: t.border });
             yy += 6;
             R.drawText('持续伤害抗性：', x, yy, { fontSize: 11, color: t.textMuted });
             R.drawText(resistLines.map(function (r) { return r.name + (r.pct > 0 ? r.pct + '%' : '无'); }).join('  '), x, yy + 15, { fontSize: 11, color: t.textMuted, maxWidth: w - 24 });
@@ -458,69 +500,71 @@
     function drawExploreBtn(y) {
         const t = R.Theme.get();
         const game = g();
+        // DOM 探索 box：pad16 + 按钮 h58（margin4）+ pad16 = 实测 h100
+        box(PX, y, MAX_W, 100, t.bgCard, 12);
         R.drawButton({
-            id: 'exploreBtn', x: PX + 14, y: y, w: MAX_W - 28, h: 54,
+            id: 'exploreBtn', x: PX + 17, y: y + 21, w: MAX_W - 34, h: 58,
             text: '探索前进', icon: 'map', fontSize: 18, bg: t.success, color: '#ffffff',
             onTap: function () { try { game.goExplore(); } catch (e) {} }
         });
-        return 66;
+        return 110;
     }
 
     function drawFeatureGrid(y) {
         const t = R.Theme.get();
         const game = g();
-        const gap = 10;
+        // DOM 宫格 box：实测 gap 16（672-722 / 738-788）
+        const gap = 16;
         const w = (MAX_W - 28 - gap) / 2;
         const h = 50;
-        const x0 = PX + 14;
+        const x0 = PX + 15;
         const feats = [
             { id: 'feat_talent', text: '天赋', icon: 'seedling', onTap: function () { game.openInRunTalentPanel(); } },
             { id: 'feat_status', text: '状态', icon: 'user', onTap: function () { game.openStatus(); } },
             { id: 'feat_inv', text: '背包', icon: 'bag', onTap: function () { game.openInventory(); } },
             { id: 'feat_sym', text: '共生体', icon: 'target', onTap: function () { game.openSymbiontPanel(); } }
         ];
-        box(PX, y, MAX_W, h * 2 + gap + 20, t.bgCard, 12);
+        box(PX, y, MAX_W, 154, t.bgCard, 12);
         feats.forEach(function (f, i) {
             const col = i % 2, row = Math.floor(i / 2);
             R.drawButton({
-                id: f.id, x: x0 + col * (w + gap), y: y + 10 + row * (h + gap), w: w, h: h,
-                text: f.text, icon: f.icon, fontSize: 15, bg: t.bgHover, color: t.textPrimary, border: t.borderSoft,
+                id: f.id, x: x0 + col * (w + gap), y: y + 18 + row * (h + gap), w: w, h: h,
+                text: f.text, icon: f.icon, fontSize: 15, bg: t.accent, color: '#ffffff',
                 onTap: f.onTap
             });
         });
-        return h * 2 + gap + 20;
+        return 164;
     }
 
     function drawMoreArea(y) {
         const t = R.Theme.get();
         const game = g();
-        const h = 48;
+        // DOM 实测：更多 box 817-1155（展开 h338 = 78 + 12 + 菜单248），按钮 h48 行距64
+        const NAV_H = 76;
+        const menuH = 248;
+        const h = _moreOpen ? 338 : 78;
         box(PX, y, MAX_W, h, t.bgCard, 12);
-        // P2-3：展开菜单时若底部超出底栏遮挡区（排行/设置不可见），自动滚动到可见
-        const NAV_H = 76; // 底部导航高度（含安全区）
+        R.drawRect(PX, y, MAX_W, h, { stroke: t.border, lineWidth: 1, radius: 12 });
         R.drawButton({
-            id: 'moreToggle', x: PX, y: y, w: MAX_W, h: h,
+            id: 'moreToggle', x: PX + 15, y: y + 15, w: MAX_W - 30, h: 48,
             text: '更多功能 ' + (_moreOpen ? '▲' : '▼'),
-            icon: 'bolt', iconSize: 15, fontSize: 15, bg: t.borderPrimary, color: t.textPrimary,
+            icon: 'bolt', iconSize: 15, fontSize: 15, bg: t.border, color: t.textPrimary,
             onTap: (function (yy) {
                 return function () {
                     _moreOpen = !_moreOpen;
-                    // 展开菜单时关闭 tooltip，避免遮挡菜单项（P3-x）
                     try { if (game && game.hideTooltip) game.hideTooltip(); } catch (e) {}
                     if (_moreOpen) {
-                        const areaH = 4 * (44 + 8) + 10;
-                        const menuBottom = yy + h + areaH - _scrollY; // 菜单底部（屏幕坐标，yy 为未滚动坐标）
-                        const need = menuBottom - (R.SCREEN_H - NAV_H);
-                        if (need > _scrollY) _scrollY = need;
+                        // 展开后菜单底（未滚动坐标）必须可见：增量滚动到菜单底不超出视口
+                        const menuBottom = yy + 338;
+                        const viewBottom = _scrollY + (R.SCREEN_H - NAV_H);
+                        if (menuBottom > viewBottom) _scrollY += menuBottom - viewBottom;
                     }
                 };
             })(y)
         });
-        let ret = h;
         if (_moreOpen) {
             const gap = 8;
-            const w = (MAX_W - 28 - gap) / 2;
-            const bh = 44;
+            const w = (MAX_W - 30 - gap) / 2;
             const items = [
                 { id: 'more_guide', text: '效果图鉴', icon: 'book', onTap: function () { game.openStatusGuide(); } },
                 { id: 'more_shop', text: '商店', icon: 'shop', onTap: function () { game.openShop(); } },
@@ -531,43 +575,43 @@
                 { id: 'more_rank', text: '排行', icon: 'trendUp', onTap: function () { game.openLeaderboardPanel(); } },
                 { id: 'more_set', text: '设置', icon: 'settings', onTap: function () { game.openSettings(); } }
             ];
-            const rows = 4;
-            const areaH = rows * (bh + gap) + 10;
-            box(PX, y + h, MAX_W, areaH, t.bgCard, 12);
             items.forEach(function (it, i) {
                 const col = i % 2, row = Math.floor(i / 2);
                 R.drawButton({
-                    id: it.id, x: PX + 14 + col * (w + gap), y: y + h + 8 + row * (bh + gap), w: w, h: bh,
-                    text: it.text, icon: it.icon, iconSize: 14, fontSize: 14, bg: t.bgHover, color: t.textPrimary,
+                    id: it.id, x: PX + 15 + col * (w + gap), y: y + 79 + row * 64, w: w, h: 48,
+                    text: it.text, icon: it.icon, iconSize: 14, fontSize: 14, bg: t.accent, color: '#ffffff',
                     onTap: it.onTap
                 });
             });
-            ret += areaH;
         }
-        return ret;
+        return h + 10;
     }
 
     function drawGrowth(y) {
         const t = R.Theme.get();
         const game = g();
         const blocked = (game.currentFloor || 1) > 1;
-        let h = 64;
+        // DOM 轮回 box：pad14 + 按钮44 + pad14 = 实测 h82
+        let h = 82;
         if (blocked) h += 56;
         box(PX, y, MAX_W, h, t.bgCard, 12);
+        // DOM growthBtn 为内容宽 + padding 32（12px 16px×2），居中；其余主屏按钮全宽
+        const gText = '局外成长（轮回空间）';
+        const gW = R.measureText(gText, 13, true) + 24;
         R.drawButton({
-            id: 'growthBtn', x: PX + 14, y: y + 10, w: MAX_W - 28, h: 42,
-            text: '局外成长（轮回空间）', fontSize: 15,
+            id: 'growthBtn', x: PX + (MAX_W - gW) / 2, y: y + 19, w: gW, h: 44,
+            text: gText, fontSize: 13,
             bg: blocked ? 'rgba(90,106,101,0.35)' : t.warning, color: blocked ? t.textMuted : '#1a1206',
             disabled: blocked,
             onTap: function () { try { game.openGrowth(); } catch (e) {} }
         });
         if (blocked) {
             R.drawButton({
-                id: 'suicideBtn', x: PX + 14, y: y + 58, w: MAX_W - 28, h: 38,
-                text: '结束轮回（自杀）', icon: 'shield', iconSize: 14, fontSize: 14, bg: t.danger, color: '#ffffff',
+                id: 'suicideBtn', x: PX + 15, y: y + 71, w: MAX_W - 30, h: 38,
+                text: '结束轮回（自杀）', icon: 'shield', iconSize: 12, fontSize: 13, bg: t.danger, color: '#ffffff',
                 onTap: function () { try { game.suicide(); } catch (e) {} }
             });
-            R.drawText('轮回空间仅在死亡后可进入，当前探索进度将保留', PX + MAX_W / 2, y + 104, { fontSize: 11, color: t.textMuted, align: 'center' });
+            R.drawText('轮回空间仅在死亡后可进入，当前探索进度将保留', PX + MAX_W / 2, y + 118, { fontSize: 12, color: t.textMuted, align: 'center' });
             h += 46;
         }
         return h;
@@ -587,11 +631,12 @@
         ctx.rect(0, 0, R.SCREEN_W, R.SCREEN_H);
         ctx.clip();
         // P3-3：与其它界面统一 —— 内容用未滚动坐标绘制，滚动偏移交给 Input 命中补偿
+        // DOM 顶栏 position:sticky 不随内容滚动 → 顶栏画在滚动位移之外
+        let y = 0;
+        y += drawTopBar(0);   // 顶栏高度计入内容流（DOM sticky 顶栏占位 51px），顶栏本身最后重绘
         ctx.translate(0, -_scrollY);
         Input.setScrollOffset(_scrollY);
 
-        let y = 0;
-        y += drawTopBar(y);
         y += drawTitle(y);
         y += drawPlayerCard(y);
         y += drawStoryArea(y);
@@ -602,6 +647,13 @@
         y += BOTTOM_PAD;
 
         _contentH = y;
+        ctx.restore();
+        // DOM 顶栏 position:sticky —— 最后绘制，保证盖在滚动内容之上
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, R.SCREEN_W, 52);
+        ctx.clip();
+        drawTopBar(0);
         ctx.restore();
         // 滚动偏移保持到下一帧（与其它界面一致），点击命中时由 Input 补偿
 

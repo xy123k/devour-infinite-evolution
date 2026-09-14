@@ -152,14 +152,11 @@
         if (side === 'enemy') {
             const eCrit = 5 + (unit.stats.per || 5) * 0.8;
             const eHit = 85 + (unit.stats.per || 5) / 5;
-            line1 = '攻击：' + unit.stats.atk + ' | 防御：' + unit.stats.def + ' | 先手：' + (unit.stats.agi || 5);
-            line2 = '暴击：' + eCrit.toFixed(0) + '% | 命中：' + eHit.toFixed(0) + '%';
+            line1 = '生命：' + unit.stats.hp + '/' + unit.stats.maxHp + ' | 攻击：' + unit.stats.atk + ' | 防御：' + unit.stats.def + ' | 先手：' + (unit.stats.agi || 5) + ' | 暴击：' + eCrit.toFixed(0) + '% | 命中：' + eHit.toFixed(0) + '%';
         } else {
-            line1 = '攻击：' + Math.floor(unit.attack) + ' | 防御：' + Math.floor(unit.defense) + ' | 暴击：' + unit.crit + '%';
-            line2 = '命中：' + unit.hit + '% | 先手：' + unit.speed + ' | 能量：' + unit.energy + '/' + unit.maxEnergy;
+            line1 = '生命：' + unit.hp + '/' + unit.maxHp + ' | 攻击：' + unit.attack + ' | 防御：' + unit.defense + ' | 暴击：' + unit.crit + '% | 命中：' + unit.hit + '% | 先手：' + unit.speed + ' | 能量：' + unit.energy + '/' + unit.maxEnergy;
         }
-        R.drawText(line1, x, y + 56, { fontSize: 11, color: t.textMuted, maxWidth: w });
-        R.drawText(line2, x, y + 72, { fontSize: 11, color: t.textMuted, maxWidth: w });
+        R.drawText(line1, x, y + 56, { fontSize: 12, color: t.textMuted, maxWidth: w });
 
         // 状态（逐状态绘制 + tooltip，对齐 DOM 原版 status-tag）
         let statusList = [];
@@ -198,7 +195,7 @@
         const maxRows = Math.floor((LOG_H - 26) / 13);
         let yy = y + 26;
         let drawn = 0;
-        for (let i = logs.length - 1; i >= 0 && drawn < maxRows; i--) {
+        for (let i = 0; i < logs.length && drawn < maxRows; i++) {
             const l = logs[i];
             const text = stripHtml(l.text);
             const lines = R.wrapText(text, w - 20, 11, false);

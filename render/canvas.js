@@ -217,6 +217,14 @@
         if (radius > 0) {
             roundRectPath(ctx, x, y, w, h, radius);
             if (opt.fill) { ctx.fillStyle = opt.fill; ctx.fill(); }
+            if (opt.gradient) {
+                // 135° 对角线渐变（对齐 DOM linear-gradient(135deg, ...)）
+                const g = ctx.createLinearGradient(x, y, x + w, y + h);
+                g.addColorStop(0, opt.gradient.from);
+                g.addColorStop(1, opt.gradient.to);
+                ctx.fillStyle = g;
+                ctx.fill();
+            }
             if (opt.stroke) {
                 ctx.strokeStyle = opt.stroke;
                 ctx.lineWidth = opt.lineWidth || 1;
@@ -224,6 +232,13 @@
             }
         } else {
             if (opt.fill) { ctx.fillStyle = opt.fill; ctx.fillRect(x, y, w, h); }
+            if (opt.gradient) {
+                const g = ctx.createLinearGradient(x, y, x + w, y + h);
+                g.addColorStop(0, opt.gradient.from);
+                g.addColorStop(1, opt.gradient.to);
+                ctx.fillStyle = g;
+                ctx.fillRect(x, y, w, h);
+            }
             if (opt.stroke) {
                 ctx.strokeStyle = opt.stroke;
                 ctx.lineWidth = opt.lineWidth || 1;
@@ -242,7 +257,7 @@
     // ---- 文本测量与换行 ----
     let _fontCache = '';
     function setFont(fontSize, bold) {
-        const f = (bold ? 'bold ' : '') + fontSize + 'px "PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif';
+        const f = (bold ? 'bold ' : '') + fontSize + 'px "Microsoft YaHei","Segoe UI",sans-serif';
         if (f !== _fontCache) {
             ctx.font = f;
             _fontCache = f;
@@ -356,6 +371,8 @@
         const maxWidth = opt.maxWidth;
         const lineHeight = opt.lineHeight || Math.round(fontSize * 1.4);
         const maxLines = opt.maxLines || 0;
+        const letterSpacing = opt.letterSpacing || 0;
+        const glow = opt.glow;
 
         let lines;
         if (maxWidth) {
@@ -393,9 +410,32 @@
 
         for (let i = 0; i < lines.length; i++) {
             let tx = x;
-            if (align === 'center') tx = x - measureText(lines[i], fontSize, bold) / 2;
-            else if (align === 'right') tx = x - measureText(lines[i], fontSize, bold);
-            ctx.fillText(lines[i], tx, startY + i * lineHeight);
+            const ln = lines[i];
+            if (letterSpacing > 0) {
+                // 逐字符绘制（h2 字距 4px），先算总宽用于居中/右对齐
+                let total = 0;
+                for (let c = 0; c < ln.length; c++) total += measureText(ln[c], fontSize, bold) + (c < ln.length - 1 ? letterSpacing : 0);
+                let cx = x;
+                if (align === 'center') cx = x - total / 2;
+                else if (align === 'right') cx = x - total;
+                ctx.save();
+                if (glow) {
+                    ctx.shadowColor = glow;
+                    ctx.shadowBlur = 20;
+                }
+                for (let c = 0; c < ln.length; c++) {
+                    ctx.fillText(ln[c], cx, startY + i * lineHeight);
+                    cx += measureText(ln[c], fontSize, bold) + letterSpacing;
+                }
+                ctx.restore();
+                continue;
+            }
+            if (align === 'center') tx = x - measureText(ln, fontSize, bold) / 2;
+            else if (align === 'right') tx = x - measureText(ln, fontSize, bold);
+            ctx.save();
+            if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 20; }
+            ctx.fillText(ln, tx, startY + i * lineHeight);
+            ctx.restore();
         }
         return lines.length;
     }
@@ -455,11 +495,41 @@
         // P3-5：桌面悬停反馈（按钮悬停提亮）
         const hovered = !opt.disabled && !pressed && Input && Input._hoverId === id;
 
-        const bg = opt.disabled ? (opt.bgDisabled || 'rgba(90,106,101,0.35)')
+        const bg = opt.disabled ? (opt.bgDisabled || t.bgHover)
             : (pressed ? (opt.bgPressed || shade(opt.bg || t.accent, -0.2))
                 : (hovered ? shade(opt.bg || t.accent, 0.14) : (opt.bg || t.accent)));
-        const color = opt.disabled ? (opt.colorDisabled || '#8a9a95') : (opt.color || '#0a0e17');
+        const color = opt.disabled ? (opt.colorDisabled || '#ffffff') : (opt.color || '#ffffff');
         const radius = opt.radius == null ? 8 : opt.radius;
+
+        // DOM 按钮渐变映射：默认按钮 = accent 135° 渐变；.btn-warn = warning→orange 渐变；其余纯色
+        // DOM index.html button 全局样式：1px rgba(0,255,170,.3) 边框 + box-shadow 0 2px 10px rgba(0,212,170,.3)
+        // + inset 0 1px 0 rgba(255,255,255,.2) + text-shadow 0 1px 2px rgba(0,0,0,.3)
+        // btn-success 静态无 box-shadow（仅 hover 有）；btn-danger 为 rgba(255,82,82,.3)
+        let gradient = null, glow = null, borderColor = null;
+        if (!opt.disabled && !opt.noGradient) {
+            const raw = opt.bg;
+            if (raw === undefined || raw === null || raw === t.accent) {
+                gradient = { from: shade(t.accent, pressed ? -0.2 : (hovered ? 0.14 : 0)), to: shade(t.accentDark, pressed ? -0.2 : (hovered ? 0.14 : 0)) };
+                glow = 'rgba(0,212,170,0.3)';
+                borderColor = 'rgba(0,255,170,0.3)';
+            } else if (raw === t.warning) {
+                gradient = { from: shade(t.warning, pressed ? -0.2 : (hovered ? 0.14 : 0)), to: shade(t.orange, pressed ? -0.2 : (hovered ? 0.14 : 0)) };
+                glow = 'rgba(255,183,77,0.3)';
+                borderColor = 'rgba(255,183,77,0.3)';
+            } else if (raw === t.success) {
+                // DOM .btn-success 静态无外发光，仅 hover 提亮 + 0 0 12px rgba(46,213,115,.4)
+                glow = hovered ? 'rgba(46,213,115,0.4)' : null;
+                borderColor = 'rgba(0,255,170,0.3)';
+            } else if (raw === t.danger) {
+                glow = 'rgba(255,82,82,0.3)';
+                borderColor = 'rgba(255,82,82,0.3)';
+            }
+        }
+        // 非默认背景的按钮（bgHover/borderPrimary 等）仍继承 button 全局边框 + 外发光
+        if (borderColor === null && !opt.disabled && opt.border !== false) {
+            borderColor = 'rgba(0,255,170,0.3)';
+            if (glow === null) glow = 'rgba(0,212,170,0.3)';
+        }
 
         // 注册（Input 存在时）
         if (Input && typeof Input.registerButton === 'function') {
@@ -469,16 +539,44 @@
             });
         }
 
+        ctx.save();
+        // DOM button:disabled {background:var(--bg-hover);opacity:0.6}
+        if (opt.disabled) ctx.globalAlpha = 0.6;
+        if (glow) {
+            // DOM box-shadow 0 2px 10px：CSS blur 10 ≈ canvas shadowBlur 5（高斯半径一半）
+            ctx.shadowColor = glow;
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetY = 2;
+        }
         drawRect(opt.x, opt.y, opt.w, opt.h, {
-            fill: bg,
-            stroke: opt.border || null,
+            fill: gradient ? null : bg,
+            gradient: gradient,
+            stroke: opt.border === false ? null : (opt.border || borderColor),
             lineWidth: opt.borderWidth || 1,
             radius: radius
         });
+        // DOM inset 0 1px 0 rgba(255,255,255,0.2)：顶部内高光（disabled 或显式关闭时不画）
+        if (!opt.disabled && opt.inset !== false && radius > 0) {
+            ctx.save();
+            ctx.globalAlpha = 0.2;
+            roundRectPath(ctx, opt.x + 1, opt.y + 1, opt.w - 2, 1, Math.min(radius, 1));
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
         // 主文字（支持左侧图标，DOM 原版样式：icon + 文字并排居中）
         if (opt.text != null) {
-            const fs = opt.fontSize || 15;
-            const iconSize = opt.iconSize || (opt.subText ? 14 : 16);
+            ctx.save();
+            // DOM button text-shadow: 0 1px 2px rgba(0,0,0,0.3)
+            if (!opt.disabled && opt.textShadow !== false) {
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 2;
+                ctx.shadowOffsetY = 1;
+            }
+            // DOM button 全局 13px；内联 font-size 覆盖者由调用方显式传 fontSize
+            const fs = opt.fontSize || 13;
+            const iconSize = opt.iconSize || (opt.subText ? 12 : 14);
             let textX = opt.x + opt.w / 2;
             let iconX = null;
             let textAlign = 'center';
@@ -505,6 +603,7 @@
             if (iconX != null) {
                 drawIcon(opt.icon, iconX, opt.y + (opt.h - iconSize) / 2, iconSize, color);
             }
+            ctx.restore();
         }
         return id;
     }

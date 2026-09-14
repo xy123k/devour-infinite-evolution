@@ -85,16 +85,17 @@
         const convs = [
             ['获得自由属性点', '+ ' + ui.totalFree],
             ['获得天赋点', '+ ' + ui.talentPointReward],
-            ['已分配五维' + ui.allocatedGained + '点+未分配属性点' + ui.unspentPoints + '点=' + ui.totalGained + '点×55%=' + Math.floor(ui.totalGained * 0.55) + '点', ''],
-            ['层数保底', '第' + game.currentFloor + '层×0.5=' + ui.floorBonus + '点'],
+            ['已分配五维' + ui.allocatedGained + '点 + 未分配属性点' + ui.unspentPoints + '点 = ' + ui.totalGained + '点 × 55% = ' + Math.floor(ui.totalGained * 0.55) + '点', ''],
+            ['层数保底', '第' + game.currentFloor + '层 × 0.5 = ' + ui.floorBonus + '点'],
+            ['天赋转化', (function () { const ft = []; const qn = ['', '普通', '稀有', '史诗', '传说', '神话']; for (let q = 1; q <= 5; q++) { if ((ui.fragReturned || {})[q] > 0) ft.push(qn[q] + '碎片+' + ui.fragReturned[q]); } return ft.length ? ft.join('，') : ''; })()],
             ['基因精华转化', ui.canConvertEssence ? ('剩余' + p.gold + '×' + ratePct + '%=' + ui.goldToEssence + '精粹') : '击杀不足5个（当前' + ui.killsThisRun + '），无法转化'],
             ['所有碎片', '100%保留至局外']
         ];
         convs.forEach(function (cv) {
             if (!cv[0]) return;
             box(x, y, w, 26, t.bgSecondary, 6);
-            R.drawText(cv[0], x + 8, y + 8, { fontSize: 11, color: t.textMuted, maxWidth: w - 16 });
-            if (cv[1]) R.drawText(cv[1], x + w - 10, y + 8, { fontSize: 11, color: t.textPrimary, align: 'right' });
+            R.drawText(cv[0] + (cv[1] ? (cv[0] === '所有碎片' ? ' ' + cv[1] : '：' + cv[1]) : ''), x + 8, y + 8, { fontSize: 11, color: t.textMuted, maxWidth: w - 16 });
+            if (false) R.drawText(cv[1], x + w - 10, y + 8, { fontSize: 11, color: t.textPrimary, align: 'right' });
             y += 30;
         });
         y += 6;

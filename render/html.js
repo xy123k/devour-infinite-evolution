@@ -124,7 +124,7 @@
     }
 
     function textLines(node, maxW, fontSize) {
-        const text = node.text || '';
+        const text = String(node && node.text != null ? node.text : '');
         if (!text) return [''];
         const lines = [];
         let cur = '';
@@ -132,7 +132,9 @@
             const ch = text[i];
             if (ch === '\n') { lines.push(cur); cur = ''; continue; }
             cur += ch;
-            if (R.ctx.measureText(cur).width > maxW) {
+            let cw = 0;
+            try { cw = R.measureText(cur, fontSize).width; } catch (e) { try { R.ctx.font = fontSize + 'px sans-serif'; cw = R.ctx.measureText(cur).width; } catch (e2) { cw = cur.length * fontSize; } }
+            if (cw > maxW) {
                 // 回退到最后一个空格
                 const sp = cur.lastIndexOf(' ');
                 if (sp > 0) { lines.push(cur.slice(0, sp)); cur = cur.slice(sp + 1); }
@@ -187,7 +189,14 @@
     }
 
     function marginTop(node) { const v = node.style['margin-top']; const n = parseFloat(v || '0'); return isNaN(n) ? 0 : n; }
-    function marginBottom(node) { const v = node.style['margin-bottom']; const n = parseFloat(v || '0'); return isNaN(n) ? 0 : n; }
+    function marginBottom(node) {
+        const v = node.style['margin-bottom'];
+        if (v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+        // DOM 全局默认：h3 {margin-bottom:10px} / h2 {margin:16px 0}
+        if (node.tag === 'h3') return 10;
+        if (node.tag === 'h2') return 16;
+        return 0;
+    }
 
     function pushItem(node, x, y, w, h, result, extra) {
         if (node.tag === '#text' || node.tag === 'br' || node.tag === 'root') return;
@@ -199,11 +208,14 @@
     // flex 布局辅助：无 flex 声明的子项按内容自然宽度（修复：图标/标签不再被平分整行而撑爆/截断）
     function naturalWidth(node) {
         const pad = paddingOf(node);
-        const ml = parseFloat(node.style['margin-left'] || '0') || 0;
-        const mr = parseFloat(node.style['margin-right'] || '0') || 0;
+        // DOM 全局 button{margin:4px}：未行内覆盖的边补 4px（影响行内流换行/间距）
+        const btnGlob = node.tag === 'button' ? 4 : 0;
+        const mlRaw = parseFloat(node.style['margin-left'] || '0');
+        const mrRaw = parseFloat(node.style['margin-right'] || '0');
+        const ml = (isNaN(mlRaw) ? 0 : mlRaw) + (node.style['margin-left'] ? 0 : btnGlob);
+        const mr = (isNaN(mrRaw) ? 0 : mrRaw) + (node.style['margin-right'] ? 0 : btnGlob);
         function textW(t, fs) {
-            try { R.ctx.font = fs + 'px "PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif'; } catch (e) {}
-            return R.ctx.measureText(t).width;
+            try { return R.measureText(t, fs).width; } catch (e) { try { R.ctx.font = fs + 'px sans-serif'; return R.ctx.measureText(t).width; } catch (e2) { return t.length * fs; } }
         }
         let tw = 0;
         (function walk(n, parentFs) {
@@ -230,9 +242,14 @@
         return tw + pad.left + pad.right + ml + mr;
     }
 
-    function layoutBlock(node, x, y, w, result) {
+    function layoutBlock(node, x, y, w, result, inherit) {
+        inherit = inherit || { fs: 13, lh: 1.6 };
         node.style = node.style || {};
         node.attrs = node.attrs || {};
+        // font-size / line-height 继承（DOM inline style 只写在容器上，文本节点需继承）
+        const fsNow = (function () { const f = node.style['font-size']; if (f) { const n = parseFloat(f); if (!isNaN(n)) return n; } if (node.tag === 'h3') return 17; if (node.tag === 'h2') return 22; if (node.tag === 'button') return 13; return inherit.fs; })();
+        const lhNow = (function () { const l = node.style['line-height']; if (l) { const n = parseFloat(l); if (!isNaN(n)) return n; } return inherit.lh; })();
+        const childInherit = { fs: fsNow, lh: lhNow };
         // display:none：不占空间、不绘制
         if (node.style.display === 'none' && node.tag !== 'root') {
             result.height = Math.max(result.height, y);
@@ -244,22 +261,27 @@
 
         if (node.tag === 'br') { result.height = Math.max(result.height, y + 14); return y + 14; }
         if (node.tag === '#text') {
-            const fs = fontSizeOf(node, 13);
+            const fs = inherit.fs;
             const lines = textLines(node, innerW, fs);
-            const h = lines.length * (fs + 5);
+            const h = lines.length * Math.round(fs * inherit.lh);
             result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: h, lines: lines, fs: fs });
             return cursorY + h + pad.bottom + marginBottom(node);
         }
 
         // svg+文本同行（标题/物品行图标）
         if (node.tag === 'svgtext') {
-            const fs = fontSizeOf(node, 13);
+            const fs = inherit.fs;
             const size = svgSize(node.svg, fs);
             const gap = 5;
-            const lines = textLines(node.text, innerW - size.w - gap, fs);
-            const th = lines.length * (fs + 5);
+            // 自然宽（svg + 文本），不撑满整行（否则行内流中独占一行导致换行）
+            const textStr = (node.text && node.text.text != null) ? String(node.text.text) : String(node.text || '');
+            let tw = 0;
+            try { tw = R.measureText(textStr, fs).width; } catch (e) { try { R.ctx.font = fs + 'px sans-serif'; tw = R.ctx.measureText(textStr).width; } catch (e2) { tw = textStr.length * fs; } }
+            const w = size.w + gap + tw;
+            const lines = textLines({ text: textStr }, w - size.w - gap, fs);
+            const th = lines.length * Math.round(fs * inherit.lh);
             const h = Math.max(size.h, th);
-            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: h, lines: lines, fs: fs, svgSize: size, svgGap: gap });
+            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: w, h: h, lines: lines, fs: fs, svgSize: size, svgGap: gap });
             return cursorY + h + pad.bottom + marginBottom(node);
         }
 
@@ -267,7 +289,8 @@
         if (node.tag === 'svg') {
             const fs = fontSizeOf(node, 13);
             const size = svgSize(node, fs);
-            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: size.h, svgSize: size });
+            // 自然宽（图标原始尺寸），不撑满整行（否则行内流中独占一行导致换行）
+            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: size.w, h: size.h, svgSize: size });
             return cursorY + size.h + pad.bottom + marginBottom(node);
         }
 
@@ -313,7 +336,7 @@
                     maxH = 0;
                     cx = x + pad.left;
                 }
-                const ch = layoutBlock(child, cx, rowY, cw, result);
+                const ch = layoutBlock(child, cx, rowY, cw, result, childInherit);
                 maxH = Math.max(maxH, ch - rowY);
                 cx += cw + gap;
             });
@@ -334,7 +357,7 @@
             items.forEach(function (child, i) {
                 const col = i % colCount;
                 if (col === 0 && i > 0) { rowY += maxRowH + gap; maxRowH = 0; }
-                const ch = layoutBlock(child, x + pad.left + col * (colW + gap), rowY, colW, result);
+                const ch = layoutBlock(child, x + pad.left + col * (colW + gap), rowY, colW, result, childInherit);
                 maxRowH = Math.max(maxRowH, ch - rowY);
             });
             const h = maxRowH + pad.bottom + marginBottom(node);
@@ -342,12 +365,81 @@
             return rowY + h;
         }
 
-        // 块级：纵向堆叠
+        // 块级：纵向堆叠；子元素含行内元素（span/button/inline-block）时横向流式排列（修复：碎片行竖排拆开）
+        const INLINE_TAGS = { span: 1, button: 1, a: 1, label: 1, em: 1, strong: 1, b: 1, small: 1, i: 1 };
+        function isInlineish(c) {
+            if (!c || !c.style) return false;
+            const d = c.style.display;
+            if (d === 'inline' || d === 'inline-block' || d === 'inline-flex') return true;
+            if (INLINE_TAGS[c.tag]) {
+                if (d === 'block') return false;
+                const w = c.style.width;
+                if (w && (w === '100%' || (w.indexOf('%') === 0))) return false;
+                return true;
+            }
+            return false;
+        }
+        const kids = node.children.filter(function (c) { return !(c.tag === '#text' && !String(c.text || '').trim()); });
         let by = cursorY;
-        node.children.forEach(function (child) {
-            by = layoutBlock(child, x + pad.left, by, innerW, result);
-        });
-        const bh = by + pad.bottom + marginBottom(node);
+        const hasInlineKids = kids.some(isInlineish);
+        if (hasInlineKids) {
+            // 行内流：按自然宽横排、超出换行；容器 text-align 决定行对齐
+            const scratch = { width: 0, height: 0, nodes: [] };
+            const rows = []; // {items:[{node,x,w}], rowW, rowH}
+            let curRow = { items: [], rowW: 0, rowH: 0 };
+            rows.push(curRow);
+            let rx = x + pad.left;
+            let ry = cursorY;
+            kids.forEach(function (child) {
+                if (!isInlineish(child)) {
+                    // 混入块级：新起一行，块级纵向布局
+                    curRow = { items: [], rowW: 0, rowH: 0 };
+                    rows.push(curRow);
+                    curRow.block = child;
+                    return;
+                }
+                const cw = naturalWidth(child);
+                if (rx + cw > x + w - pad.right && rx > x + pad.left) {
+                    curRow = { items: [], rowW: 0, rowH: 0 };
+                    rows.push(curRow);
+                    rx = x + pad.left;
+                }
+                // 测量高度（scratch 丢弃，避免重复注册节点）
+                const ch = layoutBlock(child, 0, 0, cw, scratch, childInherit);
+                curRow.items.push({ node: child, x: rx, w: cw, h: ch });
+                curRow.rowW = Math.max(curRow.rowW, rx - x - pad.left + cw);
+                curRow.rowH = Math.max(curRow.rowH, ch);
+                rx += cw;
+            });
+            // 逐行对齐 + 真实布局
+            const ta = node.style['text-align'];
+            rows.forEach(function (row) {
+                if (row.block) { ry = layoutBlock(row.block, x + pad.left, ry, innerW, result, childInherit); return; }
+                if (!row.items.length) return;
+                let shift = 0;
+                if (ta === 'right') shift = Math.max(0, innerW - row.rowW);
+                else if (ta === 'center') shift = Math.max(0, (innerW - row.rowW) / 2);
+                let rowBottom = ry;
+                row.items.forEach(function (it) {
+                    const bx = it.x + shift;
+                    const ch = layoutBlock(it.node, bx, ry, it.w, result, childInherit);
+                    rowBottom = Math.max(rowBottom, ry + it.h);
+                });
+                ry = rowBottom;
+            });
+            by = ry;
+        } else {
+            node.children.forEach(function (child) {
+                by = layoutBlock(child, x + pad.left, by, innerW, result, childInherit);
+            });
+        }
+        let bh = by + pad.bottom + marginBottom(node);
+        // DOM 全局 button{min-height:44px;margin:4px}：按钮无行内 min-height 时按 44+上下 margin 布局
+        if (node.tag === 'button' && !node.style['min-height']) {
+            if (bh - y < 44) bh = y + 44;
+            if (!node.style['margin-top']) bh += 4;
+            if (!node.style['margin-bottom']) bh += 4;
+        }
         pushItem(node, x, y, w, bh - y, result);
         return bh;
     }
@@ -395,11 +487,13 @@
             if (align === 'center') ax = x + w / 2;
             else if (align === 'right') ax = x + w;
             n.lines.forEach(function (ln, i) {
-                R.drawText(ln, ax, y + i * (n.fs + 5), {
+                R.drawText(ln, ax, y + i * Math.round(n.fs * 1.6), {
                     fontSize: n.fs,
-                    color: colorOf(node, t.textPrimary),
+                    color: colorOf(node, node.tag === 'h2' ? t.accent : t.textPrimary),
                     align: align === 'center' ? 'center' : (align === 'right' ? 'right' : 'left'),
-                    bold: node.style['font-weight'] === 'bold' || node.tag === 'strong' || node.tag === 'b' || node.tag === 'h2' || node.tag === 'h3'
+                    bold: node.style['font-weight'] === 'bold' || node.tag === 'strong' || node.tag === 'b' || node.tag === 'h2' || node.tag === 'h3',
+                    letterSpacing: node.tag === 'h2' ? 4 : 0,
+                    glow: node.tag === 'h2' ? 'rgba(0,229,176,0.35)' : null
                 });
             });
             return;
@@ -410,16 +504,30 @@
         const bg = bgColorOf(node);
         const radius = parseFloat(node.style['border-radius'] || '0');
         const opacity = parseFloat(node.style.opacity || '1');
-        if (bg && opacity > 0) {
+        // button 背景由 drawButtonNode 全权处理（含 disabled 覆盖），此处跳过避免半透明叠底
+        if (bg && opacity > 0 && node.tag !== 'button') {
             R.ctx.save();
             R.ctx.globalAlpha = opacity;
             R.drawRect(x, y, w, h, { fill: bg, radius: isNaN(radius) ? 0 : radius });
             R.ctx.restore();
         }
-        // 边框
+        // 边框（解析颜色/宽度：border:2px solid var(--accent-primary) 等）
         const border = node.style.border;
         if (border && border.indexOf('none') < 0) {
-            R.drawRect(x, y, w, h, { fill: null, radius: isNaN(radius) ? 0 : radius, stroke: t.borderSoft });
+            let bc = null, bw = 1;
+            const bm = border.match(/(\d+)px/); if (bm) bw = parseFloat(bm[1]);
+            const cm = border.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|var\([^)]+\))/);
+            if (cm) {
+                if (cm[1].indexOf('var(') === 0) {
+                    const t2 = R.Theme.get();
+                    const nm = cm[1].replace('var(', '').replace(')', '').trim();
+                    const map = { '--accent-primary': t2.accent, '--accent-warning': t2.warning, '--accent-success': t2.success, '--accent-info': t2.info, '--accent-danger': t2.danger, '--accent-purple': t2.purple, '--accent-orange': t2.orange, '--text-primary': t2.textPrimary, '--text-secondary': t2.textSecondary, '--text-muted': t2.textMuted, '--text-faint': t2.textFaint, '--bg-card': t2.bgCard, '--bg-secondary': t2.bgSecondary, '--border-primary': t2.border, '--bg-hover': t2.bgHover };
+                    bc = map[nm] || null;
+                } else {
+                    bc = cm[1];
+                }
+            }
+            R.drawRect(x, y, w, h, { fill: null, radius: isNaN(radius) ? 0 : radius, stroke: bc || t.borderSoft, strokeWidth: bw });
         }
         if (node.style['border-left']) {
             R.drawRect(x, y, 3, h, { fill: t.success, radius: 1.5 });
@@ -446,10 +554,12 @@
         drawSVG(node.svg, x, y + (h - size.h) / 2, size.w, size.h);
         const tx = x + size.w + n.svgGap;
         n.lines.forEach(function (ln, i) {
-            R.drawText(ln, tx, y + (h - n.lines.length * (fs + 5)) / 2 + i * (fs + 5), {
+            R.drawText(ln, tx, y + (h - n.lines.length * Math.round(fs * 1.6)) / 2 + i * Math.round(fs * 1.6), {
                 fontSize: fs,
-                color: colorOf(node, t.textPrimary),
-                bold: node.style['font-weight'] === 'bold' || node.tag === 'h2' || node.tag === 'h3'
+                color: colorOf(node, node.tag === 'h2' ? t.accent : t.textPrimary),
+                bold: node.style['font-weight'] === 'bold' || node.tag === 'h2' || node.tag === 'h3',
+                letterSpacing: node.tag === 'h2' ? 4 : 0,
+                glow: node.tag === 'h2' ? 'rgba(0,229,176,0.35)' : null
             });
         });
     }
@@ -805,6 +915,8 @@
         state.popScroll = 0;
         state.popScrollMax = 0;
         setNavInteractive(false);
+        // 弹窗遮罩压暗 DOM 底部导航（DOM 版 #overlay z99 > bottomNav z50；Canvas 遮罩画在 canvas 内盖不住 DOM 导航）
+        try { const nav = document.getElementById('bottomNav'); if (nav) nav.style.filter = 'brightness(0.25)'; } catch (e) {}
         Input.unregisterAllButtons();
         // 打开弹窗时强制关闭 tooltip，避免叠层残留（P3-x）
         try { hideTooltip(); } catch (e) {}
@@ -819,6 +931,7 @@
         state.popScroll = 0;
         state.popScrollMax = 0;
         blurInput();
+        try { const nav = document.getElementById('bottomNav'); if (nav) nav.style.filter = ''; } catch (e) {}
         setNavInteractive(true);
         Input.unregisterAllButtons();
     }
@@ -837,7 +950,9 @@
     function drawModal() {
         if (!state.visible || !R.ctx) return;
         const t = R.Theme.get();
-        const maxW = Math.min(R.SCREEN_W - 40, 360);
+        const maxW = Math.min(R.SCREEN_W * 0.92, 500);
+        // DOM #popBox padding：16px 16px 40px（内容区 = 卡片内缩进）
+        const padT = 16, padB = 40, padL = 16;
 
         // 弹窗按钮以屏幕坐标注册（界面层滚动偏移不适用于弹窗，P3-3 需清 0）
         Input.setScrollOffset(0);
@@ -856,7 +971,7 @@
             root = _cacheRoot;
             if (animating) {
                 animateGacha(root);
-                lay = layout(root, maxW);
+                lay = layout(root, maxW - padL * 2);
                 _cacheLayout = lay;
             } else {
                 lay = _cacheLayout;
@@ -864,15 +979,16 @@
         } else {
             root = parseHTML(state.html);
             animateGacha(root);
-            lay = layout(root, maxW);
+            lay = layout(root, maxW - padL * 2);
             _cacheHtml = state.html;
             _cacheRoot = root;
             _cacheLayout = lay;
         }
         resultLayout = lay;
-        const h = Math.min(lay.height, R.SCREEN_H - 120);
+        // DOM #popBox：position:fixed;top:50%;transform:translate(-50%,-50%) + padding:16px 16px 40px；无 +10 偏移
+        const h = Math.min(lay.height + padT + padB, Math.round(R.SCREEN_H * 0.85));
         const x = (R.SCREEN_W - maxW) / 2;
-        const y = Math.max(40, (R.SCREEN_H - h) / 2 - 20);
+        const y = (R.SCREEN_H - h) / 2;
         // 弹窗可视区（P1-2/P3-8）：超出此区的按钮不注册，防止误命中底层
         state.clipRect = { x: x, y: y, w: maxW, h: h };
 
@@ -894,21 +1010,28 @@
             disabled: false, onTap: function () { blurInput(); closePopup(); }
         });
 
-        // 背景遮罩
-        R.ctx.globalAlpha = 0.6;
+        // 背景遮罩（DOM #overlay = rgba(0,0,0,0.78)）
+        R.ctx.globalAlpha = 0.78;
         R.drawRect(0, 0, R.SCREEN_W, R.SCREEN_H, { fill: '#000000' });
         R.ctx.globalAlpha = 1;
 
-        // 弹窗卡片
-        R.drawRect(x - 10, y - 10, maxW + 20, h + 20, { fill: t.bgCard, radius: 14, stroke: t.borderSoft });
+        // 弹窗卡片（DOM #popBox：border-radius 12 + box-shadow 0 0 30px rgba(0,0,0,.5)；卡片=内容区无外扩）
+        R.ctx.save();
+        R.ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        R.ctx.shadowBlur = 15;
+        R.drawRect(x, y, maxW, h, {
+            gradient: { from: '#111c26', to: '#0c151d' },
+            radius: 12, stroke: t.borderSoft
+        });
+        R.ctx.restore();
 
-        // 内容（顶部裁剪 + P3-8 弹窗内滚动偏移）
+        // 内容（DOM popBox padding 16/16/40 内裁剪 + P3-8 弹窗内滚动偏移）
         R.ctx.save();
         R.ctx.beginPath();
-        R.ctx.rect(x, y, maxW, h);
+        R.ctx.rect(x + padL, y + padT, maxW - padL * 2, h - padT - padB);
         R.ctx.clip();
         R.ctx.translate(0, -state.popScroll);
-        drawNodesRecursive(root, lay, x, y - state.popScroll);
+        drawNodesRecursive(root, lay, x + padL, y + padT - state.popScroll);
         R.ctx.restore();
 
         // 技能名 tooltip 注册（data-skill-id，对齐 DOM 原版 showSkillTooltip）
@@ -995,15 +1118,18 @@
         const bg = bgColorOf(node) || t.accent;
         const disabled = node.attrs.disabled === '' || node.attrs.disabled === 'disabled' || node.attrs.disabled === 'true';
         const radius = parseFloat(node.style['border-radius'] || '0');
-        R.drawRect(x, y, w, h, { fill: disabled ? t.textFaint : bg, radius: isNaN(radius) ? 8 : radius });
+        // DOM button:disabled {background:var(--bg-hover);opacity:0.6}
+        if (disabled) R.ctx.save(), R.ctx.globalAlpha = 0.6;
+        R.drawRect(x, y, w, h, { fill: disabled ? t.bgHover : bg, radius: isNaN(radius) ? 8 : radius });
         // 按钮文本居中（flex 布局内按钮宽度由布局决定）
-        const fs = fontSizeOf(node, 13);
+        const fs = fontSizeOf(node, 15);
         const lines = buttonLines(node, w - 8, fs);
         lines.forEach(function (ln, i) {
-            R.drawText(ln, x + w / 2, y + h / 2 - ((lines.length - 1) * (fs + 5)) / 2 + i * (fs + 5), {
+            R.drawText(ln, x + w / 2, y + h / 2 - ((lines.length - 1) * Math.round(fs * 1.6)) / 2 + i * Math.round(fs * 1.6), {
                 fontSize: fs, color: colorOf(node, '#ffffff'), align: 'center', bold: true
             });
         });
+        if (disabled) R.ctx.restore();
         // 注册点击
         const onclick = node.attrs.onclick || '';
         const cb = parseOnClick(onclick);

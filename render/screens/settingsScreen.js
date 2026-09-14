@@ -28,9 +28,9 @@
         R.drawButton({
             id: opt.id, x: opt.x, y: opt.y, w: opt.w, h: opt.h,
             text: opt.text, fontSize: opt.fontSize || 13,
-            bg: selected ? opt.t.success : opt.t.bgHover,
-            color: selected ? '#0a0e17' : opt.t.textSecondary,
-            border: selected ? null : opt.t.borderSoft,
+            bg: selected ? opt.t.success : opt.t.accentDark,
+            color: '#e8f0f0',
+            border: opt.t.borderAccent,
             onTap: opt.onTap
         });
     }
@@ -38,7 +38,7 @@
     // 小节标题
     function sectionTitle(y, text) {
         const t = R.Theme.get();
-        R.drawText(text, PX + 14, y, { fontSize: 15, color: t.textPrimary, bold: true });
+        R.drawText(text, PX + 14, y, { fontSize: 15, color: t.accent, bold: true });
         return y + 26;
     }
 
@@ -50,70 +50,69 @@
         const s = game.settings;
         const x = PX + 14, w = MAX_W - 28;
 
-        // 标题
-        R.drawText('⚙ 游戏设置', PX + MAX_W / 2, 24, { fontSize: 18, color: t.textPrimary, align: 'center', bold: true });
-        R.drawButton({ id: 'setBack', x: PX + 12, y: 10, w: 74, h: 28, text: '← 返回', fontSize: 12, bg: t.bgCard, color: t.textSecondary, border: t.borderSoft, onTap: function () { try { game.goBack(); } catch (e) {} } });
-        let y = 52;
+        // 标题（DOM 实测：h2 居中基线 52，20px，无返回按钮）
+        R.drawText('⚙ 游戏设置', PX + MAX_W / 2 - 8, 52, { fontSize: 20, color: t.textPrimary, align: 'center', bold: true });
+        // DOM 设置页实测：玩法区 box y103 h326；内容绝对坐标对齐 DOM
+        let y = 103;
 
-        // ---- 游戏玩法 ----
+        // ---- 游戏玩法 ----（DOM 实测：h3@126；事件label@196 按钮行1@221 h44；速度label@311 按钮行2@336 h54；autoSkip@426 开关@416）
         y = sectionTitle(y, '游戏玩法');
-        box(x, y, w, 150, t.bgCard, 10);
-        let iy = y + 10;
-        R.drawText('事件结果显示', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
-        iy += 26;
-        const hw = (w - 30) / 2;
-        toggleBtn({ id: 'setEventDetail', t: t, x: x + 8, y: iy, w: hw, h: 34, text: '显示具体数值', selected: s.eventDetail, onTap: function () { try { game.toggleEventDetail(true); } catch (e) {} } });
-        toggleBtn({ id: 'setEventHide', t: t, x: x + 16 + hw, y: iy, w: hw, h: 34, text: '隐藏数值（模糊描述）', selected: !s.eventDetail, onTap: function () { try { game.toggleEventDetail(false); } catch (e) {} } });
-        iy += 44;
-        R.drawText('战斗速度', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
-        iy += 26;
-        const sw = (w - 30 - 16) / 3;
+        box(x, y, w, 326, t.bgCard, 10);
+        let iy = y;
+        R.drawText('事件结果显示', x + 8, 163, { fontSize: 14, color: t.textMuted });
+        const hw = (w - 8 - 8 - 16) / 2;
+        toggleBtn({ id: 'setEventDetail', t: t, x: x + 8, y: 172, w: hw, h: 36, text: '显示具体数值', selected: s.eventDetail, onTap: function () { try { game.toggleEventDetail(true); } catch (e) {} } });
+        toggleBtn({ id: 'setEventHide', t: t, x: x + 16 + hw, y: 172, w: hw, h: 36, text: '隐藏数值（模糊描述）', selected: !s.eventDetail, onTap: function () { try { game.toggleEventDetail(false); } catch (e) {} } });
+        R.drawText('战斗速度', x + 8, 254, { fontSize: 14, color: t.textMuted });
+        const sw = (w - 16 - 32) / 3;
         const speeds = [
             { k: 'slow', label: '慢速 0.5x速度' }, { k: 'normal', label: '正常 1.0x速度' }, { k: 'fast', label: '快速 2.0x速度' }
         ];
         speeds.forEach(function (sp, i) {
-            toggleBtn({ id: 'setSpeed_' + sp.k, t: t, x: x + 8 + i * (sw + 8), y: iy, w: sw, h: 34, text: sp.label, fontSize: 12, selected: s.battleSpeed === sp.k, onTap: (function (k) { return function () { try { game.setBattleSpeed(k); } catch (e) {} }; })(sp.k) });
+            toggleBtn({ id: 'setSpeed_' + sp.k, t: t, x: x + 8 + i * (sw + 16), y: 265, w: sw, h: 42, text: sp.label, fontSize: 12, selected: s.battleSpeed === sp.k, onTap: (function (k) { return function () { try { game.setBattleSpeed(k); } catch (e) {} }; })(sp.k) });
         });
-        iy += 44;
-        R.drawText('自动跳过战斗动画', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
-        toggleBtn({ id: 'setAutoSkip', t: t, x: x + w - 70, y: iy, w: 62, h: 30, text: s.autoSkip ? '开启' : '关闭', selected: s.autoSkip, onTap: function () { try { game.toggleAutoSkip(); } catch (e) {} } });
-        y += 150 + 10;
+        R.drawText('自动跳过战斗动画', x + 8, 355, { fontSize: 14, color: t.textMuted });
+        toggleBtn({ id: 'setAutoSkip', t: t, x: x + w - 60 - 17, y: 346, w: 60, h: 32, text: s.autoSkip ? '开启' : '关闭', selected: s.autoSkip, onTap: function () { try { game.toggleAutoSkip(); } catch (e) {} } });
+        y += 326 + 16;
 
-        // ---- 音频 ----
+// ---- 音频 ----
+        y = 458;
         y = sectionTitle(y, '音频设置');
-        box(x, y, w, 78, t.bgCard, 10);
-        R.drawText('音效', x + 8, y + 22, { fontSize: 13, color: t.textMuted });
-        toggleBtn({ id: 'setSfx', t: t, x: x + w - 70, y: y + 12, w: 62, h: 30, text: (s.sfx !== false) ? '开启' : '关闭', selected: s.sfx !== false, onTap: function () { try { game.toggleSfx(); } catch (e) {} } });
-        R.drawText('背景音乐功能即将上线', x + 8, y + 62, { fontSize: 11, color: t.textFaint });
-        y += 88;
+        box(x, y, w, 90, t.bgCard, 10);
+        R.drawText('音效', x + 8, 500, { fontSize: 13, color: t.textMuted });
+        toggleBtn({ id: 'setSfx', t: t, x: x + w - 70, y: 491, w: 62, h: 32, text: (s.sfx !== false) ? '开启' : '关闭', selected: s.sfx !== false, onTap: function () { try { game.toggleSfx(); } catch (e) {} } });
+        R.drawText('背景音乐功能即将上线', x + 8, 544, { fontSize: 11, color: t.textFaint });
+        y += 100;
 
-        // ---- 显示设置 ----
+        // ---- 显示设置 ----（DOM 实测：h3@742 box@768；伤害label@812 开关@792；简化label@872 开关@852；主题label@932 按钮@948）
+        y = 640;
         y = sectionTitle(y, '显示设置');
-        box(x, y, w, 188, t.bgCard, 10);
-        iy = y + 12;
-        R.drawText('显示伤害数字', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
-        toggleBtn({ id: 'setDamageNums', t: t, x: x + w - 70, y: iy, w: 62, h: 30, text: (s.damageNumbers !== false) ? '开启' : '关闭', selected: s.damageNumbers !== false, onTap: function () { try { game.toggleDamageNumbers(); } catch (e) {} } });
+        box(x, y, w, 210, t.bgCard, 10);
+        iy = 660;
+        R.drawText('显示伤害数字', x + 8, 681, { fontSize: 13, color: t.textMuted });
+        toggleBtn({ id: 'setDamageNums', t: t, x: x + w - 70, y: 672, w: 62, h: 32, text: (s.damageNumbers !== false) ? '开启' : '关闭', selected: s.damageNumbers !== false, onTap: function () { try { game.toggleDamageNumbers(); } catch (e) {} } });
         iy += 40;
-        R.drawText('简化战斗日志', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
-        toggleBtn({ id: 'setSimpleLog', t: t, x: x + w - 70, y: iy, w: 62, h: 30, text: s.simpleLog ? '开启' : '关闭', selected: s.simpleLog, onTap: function () { try { game.toggleSimpleLog(); } catch (e) {} } });
+        R.drawText('简化战斗日志', x + 8, 726, { fontSize: 13, color: t.textMuted });
+        toggleBtn({ id: 'setSimpleLog', t: t, x: x + w - 70, y: 726, w: 62, h: 32, text: s.simpleLog ? '开启' : '关闭', selected: s.simpleLog, onTap: function () { try { game.toggleSimpleLog(); } catch (e) {} } });
         iy += 40;
-        R.drawRect(x + 8, iy, w - 16, 1, { fill: t.borderSoft });
+        R.drawRect(x + 8, 766, w - 16, 1, { fill: t.borderSoft });
         iy += 12;
-        R.drawText('界面主题', x + 8, iy + 8, { fontSize: 13, color: t.textMuted });
+        R.drawText('界面主题', x + 8, 786, { fontSize: 13, color: t.textMuted });
         iy += 28;
         const tw = (w - 30 - 16) / 3;
         const themes = [
             { k: 'dark', label: '🌙 深色' }, { k: 'warm', label: '📖 复古' }, { k: 'light', label: '☀ 清爽' }
         ];
         themes.forEach(function (th, i) {
-            toggleBtn({ id: 'setTheme_' + th.k, t: t, x: x + 8 + i * (tw + 8), y: iy, w: tw, h: 34, text: th.label, fontSize: 12, selected: (game._canvasTheme || 'dark') === th.k, onTap: (function (k) { return function () { try { game.setTheme(k); } catch (e) {} }; })(th.k) });
+            toggleBtn({ id: 'setTheme_' + th.k, t: t, x: x + 8 + i * (tw + 8), y: 802, w: tw, h: 44, text: th.label, fontSize: 12, selected: (game._canvasTheme || 'dark') === th.k, onTap: (function (k) { return function () { try { game.setTheme(k); } catch (e) {} }; })(th.k) });
         });
-        R.drawText('切换即时生效，主题选择会自动保存', x + 8, iy + 46, { fontSize: 11, color: t.textFaint });
-        y += 198;
+        R.drawText('切换即时生效，主题选择会自动保存', x + 8, 852, { fontSize: 11, color: t.textFaint });
+        y += 232;
 
-        // ---- 数据管理 ----
+        // ---- 数据管理 ----（DOM 实测：标题@934 box@960 行1@994 h44 行2@1074 说明@1144）
+        y = 934;
         y = sectionTitle(y, '数据管理');
-        box(x, y, w, 110, t.bgCard, 10);
+        box(x, y, w, 190, t.bgCard, 10);
         const bw = (w - 30 - 12) / 2;
         const btns = [
             { id: 'setRedeem', text: '兑换码', bg: t.purple, onTap: function () { try { game.openRedeemPanel(); } catch (e) {} } },
@@ -123,16 +122,17 @@
         ];
         btns.forEach(function (b, i) {
             const bx = x + 8 + (i % 2) * (bw + 8);
-            const by = y + 12 + Math.floor(i / 2) * 44;
-            R.drawButton({ id: b.id, x: bx, y: by, w: bw, h: 36, text: b.text, fontSize: 13, bg: b.bg, color: '#ffffff', onTap: b.onTap });
+            const by = (i < 2 ? 994 : 1074);
+            R.drawButton({ id: b.id, x: bx, y: by, w: bw, h: 44, text: b.text, fontSize: 13, bg: b.bg, color: '#ffffff', onTap: b.onTap });
         });
-        R.drawText('导出存档会复制存档代码到剪贴板，导入存档需要粘贴存档代码', x + 8, y + 98, { fontSize: 10, color: t.textFaint, maxWidth: w - 16 });
-        y += 120;
+        R.drawText('导出存档会复制存档代码到剪贴板，导入存档需要粘贴存档代码', x + 8, 1144, { fontSize: 10, color: t.textFaint, maxWidth: w - 16 });
+        y += 200;
 
-        // ---- 关于游戏 ----
+        // ---- 关于游戏 ----（DOM 实测：标题@1214 box@1240 内容@1256 每行30）
+        y = 1214;
         y = sectionTitle(y, '关于游戏');
-        box(x, y, w, 130, t.bgCard, 10);
-        iy = y + 12;
+        box(x, y, w, 150, t.bgCard, 10);
+        iy = y + 16;
         const abouts = [
             ['游戏名称：', '无限吞噬进化'],
             ['游戏类型：', '单机文字冒险RPG'],
@@ -143,16 +143,16 @@
         abouts.forEach(function (a) {
             R.drawText(a[0], x + 8, iy, { fontSize: 12, color: t.accent, bold: true });
             R.drawText(a[1], x + 96, iy, { fontSize: 12, color: t.textSecondary, maxWidth: w - 110 });
-            iy += 22;
+            iy += 30;
         });
-        y += 140;
+        y += 160;
 
         // 页面滚动
         if (Input && Input.setPageScroll) {
             Input.setPageScroll({
                 get: function () { return _scrollY; },
                 set: function (v) { _scrollY = v; },
-                max: function () { return Math.max(0, y - R.SCREEN_H + 160); }
+                max: function () { return Math.max(0, y - R.SCREEN_H + 350); }
             });
         }
     }

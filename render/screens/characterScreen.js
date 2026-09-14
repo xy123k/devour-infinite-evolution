@@ -28,7 +28,7 @@
             .replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
     }
 
-    const STAT_NAMES = { maxHp: '生命', defense: '防御', attack: '攻击', speed: '先手值', crit: '暴击率', agility: '敏捷', strength: '力量', vitality: '体质', perception: '感知', evolution: '进化', hit: '命中率', dodge: '闪避率', critDamage: '暴击伤害', energy: '能量', maxEnergy: '能量上限', energyRegen: '能量恢复', talentPower: '天赋强度', hpRegen: '生命恢复', dotDamage: '持续伤害', cooldownReduction: '冷却缩减', armorPenetration: '护甲穿透', critResistance: '暴击抗性', lifeSteal: '吸血', reflectDamage: '反伤', shield: '护盾', thorns: '荆棘' };
+    const STAT_NAMES = { maxHp: '生命', defense: '防御', attack: '攻击', speed: '先手值', crit: '暴击率', agility: '敏捷', strength: '力量', vitality: '体质', perception: '感知', evolution: '进化', hit: '命中率', dodge: '闪避率', critDamage: '暴击伤害', energy: '能量', maxEnergy: '能量上限', energyRegen: '能量恢复', talentPower: '天赋强度', hpRegen: '生命恢复', dotDamage: '持续伤害', cooldownReduction: '冷却缩减', armorPenetration: '护甲穿透', critResistance: '暴击抗性', lifeSteal: '吸血', reflectDamage: '反伤', shield: '护盾', thorns: '荆棘', firstStrike: '先手攻击伤害', dotOnHit: '攻击附加中毒', dodgeBonus: '闪避加成', critChance: '暴击率', extraAttack: '额外攻击概率', cooldownReductionPct: '冷却缩减', healOnKill: '击杀回血', damageReduction: '伤害减免', poisonResist: '中毒抗性', burnResist: '燃烧抗性', frostResist: '冰冻抗性', crystalResist: '晶体抗性', paralysisResist: '麻痹抗性', witherResist: '枯萎抗性', doomResist: '凋零抗性' };
     const SLOT_NAMES = { core: '核心', predator: '捕食', sensor: '感知', motor: '运动', energy: '能量', evolution: '进化' };
     const SLOT_ORDER = ['core', 'predator', 'sensor', 'motor', 'energy', 'evolution'];
     const QUALITY_NAMES = ['', '普通', '稀有', '史诗', '传说', '神话'];
@@ -83,7 +83,7 @@
             if (passiveManual.isMaxManual) passiveLines.push('手动扩充已达上限（' + passiveManual.manualSlots + '/' + passiveManual.maxManualSlots + '）');
             else passiveLines.push('手动扩充：消耗' + passiveManual.cost + '精粹（当前' + passiveManual.essence + '）');
         }
-        h += 26 + passiveLines.length * 18 + 8;
+        h += 26 + passiveLines.length * 23 + 8;
 
         // 技能槽
         const activeSlots = game.getActiveSlots ? game.getActiveSlots() : 3;
@@ -99,23 +99,23 @@
             if (activeManual.isMaxManual) activeLines.push('手动扩充已达上限（' + activeManual.manualSlots + '/' + activeManual.maxManualSlots + '）');
             else activeLines.push('手动扩充：消耗' + activeManual.cost + '精粹（当前' + activeManual.essence + '）');
         }
-        h += 26 + activeLines.length * 18 + 8;
+        h += 26 + activeLines.length * 23 + 8;
 
         box(x, y, w, h, t.bgCard, 10);
-        R.drawText('槽位扩充', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
-        let iy = y + 36;
+        R.drawText('槽位扩充', x + 8, y + 22, { fontSize: 14, color: t.textPrimary, bold: true });
+        let iy = y + 46;
         // 被动槽
         R.drawText('天赋槽（被动）：' + equippedTalents.length + '/' + passiveSlots, x + 8, iy, { fontSize: 12, color: t.success, bold: true });
         if (passiveAuto) R.drawText('初始4 + 自动' + passiveAuto.autoSlots + ' + 手动' + (passiveManual ? passiveManual.manualSlots : 0), x + w / 2, iy, { fontSize: 10, color: t.textFaint });
-        iy += 18;
+        iy += 23;
         passiveLines.forEach(function (ln) {
             R.drawText(ln, x + 16, iy, { fontSize: 11, color: ln.indexOf('上限') >= 0 ? t.textMuted : t.textSecondary });
-            iy += 18;
+            iy += 23;
         });
         // 手动扩充按钮
         if (passiveManual && !passiveManual.isMaxManual) {
             R.drawButton({
-                id: 'charExpandPassive', x: x + 8, y: iy, w: w - 16, h: 26,
+                id: 'charExpandPassive', x: x + 8, y: iy, w: w - 16, h: 30,
                 text: '手动扩充天赋槽（消耗' + passiveManual.cost + '精粹）',
                 fontSize: 11, bg: passiveManual.canAfford ? t.success : t.textFaint, color: '#ffffff',
                 disabled: !passiveManual.canAfford,
@@ -127,14 +127,14 @@
         // 技能槽
         R.drawText('技能槽（主动）：' + activeSlots + '/6（可扩充）', x + 8, iy, { fontSize: 12, color: t.info, bold: true });
         if (activeAuto) R.drawText('初始3 + 自动' + activeAuto.autoSlots + ' + 手动' + (activeManual ? activeManual.manualSlots : 0), x + w / 2, iy, { fontSize: 10, color: t.textFaint });
-        iy += 18;
+        iy += 23;
         activeLines.forEach(function (ln) {
             R.drawText(ln, x + 16, iy, { fontSize: 11, color: ln.indexOf('上限') >= 0 || ln.indexOf('默认') >= 0 ? t.textMuted : t.textSecondary });
-            iy += 18;
+            iy += 23;
         });
         if (activeManual && !activeManual.isMaxManual) {
             R.drawButton({
-                id: 'charExpandActive', x: x + 8, y: iy, w: w - 16, h: 26,
+                id: 'charExpandActive', x: x + 8, y: iy, w: w - 16, h: 30,
                 text: '手动扩充技能槽（消耗' + activeManual.cost + '精粹）',
                 fontSize: 11, bg: activeManual.canAfford ? t.info : t.textFaint, color: '#ffffff',
                 disabled: !activeManual.canAfford,
@@ -142,6 +142,9 @@
             });
             iy += 34;
         }
+        iy += 18;
+        R.drawText('槽位满足条件后自动扩充，无需手动操作', x + 8, iy, { fontSize: 11, color: t.textFaint });
+        h += 20;
         return y + h + 10;
     }
 
@@ -219,6 +222,9 @@
         });
         y += 104;
 
+        // 槽位扩充（DOM 在基本信息后）
+        y = renderSlotUpgrade(y);
+
         // 五维 + 永久成长
         box(x, y, w, 110, t.bgCard, 10);
         R.drawText('基础属性（基础 + 永久成长）', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
@@ -267,8 +273,6 @@
         });
         y += 128;
 
-        // P3-1：槽位扩充区块
-        y = renderSlotUpgrade(y);
         // P3-1：天赋套装区块
         y = renderTalentSets(y);
 
@@ -515,7 +519,7 @@
                     for (var k in tpl.stats) { if (tpl.stats[k]) statsText += (STAT_NAMES[k] || k) + '+' + tpl.stats[k] + ' '; }
                 }
                 const lines = [];
-                lines.push('🦠 ' + tpl.name + ' [' + QUALITY_NAMES[tpl.quality || 1] + '·' + (game.symbiontSlotNames ? game.symbiontSlotNames[tpl.slot] : SLOT_NAMES[tpl.slot] || tpl.slot) + ']' + (isEq ? '（已装备）' : ''));
+                lines.push('🦠 ' + tpl.name + ' [' + QUALITY_NAMES[tpl.quality || 1] + '·' + (game.symbiontSlotNames ? game.symbiontSlotNames[tpl.slot] : SLOT_NAMES[tpl.slot] || tpl.slot) + ']');
                 if (tpl.desc) lines.push(stripHtml(tpl.desc));
                 if (statsText) lines.push(statsText);
                 const cardH = 20 + lines.length * 15 + 6;
@@ -523,9 +527,12 @@
                 R.drawRect(x, y, 3, cardH, { fill: qColor, radius: 1.5 });
                 let iy = y + 10;
                 lines.forEach(function (ln, i) {
-                    R.drawText(ln, x + 10, iy, { fontSize: i === 0 ? 12 : 10, color: i === 0 ? qColor : t.textFaint, bold: i === 0, maxWidth: w - 20 });
+                    R.drawText(ln, x + 10, iy, { fontSize: i === 0 ? 12 : 10, color: i === 0 ? qColor : t.textFaint, bold: i === 0, maxWidth: w - 110 });
                     iy += 15;
                 });
+                if (isEq) {
+                    R.drawButton({ id: 'symEq_' + symId, x: x + w - 74, y: y + 10, w: 66, h: 28, text: '已装备', fontSize: 11, bg: t.success, color: '#ffffff', onTap: function () {} });
+                }
                 y += cardH + 6;
             });
         }
@@ -542,11 +549,10 @@
         R.ctx.translate(0, -_scrollY);
         if (window.Input && Input.setScrollOffset) Input.setScrollOffset(_scrollY);
 
-        R.drawText('👤 人物状态', PX + MAX_W / 2, 24, { fontSize: 18, color: t.textPrimary, align: 'center', bold: true });
-        R.drawButton({ id: 'charBack', x: PX + 12, y: 10, w: 74, h: 28, text: '← 返回', fontSize: 12, bg: t.bgCard, color: t.textSecondary, border: t.borderSoft, onTap: function () { try { game.goBack(); } catch (e) {} } });
-        drawTabs(52);
+        R.drawText('👤 人物状态', PX + MAX_W / 2, 22, { fontSize: 20, color: t.textPrimary, align: 'center', bold: true });
+        drawTabs(64);
 
-        let y = 96;
+        let y = 180;
         switch (game.characterTab || 'status') {
             case 'status': y = renderStatus(y); break;
             case 'equipment': y = renderEquipment(y); break;

@@ -25,9 +25,8 @@
         if (popBox) popBox.style.display = 'none';
     }
 
-    // 底部导航状态（DOM 底栏在迁移完成前继续使用）
-    // P3-7：轮回空间（growthScreen）原版有底部导航，补回
-    const NAV_SCREENS = ['mainScreen', 'battleScreen', 'settingsScreen', 'talentScreen', 'inventoryScreen', 'shopScreen', 'characterScreen', 'growthScreen'];
+    // 底部导航状态（对齐 DOM showScreen：main/battle/settings/talent/inventory/shop/character 显示，其余隐藏）
+    const NAV_SCREENS = ['mainScreen', 'battleScreen', 'settingsScreen', 'talentScreen', 'inventoryScreen', 'shopScreen', 'characterScreen'];
     function updateBottomNav(screenId) {
         if (typeof document === 'undefined') return;
         const bottomNav = window.__gid('bottomNav');

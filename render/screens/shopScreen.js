@@ -28,6 +28,7 @@
 
     const CATS = ['heal', 'energy', 'buff', 'resource', 'special', 'permanent', 'daily', 'weekly'];
     const CAT_NAMES = { heal: '生命恢复', energy: '能量恢复', buff: '属性强化', resource: '资源包', special: '特殊道具', permanent: '永久强化', daily: '每日特惠', weekly: '每周特惠' };
+    const CAT_ICONS = { heal: '💗', energy: '⚡', buff: '🛡', resource: '🎒', special: '⭐', permanent: '🔒', daily: '📅', weekly: '🏷' };
     const CURR_NAMES = { fragments_1: '普通碎片', fragments_2: '稀有碎片', fragments_3: '史诗碎片', fragments_4: '传说碎片', fragments_5: '神话碎片', gold: '基因精华', essence: '进化精粹' };
 
     let _scrollY = 0;
@@ -59,59 +60,84 @@
         return name;
     }
 
+    function textW(str, size) {
+        if (!str) return 0;
+        try {
+            const f = R.ctx.font;
+            R.ctx.font = (size || 12) + 'px sans-serif';
+            const w = R.ctx.measureText(String(str)).width;
+            R.ctx.font = f;
+            return w;
+        } catch (e) { return String(str).length * size; }
+    }
+    // 分类按钮固定宽度（DOM 实测：12px 字 + padding 6 12 + SVG 图标）
+    const CAT_BW = { all: 64, heal: 100, energy: 101, buff: 100, resource: 90, special: 100, permanent: 100, daily: 95, weekly: 95 };
+
     function render() {
         refreshLayout();
         const game = g();
         if (!game || !game.data || !game.data.shop) return;
         const t = R.Theme.get();
-        const x = PX + 12, w = MAX_W - 24;
+        const x = PX + 10, w = MAX_W - 20;
         const shop = game.data.shop;
         const consumables = shop.consumables || [];
         const activeCat = game.shopCategory || 'all';
 
-        R.drawText('🛒 基因共生体商人', PX + MAX_W / 2, 24, { fontSize: 18, color: t.textPrimary, align: 'center', bold: true });
-        R.drawButton({ id: 'shopBack', x: PX + 12, y: 10, w: 74, h: 28, text: '← 返回', fontSize: 12, bg: t.bgCard, color: t.textSecondary, border: t.borderSoft, onTap: function () { try { game.merchantMode ? game.leaveMerchant() : game.goBack(); } catch (e) {} } });
-        let y = 48;
-        R.drawText(game.merchantMode ? '流浪商人特惠！所有商品8折优惠！' : '"欢迎，进化者。我这里有各种基因改造品，能让你在进化之路上走得更远。"', x + 8, y, { fontSize: 11, color: game.merchantMode ? t.success : t.textSecondary, maxWidth: w - 16 });
-        y += 20;
+        // ===== 顶部 h2 标题（静态页标题：购物袋图标 + 商店）=====
+        R.drawText('🛍 商店', PX + MAX_W / 2, 34, { fontSize: 20, color: t.accent, align: 'center', bold: true, letterSpacing: 4, glow: true });
 
-        // 资源显示
-        box(x, y, w, 32, t.bgSecondary, 8);
-        R.drawText('🧬 基因精华：' + game.player.gold, x + 8, y + 10, { fontSize: 12, color: t.warning, bold: true });
-        let fx = x + 150;
-        for (let q = 1; q <= 4; q++) {
-            R.drawText(CURR_NAMES['fragments_' + q].slice(0, 2) + '碎：' + (game.permanent.universalFragments[q] || 0), fx, y + 10, { fontSize: 10, color: t.textMuted });
-            fx += 64;
-            if (fx > x + w - 40) break;
+        // ===== 商人标题行（h3 左 + 返回按钮右，垂直居中）=====
+        R.drawText('❄', x + 2, 97, { fontSize: 16, color: t.warning });
+        R.drawText('基因共生体商人', x + 26, 99, { fontSize: 16, color: t.warning, bold: true });
+        R.drawButton({ id: 'shopBack', x: PX + MAX_W - 91, y: 77, w: 76, h: 43, text: '← 返回', fontSize: 13, bg: t.success, color: '#ffffff', bold: true, radius: 6, onTap: function () { try { game.merchantMode ? game.leaveMerchant() : game.goBack(); } catch (e) {} } });
+
+        // ===== 欢迎语（12px 两行）=====
+        if (game.merchantMode) {
+            R.drawText('流浪商人特惠！所有商品8折优惠！', x, 152, { fontSize: 12, color: t.success, bold: true });
+        } else {
+            R.drawText('欢迎，进化者。我这里有各种基因改造品，', x, 152, { fontSize: 12, color: t.textSecondary });
+            R.drawText('能让你在进化之路上走得更远。', x, 173, { fontSize: 12, color: t.textSecondary });
         }
-        y += 40;
 
-        // 分类标签
-        let cx = x + 8;
-        const allBtn = { id: 'shopCat_all', text: '全部', w: 56 };
-        R.drawButton({
-            id: allBtn.id, x: cx, y: y, w: allBtn.w, h: 28,
-            text: allBtn.text, fontSize: 11, bg: activeCat === 'all' ? t.warning : t.bgCard,
-            color: activeCat === 'all' ? '#0a0e17' : t.textSecondary,
-            onTap: function () { try { game.openShop('all'); } catch (e) {} }
-        });
-        cx += allBtn.w + 6;
+        // ===== 资源行（flex-wrap 两行：基因精华 + 四种碎片）=====
+        let ry = 216;
+        let fx = x;
+        const goldLabel = '基因精华：' + game.player.gold;
+        R.drawText(goldLabel, fx, ry, { fontSize: 12, color: t.warning, bold: true });
+        fx += textW(goldLabel, 12) + 10;
+        for (let q = 1; q <= 4; q++) {
+            const lab = CURR_NAMES['fragments_' + q] + '：' + (game.permanent.universalFragments[q] || 0);
+            const qc = q === 1 ? t.quality.common : (q === 2 ? t.info : (q === 3 ? t.purple : t.warning));
+            if (fx + textW(lab, 12) > x + w - 8) { ry += 19; fx = x; }
+            R.drawText(lab, fx, ry, { fontSize: 12, color: qc });
+            fx += textW(lab, 12) + 10;
+        }
+
+        // ===== 分类标签（flex-wrap：3 列，12px，行距 58）=====
+        let cy = 269;
+        let cx = x;
+        let ci = 0;
+        function catBtn(label, id, catKey) {
+            const bw = CAT_BW[catKey] || (textW(label, 12) + 24);
+            if (ci % 3 === 0) { if (ci > 0) cy += 58; cx = x + 7; }
+            const active = activeCat === catKey;
+            R.drawButton({
+                id: id, x: cx, y: cy, w: bw, h: 42,
+                text: label, fontSize: 12, bg: active ? t.warning : t.textFaint,
+                color: active ? '#1a2332' : t.textSecondary, bold: !!active, radius: 6,
+                onTap: (function (c) { return function () { try { game.openShop(c); } catch (e) {} }; })(catKey)
+            });
+            cx += bw + 21;
+            ci++;
+        }
+        catBtn('全部', 'shopCat_all', 'all');
         CATS.forEach(function (cat) {
             const count = cat === 'daily' ? (shop.dailyItems || []).length : (cat === 'weekly' ? (shop.weeklyItems || []).length : (cat === 'permanent' ? (shop.permanentItems || []).length : consumables.filter(function (i) { return i.category === cat; }).length));
-            const label = CAT_NAMES[cat] + ' (' + count + ')';
-            const bw = Math.min(104, (R.ctx.measureText ? R.ctx.measureText(label).width + 16 : label.length * 12));
-            if (cx + bw > x + w - 8) { cx = x + 8; y += 34; }
-            R.drawButton({
-                id: 'shopCat_' + cat, x: cx, y: y, w: bw, h: 28,
-                text: label, fontSize: 10, bg: activeCat === cat ? t.warning : t.bgCard,
-                color: activeCat === cat ? '#0a0e17' : t.textSecondary,
-                onTap: (function (c) { return function () { try { game.openShop(c); } catch (e) {} }; })(cat)
-            });
-            cx += bw + 6;
+            catBtn((CAT_ICONS[cat] ? CAT_ICONS[cat] + ' ' : '') + CAT_NAMES[cat] + ' (' + count + ')', 'shopCat_' + cat, cat);
         });
-        y += 36;
+        cy += 58;
 
-        // 商品列表
+        // ===== 商品列表（talent-card 布局）=====
         const dailyItems = shop.dailyItems || [];
         const weeklyItems = shop.weeklyItems || [];
         const permanentItems = shop.permanentItems || [];
@@ -123,17 +149,18 @@
         else filtered = consumables.filter(function (i) { return i.category === activeCat; });
 
         if (!filtered.length) {
-            R.drawText('该分类暂无商品', x + 8, y + 10, { fontSize: 12, color: t.textFaint });
-            y += 26;
+            R.drawText('该分类暂无商品', x, cy + 10, { fontSize: 12, color: t.textFaint });
+            cy += 26;
         }
+        let py = 445;
         filtered.forEach(function (item) {
             const price = item.price ? item.price.amount : 10;
             const currency = item.price ? item.price.currency : 'gold';
             const currName = CURR_NAMES[currency] || currency;
+            const currColor = currency === 'gold' ? t.warning : (currency === 'essence' ? t.purple : (currency.indexOf('fragments_') === 0 ? (currency === 'fragments_1' ? t.quality.common : (currency === 'fragments_2' ? t.info : (currency === 'fragments_3' ? t.purple : (currency === 'fragments_4' ? t.warning : t.danger)))) : t.warning));
             const limit = item.limitPerRun || 99;
             const purchased = (game.shopPurchaseCount && game.shopPurchaseCount[item.id]) || 0;
             const remaining = limit - purchased;
-            // 游商 8 折：显示与实扣一致（DOM 原版 displayPrice）
             const displayPrice = game.merchantMode ? Math.floor(price * 0.8) : price;
             let canBuy = remaining > 0;
             if (currency === 'gold') canBuy = canBuy && game.player.gold >= displayPrice;
@@ -142,46 +169,47 @@
                 const q = parseInt(currency.replace('fragments_', ''), 10);
                 canBuy = canBuy && (game.permanent.universalFragments[q] || 0) >= displayPrice;
             }
-            const lines = [];
-            lines.push(item.name + (remaining <= 0 ? '（已售罄）' : ''));
-            if (item.description) lines.push(stripHtml(item.description));
-            const eff = effectText(item, game);
-            if (eff) lines.push(eff);
-            let priceLine = (game.merchantMode && displayPrice !== price) ? '8折 原价' + price + '→' + displayPrice : String(displayPrice);
-            priceLine += ' ' + currName;
-            if (limit < 99) priceLine += ' · 每局限购' + limit + '个，剩' + remaining + '个';
-            lines.push(priceLine);
-            const cardH = 26 + lines.length * 16 + 8;
-            box(x, y, w, cardH, canBuy ? t.bgSecondary : t.bgPrimary, 8);
-            if (!canBuy) R.ctx.globalAlpha = 0.55;
-            // P2-2：商品图标（与 DOM 原版一致：item.icon 或回退 'box'，28px）
+            if (!canBuy) R.ctx.globalAlpha = 0.5;
+            // 图标 28px（左）
             const ic = (item.icon && game.icons && game.icons[item.icon]) ? item.icon : 'box';
-            R.drawIcon(ic, x + 10, y + 10, 26, canBuy ? t.accent : t.textMuted);
-            let iy = y + 10;
-            lines.forEach(function (ln, i) {
-                R.drawText(ln, x + 44, iy, { fontSize: i === 0 ? 13 : 10, color: i === 0 ? t.textPrimary : (i === 1 ? t.textSecondary : (i === 2 ? t.accent : t.warning)), bold: i === 0, maxWidth: w - 130 });
-                iy += 16;
-            });
-            R.ctx.globalAlpha = 1;
+            R.drawIcon(ic, x + 10, py + 12, 28, t.textPrimary);
+            // 名称（左）
+            R.drawText(item.name, x + 48, py + 20, { fontSize: 13, color: t.textPrimary, bold: true, maxWidth: w - 120 });
+            // 价格（右列）
+            if (game.merchantMode && displayPrice !== price) {
+                R.drawText(String(price), x + w - 16, py + 20, { fontSize: 12, color: t.textMuted, align: 'right' });
+                R.drawText(String(displayPrice) + ' ' + currName, x + w - 16, py + 27, { fontSize: 14, color: t.success, align: 'right', bold: true });
+            } else {
+                R.drawText(String(displayPrice) + ' ' + currName, x + w - 16, py + 27, { fontSize: 14, color: currColor, align: 'right', bold: true });
+            }
+            // 描述（12px muted，最多两行）
+            const desc = item.description ? stripHtml(item.description) : '';
+            if (desc) R.drawText(desc, x + 48, py + 40, { fontSize: 12, color: t.textMuted, maxWidth: 220, maxLines: 2 });
+            // 效果（12px accent bold）
+            const eff = effectText(item, game);
+            if (eff) R.drawText('⚡ ' + eff, x + 48, py + 64, { fontSize: 12, color: t.accent, bold: true });
+            // 限购（11px）
+            if (limit < 99) R.drawText('每局限购' + limit + '个，剩余' + remaining + '个', x + 48, py + 84, { fontSize: 11, color: remaining > 0 ? t.success : t.danger });
+            // 购买按钮（右列）
             R.drawButton({
-                id: 'shopBuy_' + item.id, x: x + w - 84, y: y + cardH / 2 - 15, w: 74, h: 30,
-                text: remaining > 0 ? '购买' : '已售罄', fontSize: 12,
-                bg: canBuy ? t.success : t.textFaint, color: '#ffffff', disabled: !canBuy,
+                id: 'shopBuy_' + item.id, x: x + w - 76, y: py + 50, w: 64, h: 32,
+                text: remaining > 0 ? '购买' : '已售罄', fontSize: 13,
+                bg: canBuy ? '#00b498' : t.textFaint, color: '#0a0e17', bold: true, radius: 6, disabled: !canBuy,
                 onTap: (function (iid) { return function () { try { game.buyItem(iid); } catch (e) {} }; })(item.id)
             });
-            y += cardH + 6;
+            R.ctx.globalAlpha = 1;
+            py += 117;
         });
-        y += 20;
+        py += 20;
 
         if (Input && Input.setPageScroll) {
             Input.setPageScroll({
                 get: function () { return _scrollY; },
                 set: function (v) { _scrollY = v; },
-                max: function () { return Math.max(0, y - R.SCREEN_H + 160); }
+                max: function () { return Math.max(0, py - R.SCREEN_H + 160); }
             });
         }
     }
-
     function draw() {
         refreshLayout();
         const game = g();
