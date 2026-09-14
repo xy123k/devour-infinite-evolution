@@ -69,12 +69,13 @@
         const am = game.getActiveSlotManualProgress ? game.getActiveSlotManualProgress() : { manualSlots: 0, maxManualSlots: 1, cost: 0, essence: 0, canAfford: false, isMaxManual: false };
         // 资源区（DOM：bg-card y215-238 h23，☆天赋点）
         R.drawRect(x, y, w, 23, { fill: t.bgCard, radius: 8 });
-        R.drawText('☆ 天赋点：' + (game.permanent.talentPoints || 0), x + 14, y + 17, { fontSize: 13, color: t.warning, bold: true });
+        R.drawIcon('star', x + 14, y + 2, 13, t.warning);
+        R.drawText(' 天赋点：' + (game.permanent.talentPoints || 0), x + 30, y + 17, { fontSize: 13, color: t.warning, bold: true });
         // 天赋槽（被动）扩充区（DOM：bg-secondary y239-368 h129, border-left 3px success）
         const y2 = y + 24;
         R.drawRect(x, y2, w, 129, { fill: t.bgSecondary, radius: 8 });
         R.drawRect(x, y2, 3, 129, { fill: t.success, radius: 1.5 });
-        R.drawText('🛡\uFE0E', x + 8, y2 + 23, { fontSize: 13, color: t.success });
+        R.drawIcon('heart', x + 8, y2 + 8, 13, t.success);
         R.drawText('天赋槽（被动）：' + equipped.length + '/' + passiveSlots, x + 21, y2 + 23, { fontSize: 13, color: t.success, bold: true });
         R.drawText('初始4 + 自动' + pa.autoSlots + ' + 手动' + pm.manualSlots, x + w - 6, y2 + 23, { fontSize: 11, color: t.textFaint, align: 'right' });
         if (pa.isMaxAuto) {
@@ -94,10 +95,10 @@
             });
         }
         // 技能槽（主动）区（DOM：bg-secondary y410-515 h105, border-left 3px info）
-        const y3 = y2 + 129 + 42;
+        const y3 = y2 + 129 + 8;
         R.drawRect(x, y3, w, 105, { fill: t.bgSecondary, radius: 8 });
         R.drawRect(x, y3, 3, 105, { fill: t.info, radius: 1.5 });
-        R.drawText('⚡\uFE0E', x + 8, y3 - 5, { fontSize: 13, color: t.info });
+        R.drawIcon('bolt', x + 8, y3 - 20, 13, t.info);
         R.drawText('技能槽（主动）：' + as + '/6（可扩充）', x + 21, y3 - 5, { fontSize: 13, color: t.info, bold: true });
         R.drawText('初始3 + 自动' + aa.autoSlots + ' + 手动' + am.manualSlots, x + w - 6, y3 - 5, { fontSize: 11, color: t.textFaint, align: 'right' });
         if (aa.isMaxAuto) {
