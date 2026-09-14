@@ -130,14 +130,12 @@
         const passiveSlots = game.getPassiveSlots ? game.getPassiveSlots() : 0;
         R.drawRect(x, y, w, 93, { fill: t.bgSecondary, radius: 8 });
         R.drawRect(x, y, 3, 93, { fill: t.success, radius: 1.5 });
-        R.drawText('已装备天赋', x + 14, y + 28, { fontSize: 13, color: t.success, bold: true });
-        R.drawText('（' + equipped.length + '/' + passiveSlots + '）', x + 14, y + 51, { fontSize: 13, color: t.success, bold: true });
-        R.drawText('点击天赋卡片上的"装备/卸下"按钮可快速', x + w - 12, y + 28, { fontSize: 11, color: t.textFaint, align: 'right' });
-        R.drawText('更换', x + w - 12, y + 51, { fontSize: 11, color: t.textFaint, align: 'right' });
+        R.drawText('已装备天赋（' + equipped.length + '/' + passiveSlots + '）', x + 14, y + 28, { fontSize: 13, color: t.success, bold: true });
+        R.drawText('点击天赋卡片上的"装备/卸下"按钮可快速更换', x + w - 14, y + 28, { fontSize: 11, color: t.textFaint, align: 'right', maxWidth: w - 230 });
         if (equipped.length === 0) {
-            R.drawText('还没有装备任何天赋，在下方列表中点击"装备"按钮即可', x + w / 2, y + 70, { fontSize: 12, color: t.textFaint, align: 'center' });
+            R.drawText('还没有装备任何天赋，在下方列表中点击"装备"按钮即可', x + w / 2, y + 62, { fontSize: 12, color: t.textFaint, align: 'center' });
         } else {
-            let cx = x + 2, cy = y + 62;
+            let cx = x + 2, cy = y + 52;
             equipped.forEach(function (tid) {
                 const tpl = all.find(function (tt) { return tt.id === tid; });
                 if (!tpl) return;
@@ -150,7 +148,7 @@
                 R.drawRect(cx, cy, chipW, 31, { fill: t.bgPrimary, radius: 6, border: qc, borderW: 1 });
                 R.drawText(name, cx + 10, cy + 20, { fontSize: 12, color: qc, bold: true });
                 R.drawText(lv + '级', cx + 10 + nameW + 6, cy + 20, { fontSize: 10, color: t.warning });
-                R.drawButton({ id: 'eqTalent_' + tid, x: cx + chipW - 46, y: cy + 5, w: 40, h: 21, text: '卸下', fontSize: 10, bg: t.danger, color: '#ffffff', onTap: (function (ttid) { return function () { try { game.unequipTalentAndRefresh(ttid); } catch (e) {} }; })(tid) });
+                R.drawButton({ id: 'eqTalent_' + tid, x: cx + chipW - 46, y: cy + 7, w: 40, h: 21, text: '卸下', fontSize: 10, bg: t.danger, color: '#ffffff', onTap: (function (ttid) { return function () { try { game.unequipTalentAndRefresh(ttid); } catch (e) {} }; })(tid) });
                 cx += chipW + 8;
                 if (cx > x + w - 60) { cx = x + 14; cy += 40; }
             });
