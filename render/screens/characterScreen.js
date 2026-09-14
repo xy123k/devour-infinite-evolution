@@ -367,8 +367,8 @@
         const levels = game.permanent.talentLevels || {};
 
         box(x, y, w, 44, t.bgCard, 8);
-        R.drawText('已装备天赋（' + equipped.length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 0) + '）', x + 8, y + 12, { fontSize: 13, color: t.success, bold: true });
-        R.drawText('天赋点：' + (game.permanent.talentPoints || 0), x + 8, y + 30, { fontSize: 11, color: t.warning });
+        R.drawText('已装备天赋（' + equipped.length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 0) + '）', x + 8, y + 13, { fontSize: 13, color: t.success, bold: true });
+        R.drawText('天赋点：' + (game.permanent.talentPoints || 0), x + 8, y + 35, { fontSize: 11, color: t.warning });
         y += 52;
 
         if (equipped.length === 0) {
@@ -395,8 +395,8 @@
         }
 
         box(x, y, w, 44, t.bgCard, 8);
-        R.drawText('💡 完整天赋管理与碎片合成', x + 8, y + 12, { fontSize: 12, color: t.info });
-        R.drawText('请到底部导航「天赋」界面操作', x + 8, y + 30, { fontSize: 10, color: t.textFaint });
+        R.drawText('💡 完整天赋管理与碎片合成', x + 8, y + 13, { fontSize: 12, color: t.info });
+        R.drawText('请到底部导航「天赋」界面操作', x + 8, y + 35, { fontSize: 10, color: t.textFaint });
         y += 52;
 
         // 预构筑

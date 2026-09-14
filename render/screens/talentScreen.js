@@ -357,6 +357,7 @@
         let y = drawResources(215);
         y = drawEquipped(y);
         y = drawFragments(y);
+        const tab = game.talentPanelTab || 'unlock';
         if (tab === 'unlock') y = renderList(y, 'unlock');
         else if (tab === 'equip') y = renderList(y, 'equip');
         else y = renderPreset(y);
