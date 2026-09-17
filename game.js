@@ -13774,9 +13774,27 @@ game.showPrivacyPolicy = function () {
     this.showPopup(html);
 };
 
+// ============================================================
+//  启动诊断打点（P0, 2026-09-17）：容器 js_log / vConsole 可见
+//  全局兜底：任何未捕获异常都进 console，方便定位设备侧黑屏阶段
+// ============================================================
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    try {
+        window.addEventListener('error', function (e) {
+            try { console.error('[Boot] uncaught error:', e && e.message ? e.message : String(e)); } catch (_e) {}
+        });
+    } catch (_e) {}
+}
+try { console.log('[Boot] game.js loaded, Render=' + (typeof Render !== 'undefined')); } catch (_e) {}
+
 // 启动
 setTimeout(() => {
-    game.init();
+    try {
+        game.init();
+        try { console.log('[Boot] game.init OK, canvas=' + (typeof Render !== 'undefined' && Render.canvas ? (Render.canvas.width + 'x' + Render.canvas.height) : 'none')); } catch (_e) {}
+    } catch (e) {
+        try { console.error('[Boot] game.init FAILED:', e && e.message ? e.message : e); } catch (_e) {}
+    }
     user.init();
     // TapTap 生命周期：切后台立即存盘（防杀进程丢档），回前台恢复
     if (typeof tt !== 'undefined') {
