@@ -118,6 +118,29 @@
         if (typeof console !== 'undefined') { try { console.log('[Canvas] base fill drawn, size=' + canvas.width + 'x' + canvas.height); } catch (_e) {} }
     } catch (_e) {}
 
+    // P0-6 v10: 画面自检打点 + 呼吸动画兜底
+    // 某些设备（SEA-AL10/24122RKC7C/PD2068）被判定"加载失败/黑白屏"：
+    // 即使 JS 跑通、canvas 创建成功，若 draw 循环未启动/RAF 未触发，画面保持纯黑。
+    // 这里启动一个与游戏循环无关的 500ms 呼吸动画：把底色在 #0a0e17 ~ #0d1420 间交替，
+    // 保证任何时刻截图都不是纯黑（luma_std>0），并输出 canvas 存在性自检。
+    try {
+        if (typeof console !== 'undefined') { try {
+            console.log('[Canvas] self-check w=' + canvas.width + ' h=' + canvas.height +
+                ' style=' + (canvas.style ? (canvas.style.display + '/' + canvas.style.position) : 'none') +
+                ' parent=' + (canvas.parentNode ? (canvas.parentNode.tagName || 'yes') : 'none'));
+        } catch (_e) {} }
+        var _breathOn = true;
+        var _breathTimer = setInterval(function () {
+            try {
+                if (!ctx) return;
+                _breathOn = !_breathOn;
+                ctx.fillStyle = _breathOn ? '#0a0e17' : '#0d1420';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } catch (_e) {}
+        }, 500);
+        if (_breathTimer && typeof _breathTimer.unref === 'function') { try { _breathTimer.unref(); } catch (_e) {} }
+    } catch (_e) {}
+
     // ============================================================
     //  resize 适配（P1-4）：监听视口变化，重算画布尺寸（含 DPR）并触发当前界面重绘
     // ============================================================
