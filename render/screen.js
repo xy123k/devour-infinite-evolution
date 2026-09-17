@@ -111,6 +111,7 @@
         const frameTimes = [];          // 最近 30 帧耗时（ms）
         const FRAME_WINDOW = 30;
         const LOOP_MAX = 0;             // 无帧数上限
+        let _lastLoopAt = Date.now();   // P0-4 v8: defined before loop() to avoid let-TDZ if RAF fires synchronously
 
         function loop(ts) {
             try { _lastLoopAt = Date.now(); } catch (_e) {}
@@ -139,7 +140,6 @@
         requestAnimationFrame(loop);
         // P0-4 v7: RAF fallback — on some devices (MIUI WebView) requestAnimationFrame may never
         // fire; if no new frame within 120ms, drive the loop via setInterval as a backup.
-        let _lastLoopAt = Date.now();
         const _loopGuard = setInterval(function () {
             try {
                 if (Date.now() - _lastLoopAt > 120) {
