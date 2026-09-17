@@ -166,31 +166,46 @@ const game = {
     // ========== 广告管理模块（TapTap小游戏） ==========
     adManager: {
         config: {
-            rewardedVideoAdUnitId: 'YOUR_REWARDED_VIDEO_AD_UNIT_ID',
+            // 兼容入口：默认使用死亡复活点位
+            rewardedVideoAdUnitId: '1066325',
+            // 4 个激励视频点位（Dirichlet 测试推广位，媒体 1109489）
+            adUnitIds: {
+                death_revive: '1066325',
+                essence_daily: '1066327',
+                elite_double: '1066329',
+                death_convert: '1066331',
+            },
         },
-        _rewardedVideoAd: null,
+        _rewardedVideoAds: {},
         _pendingCallback: null,
         _pendingType: null,
+
+        _getAd(adUnitId) {
+            if (this._rewardedVideoAds[adUnitId]) return this._rewardedVideoAds[adUnitId];
+            if (typeof tt === 'undefined' || !tt.createRewardedVideoAd) return null;
+            const ad = tt.createRewardedVideoAd({ adUnitId: adUnitId });
+            ad.onClose((res) => {
+                if (res && res.isEnded) {
+                    this._grantReward();
+                } else {
+                    if (typeof game !== 'undefined') game.appendBattleLog('广告未完整观看，无法获得奖励', 'log-info');
+                }
+                this._clearPending();
+            });
+            ad.onError((err) => {
+                console.error('[AdManager] 广告错误:', err);
+                if (typeof game !== 'undefined') game.appendBattleLog('广告加载失败，请稍后重试', 'log-info');
+                this._clearPending();
+            });
+            this._rewardedVideoAds[adUnitId] = ad;
+            return ad;
+        },
 
         init() {
             if (typeof tt !== 'undefined' && tt.createRewardedVideoAd) {
                 console.log('[AdManager] TapTap环境，初始化广告SDK');
-                this._rewardedVideoAd = tt.createRewardedVideoAd({
-                    adUnitId: this.config.rewardedVideoAdUnitId
-                });
-                this._rewardedVideoAd.onClose((res) => {
-                    if (res && res.isEnded) {
-                        this._grantReward();
-                    } else {
-                        if (typeof game !== 'undefined') game.appendBattleLog('广告未完整观看，无法获得奖励', 'log-info');
-                    }
-                    this._clearPending();
-                });
-                this._rewardedVideoAd.onError((err) => {
-                    console.error('[AdManager] 广告错误:', err);
-                    if (typeof game !== 'undefined') game.appendBattleLog('广告加载失败，请稍后重试', 'log-info');
-                    this._clearPending();
-                });
+                // 预创建死亡复活广告（首个点位）
+                this._getAd(this.config.rewardedVideoAdUnitId);
             } else {
                 console.log('[AdManager] 非TapTap环境，使用模拟广告');
             }
@@ -263,10 +278,12 @@ const game = {
             }
             this._pendingCallback = callback;
             this._pendingType = adType;
-            if (this._rewardedVideoAd) {
-                this._rewardedVideoAd.show().catch(() => {
-                    this._rewardedVideoAd.load().then(() => {
-                        this._rewardedVideoAd.show();
+            const adUnitId = (this.config.adUnitIds && this.config.adUnitIds[adType]) || this.config.rewardedVideoAdUnitId;
+            const ad = this._getAd(adUnitId);
+            if (ad) {
+                ad.show().catch(() => {
+                    ad.load().then(() => {
+                        ad.show();
                     }).catch((err) => {
                         console.error('[AdManager] 广告加载失败:', err);
                         this._clearPending();
@@ -862,6 +879,7 @@ const game = {
         warning: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg>',
         skull: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2a8 8 0 0 0-8 8c0 2.5 1 4.5 2 6v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3c1-1.5 2-3.5 2-6a8 8 0 0 0-8-8z\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><path d=\"M9 18v2M15 18v2M12 18v2\"/></svg>',
         map: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6\"/><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"18\"/><line x1=\"16\" y1=\"6\" x2=\"16\" y2=\"22\"/></svg>',
+        barChart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
         book: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/></svg>',
         gift: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 12 20 22 4 22 4 12\"/><rect x=\"2\" y=\"7\" width=\"20\" height=\"5\"/><line x1=\"12\" y1=\"22\" x2=\"12\" y2=\"7\"/><path d=\"M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z\"/><path d=\"M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z\"/></svg>',
         coin: '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v12M9 9h4.5a2 2 0 0 1 0 4H9\"/></svg>',
@@ -2204,7 +2222,9 @@ const game = {
         this.battleLog = [];
 
         if (this.data.maps && this.data.maps.maps.length > 0) {
-            this.currentMap = this.data.maps.maps[Math.floor(Math.random()*this.data.maps.maps.length)];
+            // currentMap 与 currentMapIndex=0 保持一致（取可游玩地图第一张），避免状态栏"当前地图"与实际不符
+            const playable0 = this.getPlayableMaps();
+            this.currentMap = (playable0 && playable0.length > 0) ? playable0[0] : this.data.maps.maps[0];
         }
 
         // 商店永久强化：开局补给（跨轮回生效，每次轮回开局发放）
@@ -2799,8 +2819,7 @@ const game = {
     },
 
     showRandomStory() {
-        // Canvas 化主界面：环境法则由渲染器直接读取绘制
-        if (this._isCanvasScreen('mainScreen')) return;
+        // P1-I：移除 Canvas 短路，让新档随机剧情卡在 Canvas 也播放
         // 显示当前地图的环境法则作为主界面氛围文本（使用实际生效的效果描述）
         const currentMap = this.getCurrentMap();
         const envEff = this.getEnvironmentEffect();
@@ -3047,6 +3066,7 @@ const game = {
         this.currentMapIndex = (this.currentMapIndex + 1) % playable.length;
         this.currentLayer = 1;
         const nextMap = playable[this.currentMapIndex];
+        this.currentMap = nextMap;  // 同步 currentMap 字段，避免"当前地图"展示错位
         const newEra = this.getCurrentMapEra(this.currentMapIndex);
         const newChapter = this.storyData.getCurrentChapter(this.currentMapIndex);
         this.appendBattleLog(`进入新地图：${nextMap.name}！`, 'log-info');
@@ -3162,7 +3182,7 @@ const game = {
         });
         html += '</div>';
         
-        this.showCustomPopup('进化抉择', html, null, true);
+        this.showPopup(html);
     },
     
     // 选择进化抉择
@@ -4241,32 +4261,40 @@ const game = {
             html += '</div>';
             
             // 右侧：可替换的共生体（背包中该部位的，折叠展开）
+            // P9-7：按 id 分组合并重复（毒牙×2），不过滤已装备 id（装备后备用件仍显示）
             html += '<div>';
             html += '<div style="color:var(--text-muted);font-size:11px;margin-bottom:4px">可替换</div>';
-            const slotBagItems = bag.filter(id => {
+            const slotBagAll = bag.filter(id => {
                 const t = this.getSymbiontTemplate(id);
-                return t && t.slot === slot && id !== symId;
+                return t && t.slot === slot;
             });
-            if (slotBagItems.length === 0) {
+            const bagCounts = {};
+            slotBagAll.forEach(function (id) { bagCounts[id] = (bagCounts[id] || 0) + 1; });
+            const uniqueIds = Object.keys(bagCounts);
+            if (uniqueIds.length === 0) {
                 html += '<div style="background:var(--bg-secondary);padding:8px;border-radius:6px;opacity:0.5;text-align:center">';
                 html += '<div style="color:var(--text-muted);font-size:12px">无可用共生体</div>';
                 html += '</div>';
             } else {
-                // 折叠/展开按钮
+                if (!this._symbiontSlotExpanded) this._symbiontSlotExpanded = {};
+                const isOpen = !!this._symbiontSlotExpanded[slotId];
                 html += '<button onclick="game.toggleSymbiontSlot(\'' + slotId + '\')" style="width:100%;padding:6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:4px;color:var(--text-secondary);cursor:pointer;margin-bottom:4px">';
-                html += '可替换共生体（' + slotBagItems.length + '个） <span id="' + slotId + '_arrow">▼</span>';
+                html += '可替换共生体（' + uniqueIds.length + '种） <span id="' + slotId + '_arrow">' + (isOpen ? '▲' : '▼') + '</span>';
                 html += '</button>';
-                // 折叠内容（默认隐藏）
-                html += '<div id="' + slotId + '" style="display:none;max-height:200px;overflow-y:auto">';
-                slotBagItems.forEach(id => {
+                html += '<div id="' + slotId + '" style="display:' + (isOpen ? 'block' : 'none') + ';max-height:200px;overflow-y:auto">';
+                uniqueIds.forEach(id => {
                     const t = this.getSymbiontTemplate(id);
                     if (!t) return;
                     const c = this.symbiontQualityColors[t.quality] || 'var(--text-primary)';
+                    const cnt = bagCounts[id];
+                    const isEquipped = (id === symId);
                     html += '<div style="background:var(--bg-secondary);padding:6px;border-radius:4px;margin-bottom:4px">';
-                    html += '<div style="color:' + c + ';font-weight:bold;font-size:12px">' + t.name + '</div>';
+                    html += '<div style="color:' + c + ';font-weight:bold;font-size:12px">' + t.name + (cnt > 1 ? ' ×' + cnt : '') + (isEquipped ? ' <span style="color:var(--accent-success);font-size:10px">[已装备]</span>' : '') + '</div>';
                     let st = this.getSymbiontStatsText(t);
                     if (st) html += '<div style="color:var(--accent-primary);font-size:10px">' + st + '</div>';
-                    html += '<button onclick="game.equipSymbiontAndRefresh(\'' + id + '\')" style="width:100%;margin-top:2px;font-size:10px;padding:3px;background:var(--accent-primary);border:none;border-radius:3px;color:white;cursor:pointer">装备</button>';
+                    if (!isEquipped) {
+                        html += '<button onclick="game.equipSymbiontAndRefresh(\'' + id + '\')" style="width:100%;margin-top:2px;font-size:10px;padding:3px;background:var(--accent-primary);border:none;border-radius:3px;color:white;cursor:pointer">装备</button>';
+                    }
                     html += '</div>';
                 });
                 html += '</div>';
@@ -4366,7 +4394,7 @@ const game = {
             html += '<div style="color:var(--accent-primary);font-weight:bold;font-size:14px;margin-bottom:4px">' + tagName + ' <span style="font-size:11px;color:var(--text-muted);font-weight:normal">(' + ownedCount + '/' + list.length + ' 已解锁)</span></div>';
             if (set) {
                 html += '<div style="font-size:11px;color:var(--accent-warning);margin-bottom:6px;background:var(--bg-secondary);padding:5px 8px;border-radius:4px">';
-                html += '🧩 套装【' + set.name + '】：' + (set.description || '');
+                html += '🧩 套装【<span style="cursor:pointer;text-decoration:underline dotted;color:var(--accent-warning)" onclick="game.showTalentSetTooltip(\'set\',\'' + set.id + '\',event)" title="点击查看套装效果详情">' + set.name + '</span>】：' + (set.description || '');
                 (set.thresholds || []).forEach(th => {
                     html += ' <span style="color:var(--text-secondary)">|</span> ' + th.count + '件：' + th.effect;
                 });
@@ -4381,7 +4409,7 @@ const game = {
                 // 该天赋参与的跨体系组合与联动
                 const crossesOf = crossByTag[tag] || [];
                 const combosOf = comboByTag[tag] || [];
-                html += '<div style="background:var(--bg-secondary);padding:7px 8px;border-radius:6px;margin-bottom:6px;cursor:pointer" onclick="game.toggleTalentCodexDetail(\'' + t.id + '\')">';
+                html += '<div style="background:var(--bg-card);border:1px solid #2a3a4a;border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer" onclick="game.toggleTalentCodexDetail(\'' + t.id + '\')">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center">';
                 html += '<span style="color:' + c + ';font-weight:bold;font-size:13px">' + t.name + ' <span style="font-size:10px;color:var(--text-muted);font-weight:normal">[' + qn + ']</span></span>';
                 html += '<span style="font-size:11px;color:' + (isOwned ? 'var(--accent-success)' : 'var(--text-faint)') + '">' + (isOwned ? '✓ 已解锁' : '未解锁') + '</span>';
@@ -4415,7 +4443,7 @@ const game = {
                     html += '🔀 组合：';
                     crossesOf.forEach(c => {
                         const otherNames = (c.requires || []).filter(x => x != tag).map(x => tagNames[x] || ('体系' + x));
-                        html += '【' + c.name + '】（+' + otherNames.join('、') + '）：' + c.effect + '；';
+                        html += '<span style="cursor:pointer;text-decoration:underline dotted;color:var(--accent-info)" onclick="game.showTalentSetTooltip(\'cross\',\'' + c.id + '\',event)" title="点击查看组合效果详情">【' + c.name + '】</span>（+' + otherNames.join('、') + '）：' + c.effect + '；';
                     });
                     html += '</div>';
                 }
@@ -4423,7 +4451,7 @@ const game = {
                     html += '<div style="font-size:11px;color:var(--accent-warning);margin-top:3px">';
                     html += '🔗 联动：';
                     combosOf.forEach(c => {
-                        html += '【' + c.name + '】' + (c.description ? c.description + '：' : '：') + c.effect + '；';
+                        html += '<span style="cursor:pointer;text-decoration:underline dotted;color:var(--accent-warning)" onclick="game.showTalentSetTooltip(\'combo\',\'' + c.id + '\',event)" title="点击查看联动效果详情">【' + c.name + '】</span>' + (c.description ? c.description + '：' : '：') + c.effect + '；';
                     });
                     html += '</div>';
                 }
@@ -4444,13 +4472,22 @@ const game = {
         if (!this._codexExpanded) this._codexExpanded = {};
         this._codexExpanded[id] = !this._codexExpanded[id];
         this.openTalentCodex();
+        // P9-1：展开时自动滚动弹窗，确保展开区（升级效果/组合/联动）完整可见
+        // （利爪等靠底卡片展开区会超出弹窗可视区，导致“点了没反应”的错觉）
+        if (this._codexExpanded[id] && typeof Render !== 'undefined' && Render.Popup && Render.Popup.scrollIntoView) {
+            const _self = this;
+            setTimeout(function () {
+                try { Render.Popup.scrollIntoView('codexDetail_' + id); } catch (e) { }
+            }, 60);
+        }
     },
 
-    // 共生体联动详情 tooltip（图鉴内点击联动条目）
+    // 共生体联动详情 tooltip（图鉴内点击联动条目）——P8-1：Canvas tooltip（sections 结构，无 DOM tooltipBox）
     showComboTooltip(event, comboId) {
+        if (event && typeof event === 'object') { event.stopPropagation(); event.preventDefault(); }
         const combos = (this.data.talentSets && this.data.talentSets.combos) || [];
         const combo = combos.find(c => c.id === comboId);
-        if (!combo || !event) return;
+        if (!combo) return;
         const sym = this.data.symbionts.symbionts.find(s => s.id === combo.symbiontId);
         const tagNames = this.tagNames || {};
         const tags = (combo.requires || []).map(t => tagNames[t] || ('体系' + t));
@@ -4467,15 +4504,15 @@ const game = {
             }));
         }
         const active = symEquipped && hasTalent;
-        let html = '';
-        html += '<div class="tooltip-section"><span class="tooltip-label">效果</span><span class="tooltip-value">' + combo.effect + '</span></div>';
-        html += '<div class="tooltip-section"><span class="tooltip-label">触发</span><span class="tooltip-value">装备' + (sym ? sym.name : combo.symbiontId) + ' + ' + (tags.join('、') || '对应体系') + '天赋</span></div>';
-        if (combo.description) html += '<div class="tooltip-section"><span class="tooltip-label">说明</span><span class="tooltip-value">' + combo.description + '</span></div>';
-        html += '<div class="tooltip-section"><span class="tooltip-label">共生体</span><span class="tooltip-value">' + (sym ? sym.name + '（' + (this.symbiontSlotNames[sym.slot] || sym.slot) + '）' : combo.symbiontId) + '</span></div>';
-        html += '<div style="margin-top:6px;font-size:12px;color:' + (active ? 'var(--accent-success)' : 'var(--text-faint)') + '">' + (active ? '✓ 当前已激活（效果已生效）' : '○ 当前未激活（满足触发条件后生效）') + '</div>';
+        const sections = [];
+        sections.push({ label: '效果', value: combo.effect });
+        sections.push({ label: '触发', value: '装备' + (sym ? sym.name : combo.symbiontId) + ' + ' + (tags.join('、') || '对应体系') + '天赋' });
+        if (combo.description) sections.push({ label: '说明', value: combo.description });
+        sections.push({ label: '共生体', value: (sym ? sym.name + '（' + (this.symbiontSlotNames[sym.slot] || sym.slot) + '）' : combo.symbiontId) });
+        sections.push({ value: (active ? '✓ 当前已激活（效果已生效）' : '○ 当前未激活（满足触发条件后生效）') });
         if (!this.tooltipData) this.tooltipData = {};
-        this.tooltipData['combo_' + comboId] = { title: '🔗 联动【' + combo.name + '】', desc: html };
-        this.showTooltip('combo_' + comboId, event);
+        this.tooltipData['combo_' + comboId] = { title: '🔗 联动【' + combo.name + '】', titleColor: '#ff7043', sections: sections };
+        this.showTooltip('combo_' + comboId);
     },
 
     // ============================================================
@@ -4534,17 +4571,10 @@ const game = {
     
     // 切换共生体部位折叠/展开
     toggleSymbiontSlot(slotId) {
-        const el = __gid(slotId);
-        const arrow = __gid(slotId + '_arrow');
-        if (el) {
-            if (el.style.display === 'none') {
-                el.style.display = 'block';
-                if (arrow) arrow.textContent = '▲';
-            } else {
-                el.style.display = 'none';
-                if (arrow) arrow.textContent = '▼';
-            }
-        }
+        // Canvas 模式：__gid 恒 null，改为状态化展开 + 重渲染（对齐 toggleTalentCodexDetail）
+        if (!this._symbiontSlotExpanded) this._symbiontSlotExpanded = {};
+        this._symbiontSlotExpanded[slotId] = !this._symbiontSlotExpanded[slotId];
+        this.openSymbiontPanel();
     },
     
     // 获取共生体数值文本（辅助函数）
@@ -5646,6 +5676,10 @@ const game = {
             
             defender.hp -= actualDamage;
         }
+
+        // P1-H：暴击标记（伤害飘字读取；玩家打出的伤害记 _lastPlayerHitCrit，敌人打出的记 _lastEnemyHitCrit）
+        if (isPlayer) this._lastPlayerHitCrit = !!critResult.crit;
+        else this._lastEnemyHitCrit = !!critResult.crit;
 
         // 5. 日志
         const critText = critResult.crit ? "【暴击！】" : "";
@@ -7522,7 +7556,11 @@ ${transition.buff.desc}`);
             });
             self.savePermanent();
             // 弹窗仍存在则重新渲染（若看广告期间已关闭弹窗，奖励照发但不重开）
-            if (__gid('killDropPopup')) self.renderKillDropPopup();
+            // Canvas 模式无 killDropPopup DOM 节点，直接走 renderKillDropPopup 的 showPopup 分支重拼 html（html 变化后缓存失效自动重绘）
+            if (__gid('killDropPopup')
+                || (typeof Render !== 'undefined' && Render.Popup && Render.ScreenManager && Render.ScreenManager.mode === 'canvas')) {
+                self.renderKillDropPopup();
+            }
             self.appendBattleLog('观看广告，本次击杀掉落翻倍！', 'log-heal');
         });
     },
@@ -8154,7 +8192,7 @@ ${transition.buff.desc}`);
                         const targetTag = (target.tags && target.tags.length > 0) ? target.tags[0] : 1;
                         const canEvolve = this.getTagFragmentCount(targetTag, target.quality) >= fragCost;
                         const targetTagName = this.tagNames[targetTag] || ('标签'+targetTag);
-                        evolveBtn = `<button onclick="game.evolveTalent('${t.id}')" ${canEvolve?'':'disabled'} style="font-size:11px;background:var(--accent-purple);color:white" title="进化为【${target.name}】，消耗${fragCost}个【${targetTagName}】${this.qualityNames[target.quality]}碎片">进化→${target.name}</button>`;
+                        evolveBtn = `<button onclick="game.evolveTalent('${t.id}')" ${canEvolve?'':'disabled'} style="font-size:11px;background:var(--accent-purple);color:white">进化→${target.name}</button>`;
                     }
                 }
                 if (isEquipped) {
@@ -8163,7 +8201,7 @@ ${transition.buff.desc}`);
                     const canEquip = equipped.length < passiveSlots;
                     actionBtn = `${evolveBtn}<button onclick="game.equipTalentAndRefresh('${t.id}')" ${canEquip?'':'disabled'} style="font-size:12px;margin-left:4px">装备</button>`;
                 }
-            }            html += `<div class="talent-card" style="${isEquipped?'border-color:var(--accent-success)':''}">                <div>                    <div class="talent-name quality-${t.quality}" data-talent-id="${t.id}">${t.name}                        <span style="font-size:12px;color:var(--text-muted)">[${this.qualityNames[t.quality]}]</span>                        ${isUnlocked ? `<span style="font-size:12px;color:var(--accent-warning)">${lv}/${maxLv}级</span>` : ''}                        ${isEquipped ? '<span style="font-size:11px;color:var(--accent-success)">[已装备]</span>' : ''}                    </div>                    <div class="talent-desc">${effectText}</div>                    ${upgradeBtn}                </div>                <div>${actionBtn}</div>            </div>`;        });        if (listEl) listEl.innerHTML = html;    },    unlockTalentAndRefresh(tid) {        const r = this.unlockTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    upgradeTalentAndRefresh(tid) {        const r = this.upgradeTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    equipTalentAndRefresh(tid) {        const r = this.equipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    unequipTalentAndRefresh(tid) {        const r = this.unequipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },
+            }            html += `<div class="talent-card" style="${isEquipped?'border-color:' + (['','var(--accent-success)','var(--accent-info)','var(--accent-purple)','var(--accent-warning)','var(--accent-danger)'][t.quality] || 'var(--accent-success)') : ''}">                <div>                    <div class="talent-name quality-${t.quality}" data-talent-id="${t.id}">${t.name}                        <span style="font-size:12px;color:var(--text-muted)">[${this.qualityNames[t.quality]}]</span>                        ${isUnlocked ? `<span style="font-size:12px;color:var(--accent-warning)">${lv}/${maxLv}级</span>` : ''}                        ${isEquipped ? '<span style="font-size:11px;color:var(--accent-success)">[已装备]</span>' : ''}                    </div>                    <div class="talent-desc">${effectText}</div>                    ${upgradeBtn}                </div>                <div>${actionBtn}</div>            </div>`;        });        if (listEl) listEl.innerHTML = html;    },    unlockTalentAndRefresh(tid) {        const r = this.unlockTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    upgradeTalentAndRefresh(tid) {        const r = this.upgradeTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    equipTalentAndRefresh(tid) {        const r = this.equipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },    unequipTalentAndRefresh(tid) {        const r = this.unequipTalent(tid);        if (r.success) this.appendBattleLog(r.msg);        else if (r.msg) this.showGameAlert("提示", r.msg);        this.refreshGrowthUI();    },
     getTalentUnlockCost(quality) {
         return {1:5, 2:10, 3:20, 4:40, 5:80}[quality] || 10;
     },
@@ -8952,9 +8990,9 @@ ${transition.buff.desc}`);
         this.currentTooltipKey = null;
     },
     
-    // 显示品质碎片详情tooltip（游戏内弹窗，点击显示/关闭）
+    // 显示品质碎片详情tooltip（游戏内弹窗，点击显示/关闭）——P8-1：改为 Canvas tooltip（无 DOM tooltipBox 依赖，TapTap 可用）
     showQualityFragmentTooltip(event, quality) {
-        if (event) {
+        if (event && typeof event === 'object') {
             event.stopPropagation();
             event.preventDefault();
         }
@@ -8965,87 +9003,32 @@ ${transition.buff.desc}`);
             return;
         }
         this._currentQualityTooltip = quality;
-        
+
         const qualityNames = ['', '普通', '稀有', '史诗', '传说', '神话'];
-        const qName = qualityNames[quality] || ('品质'+quality);
-        const universal = this.permanent.universalFragments[quality] || 0;
-        
-        // 先统计有专属碎片的体系，决定弹窗宽度和列数（碎片少时弹窗紧凑不臃肿）
+        const qualityColors = ['', '#9e9e9e', '#42a5f5', '#ab47bc', '#ffa726', '#ef5350'];
+        const qName = qualityNames[quality] || ('品质' + quality);
+        const universal = (this.permanent.universalFragments && this.permanent.universalFragments[quality]) || 0;
+
+        // 只统计各体系专属碎片（不含万能）——P8-1：碎片统计不误计入万能碎片
         const tagIds = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,20,21,22,23,24,25,26,27,28];
         const countItems = [];
         tagIds.forEach(tagId => {
             const c = this.permanent.tagFragments && this.permanent.tagFragments[tagId] ? (this.permanent.tagFragments[tagId][quality] || 0) : 0;
             if (c > 0) countItems.push({tagId: tagId, count: c});
         });
-        const itemCount = countItems.length;
-        let boxWidth = 300, cols = 1;
-        if (itemCount > 12) { boxWidth = 620; cols = 3; }
-        else if (itemCount > 6) { boxWidth = 470; cols = 2; }
-        else if (itemCount > 3) { boxWidth = 350; cols = 2; }
-        
-        let html = '<div style="width:' + boxWidth + 'px;max-width:95vw">';
-        // 标题栏（带关闭按钮）
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--text-faint)">';
-        html += '<div style="font-weight:bold;color:var(--accent-warning);font-size:16px">' + qName + '碎片详情</div>';
-        html += '<span onclick="game.hideTooltip();game._currentQualityTooltip=null;" style="cursor:pointer;color:var(--text-muted);font-size:18px;padding:0 6px;line-height:1" title="关闭">✕</span>';
-        html += '</div>';
-        // 万能碎片
-        html += '<div style="margin-bottom:10px;padding:8px;background:var(--bg-secondary);border-radius:6px;display:flex;justify-content:space-between;align-items:center">';
-        html += '<span style="color:var(--text-secondary);font-size:13px">万能碎片（可用于任意体系）</span>';
-        html += '<span style="color:var(--accent-info);font-weight:bold;font-size:15px">' + universal + '个</span>';
-        html += '</div>';
-        // 各体系专属碎片
-        html += '<div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">各体系专属碎片：</div>';
-        
-        // 按条目数动态列数渲染（无滚轮限制）
-        html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:4px;font-size:12px">';
-        countItems.forEach(item => {
-            const tagName = this.tagNames[item.tagId] || ('体系'+item.tagId);
-            html += '<div style="display:flex;justify-content:space-between;padding:4px 6px;background:var(--bg-card);border-radius:4px;border:1px solid var(--border-secondary)">';
-            html += '<span style="color:var(--text-secondary)">' + tagName + '</span>';
-            html += '<span style="color:var(--accent-success);font-weight:bold">' + item.count + '个</span>';
-            html += '</div>';
-        });
-        html += '</div>';
-        
-        if (itemCount === 0) {
-            html += '<div style="text-align:center;color:var(--text-faint);padding:16px;font-size:13px">暂无任何体系的' + qName + '专属碎片</div>';
+
+        const sections = [];
+        sections.push({ label: '万能碎片', value: universal + '个（可用于任意体系）' });
+        if (countItems.length > 0) {
+            countItems.forEach(item => {
+                sections.push({ label: this.tagNames[item.tagId] || ('体系' + item.tagId), value: item.count + '个' });
+            });
+        } else {
+            sections.push({ value: '暂无任何体系的' + qName + '专属碎片' });
         }
-        
-        html += '<div style="margin-top:10px;font-size:11px;color:var(--text-faint);border-top:1px solid var(--text-faint);padding-top:8px">';
-        html += '提示：专属碎片只能用于对应体系，万能碎片可用于任意体系；点击空白处或关闭按钮关闭';
-        html += '</div>';
-        html += '</div>';
-        
-        // 显示在游戏内tooltip中
-        const tooltipBox = __gid('tooltipBox');
-        if (tooltipBox) {
-            tooltipBox.innerHTML = html;
-            tooltipBox.classList.add('show');
-            // 临时修改max-width，让品质碎片详情tooltip可以更宽
-            tooltipBox.style.maxWidth = '650px';
-            // 定位（居中显示，避免超出屏幕）
-            const tooltipRect = tooltipBox.getBoundingClientRect();
-            let left = (SCREEN_W - tooltipRect.width) / 2;
-            let top = (SCREEN_H - tooltipRect.height) / 2;
-            if (left < 10) left = 10;
-            if (top < 10) top = 10;
-            tooltipBox.style.top = top + 'px';
-            tooltipBox.style.left = left + 'px';
-            
-            // 添加点击空白处关闭tooltip的功能
-            const closeOnOutsideClick = (e) => {
-                if (!tooltipBox.contains(e.target)) {
-                    this.hideTooltip();
-                    this._currentQualityTooltip = null;
-                    __qrm('click', closeOnOutsideClick);
-                }
-            };
-            // 延迟添加，避免当前点击立即触发关闭
-            setTimeout(() => {
-                __qadd('click', closeOnOutsideClick);
-            }, 100);
-        }
+        if (!this.tooltipData) this.tooltipData = {};
+        this.tooltipData['quality_' + quality] = { title: qName + '碎片详情', titleColor: qualityColors[quality] || '#ffb74d', sections: sections };
+        this.showTooltip('quality_' + quality);
     },
 
     // 显示天赋Tooltip
@@ -9481,13 +9464,13 @@ ${transition.buff.desc}`);
         
         let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
         html += '<h3 style="margin:0;color:var(--accent-primary)"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><path d=\"M12 2a4 4 0 0 1 4 4c0 1.5-.5 2.5-1.5 3.5L14 11l-.5.5c-1 1-1.5 2-1.5 3.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5L7 11l.5-.5c1-1 1.5-2 1.5-3.5a4 4 0 0 1 3-3.87z\"/><path d=\"M5 8h14\"/><path d=\"M5 16h14\"/></svg> 局内天赋</h3>';
-        html += '<button onclick="game.closePop()" style="padding:6px 12px;font-size:12px;background:var(--text-faint);color:var(--text-primary);border:none;border-radius:4px;cursor:pointer">关闭</button>';
+        html += '<button data-noglow="" onclick="game.closePop()" style="padding:4px 12px;font-size:13px;min-height:auto;margin:0;background:var(--text-faint);color:var(--text-primary);border:none;border-radius:6px;cursor:pointer">关闭</button>';
         html += '</div>';
         
         // 标签切换：装备界面 / 解锁界面（装备在前）
         html += '<div style="display:flex;gap:6px;margin-bottom:10px">';
-        html += '<button onclick="game.setInRunTalentPanelTab(\'equip\')" style="flex:1;padding:8px;font-size:12px;font-weight:bold;border-radius:6px;border:none;cursor:pointer;' + (this.inRunTalentPanelTab==='equip' ? 'background:var(--accent-primary);color:var(--text-primary)' : 'background:var(--bg-card);color:var(--text-muted)') + '"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 装备</button>';
-        html += '<button onclick="game.setInRunTalentPanelTab(\'unlock\')" style="flex:1;padding:8px;font-size:12px;font-weight:bold;border-radius:6px;border:none;cursor:pointer;' + (this.inRunTalentPanelTab==='unlock' ? 'background:var(--accent-primary);color:var(--text-primary)' : 'background:var(--bg-card);color:var(--text-muted)') + '"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 9.9-1\"/></svg> 解锁</button>';
+        html += '<button onclick="game.setInRunTalentPanelTab(\'equip\')" style="flex:1;margin:0;padding:8px 16px;font-size:15px;font-weight:bold;line-height:1.2;border-radius:6px;border:none;cursor:pointer;' + (this.inRunTalentPanelTab==='equip' ? 'background:var(--accent-primary);color:var(--text-primary)' : 'background:var(--bg-card);color:var(--text-muted)') + '"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 装备</button>';
+        html += '<button onclick="game.setInRunTalentPanelTab(\'unlock\')" style="flex:1;margin:0;padding:8px 16px;font-size:15px;font-weight:bold;line-height:1.2;border-radius:6px;border:none;cursor:pointer;' + (this.inRunTalentPanelTab==='unlock' ? 'background:var(--accent-primary);color:var(--text-primary)' : 'background:var(--bg-card);color:var(--text-muted)') + '"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 9.9-1\"/></svg> 解锁</button>';
         html += '</div>';
         
         // 碎片数量显示（按品质+体系分类）
@@ -9515,7 +9498,7 @@ ${transition.buff.desc}`);
         html += '</div>';
         
         html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,30,25,0.5);border-radius:8px;border:1px solid rgba(0,229,176,0.15)">';
-        html += '<div style="margin-bottom:4px;display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding-bottom:2px"><span style="color:var(--text-muted);font-size:11px;margin-right:6px;flex-shrink:0">品质：</span>';
+        html += '<div style="margin-bottom:4px;display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="color:var(--text-muted);font-size:11px;margin-right:6px;flex-shrink:0">品质：</span>';
         const qFilters = [{v:'all',n:'全部'},{v:'1',n:'普通'},{v:'2',n:'稀有'},{v:'3',n:'史诗'},{v:'4',n:'传说'},{v:'5',n:'神话'}];
         qFilters.forEach(qf => {
             const active = filter.quality === qf.v;
@@ -9528,12 +9511,12 @@ ${transition.buff.desc}`);
             }
             qTotal = qExclusive + qUniversal;
             const fragTip = qf.v === 'all' ? '全部品质' : `${this.qualityNames[parseInt(qf.v)]}碎片：${qTotal}个（专属${qExclusive}+万能${qUniversal}）`;
-            html += `<button onclick="game.setInRunTalentFilter('quality','${qf.v}')" onmouseover="game.showTooltip(event,'${fragTip}')" onmouseout="game.hideTooltip()" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;cursor:help;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${qf.n}${qf.v!=='all'?` <span style="font-size:8px;opacity:0.8">(${qTotal})</span>`:''}</button>`;
+            html += `<button onclick="game.setInRunTalentFilter('quality','${qf.v}')" onmouseover="game.showTooltip(event,'${fragTip}')" onmouseout="game.hideTooltip()" style="font-size:13px;padding:8px 12px;margin:0;flex-shrink:0;border-radius:4px;cursor:help;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${qf.n}${qf.v!=='all'?` <span style="font-size:8px;opacity:0.8">(${qTotal})</span>`:''}</button>`;
         });
         html += '</div>';
         
-        html += '<div style="display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding-bottom:2px"><span style="color:var(--text-muted);font-size:11px;margin-right:6px;flex-shrink:0">体系：</span>';
-        html += `<button onclick="game.setInRunTalentFilter('tag','all')" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;${filter.tag==='all'?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">全部</button>`;
+        html += '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px"><span style="color:var(--text-muted);font-size:11px;margin-right:6px;flex-shrink:0">体系：</span>';
+        html += `<button onclick="game.setInRunTalentFilter('tag','all')" style="font-size:13px;padding:8px 12px;margin:0;flex-shrink:0;border-radius:4px;${filter.tag==='all'?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">全部</button>`;
         // 体系标签默认显示一行，可折叠展开
         const inrunAllTags = [];
         for (let tagId in this.tagNames) {
@@ -9546,17 +9529,18 @@ ${transition.buff.desc}`);
         const visibleInrunTags = showAllInrunTags ? inrunAllTags : inrunAllTags.slice(0, 6);
         visibleInrunTags.forEach(item => {
             const active = filter.tag === item.tagId;
-            html += `<button onclick="game.setInRunTalentFilter('tag','${item.tagId}')" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${this.tagNames[item.tagId]}(${item.count})</button>`;
+            html += `<button onclick="game.setInRunTalentFilter('tag','${item.tagId}')" style="font-size:13px;padding:8px 12px;margin:0;flex-shrink:0;border-radius:4px;${active?'background:var(--accent-primary);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}">${this.tagNames[item.tagId]}(${item.count})</button>`;
         });
+        html += '</div>';
+        // 展开按钮 + 只看可解锁 同一行
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
         if (inrunAllTags.length > 6) {
-            html += `<button onclick="game.toggleInrunTalentTagExpand()" style="font-size:10px;padding:2px 7px;margin:1px 2px;flex-shrink:0;border-radius:4px;background:var(--text-faint);color:var(--text-muted)">${showAllInrunTags?'收起 ▲':'展开 ▼ (' + (inrunAllTags.length - 6) + ')'}</button>`;
+            html += `<button onclick="game.toggleInrunTalentTagExpand()" style="font-size:13px;padding:8px 12px;margin:0;flex-shrink:0;border-radius:4px;background:var(--text-faint);color:var(--text-muted)">${showAllInrunTags?'收起 ▲':'展开 ▼ (' + (inrunAllTags.length - 6) + ')'}</button>`;
         }
+        html += `<button onclick="game.setInRunTalentFilter('showOnlyUnlockable',${!filter.showOnlyUnlockable})" style="font-size:13px;padding:8px 12px;margin:0;flex-shrink:0;border-radius:4px;${filter.showOnlyUnlockable?'background:var(--accent-warning);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 只看可解锁</button>`;
         html += '</div>';
-        
-        html += '<div>';
-        html += `<button onclick="game.setInRunTalentFilter('showOnlyUnlockable',${!filter.showOnlyUnlockable})" style="font-size:11px;padding:4px 12px;margin-right:8px;border-radius:4px;${filter.showOnlyUnlockable?'background:var(--accent-warning);color:var(--text-primary);font-weight:bold':'background:var(--text-faint);color:var(--text-secondary)'}"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> 只看可解锁</button>`;
-        html += `<span style="color:var(--text-faint);font-size:11px">共${filtered.length}个天赋</span>`;
-        html += '</div>';
+        // 共xxx个天赋 独立一行
+        html += `<div style="color:var(--text-faint);font-size:11px;margin-bottom:8px">共${filtered.length}个天赋</div>`;
         // 搜索框
         html += '<div style="margin-top:8px">';
         html += `<div style="display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.3);border:1px solid var(--text-faint);border-radius:4px;padding:0 8px">
@@ -9580,7 +9564,7 @@ ${transition.buff.desc}`);
             if (t.tags && t.tags.length > 0) {
                 t.tags.forEach(tagId => {
                     const tn = this.tagNames[tagId] || ('标签'+tagId);
-                    tagHtml += `<span style="display:inline-block;font-size:10px;padding:1px 5px;margin-right:3px;background:rgba(13,71,161,0.5);color:var(--accent-info);border-radius:3px">${tn}</span>`;
+                    tagHtml += `<span title="${tn}体系专属碎片" style="display:inline-block;font-size:10px;padding:1px 5px;margin-right:3px;background:rgba(13,71,161,0.5);color:var(--accent-info);border-radius:3px">${tn}</span>`;
                 });
             }
             
@@ -9624,8 +9608,8 @@ ${transition.buff.desc}`);
                     ? `专属${t.exclusiveFrags}+万能${t.universalFrags}`
                     : t.exclusiveFrags > 0 ? `专属${t.exclusiveFrags}` : `万能${t.universalFrags}`;
                 actionBtn = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                    <button onclick="game.unlockTalentAndRefreshInRun('${t.id}')" ${t.canUnlock?'':'disabled'} style="font-size:11px;padding:5px 10px;flex:1;min-width:100px;${!t.canUnlock?'opacity:0.7':''}">解锁(${t.cost.fragCount}${this.qualityNames[t.cost.fragQuality]}碎片)<br><span style="font-size:10px;${t.canUnlock?'color:var(--accent-success)':'color:var(--accent-danger)'}">拥有${fragInfo}${bossCoreText}</span>${!t.canUnlock?'<br><span style="font-size:9px;color:var(--accent-danger)">碎片不足</span>':''}</button>
-                    <button onclick="game.hideTalentInRun('${t.id}')" style="font-size:10px;padding:4px 8px;background:var(--text-faint);color:var(--text-muted)" title="不再提醒">隐藏</button>
+                    <button onclick="game.unlockTalentAndRefreshInRun('${t.id}')" ${t.canUnlock?'':'disabled'} style="font-size:11px;line-height:1.25;padding:4px 8px;flex:0 1 auto;min-width:96px;border-radius:8px;${!t.canUnlock?'opacity:0.7':''}">解锁(${t.cost.fragCount}${this.qualityNames[t.cost.fragQuality]}碎片)<br><span style="font-size:10px;${t.canUnlock?'color:var(--accent-success)':'color:var(--accent-danger)'}">拥有${fragInfo}${bossCoreText}${!t.canUnlock?' · 碎片不足':''}</span></button>
+                    <button onclick="game.hideTalentInRun('${t.id}')" style="font-size:10px;line-height:1.25;padding:4px 8px;background:var(--text-faint);color:var(--text-muted);border-radius:8px">隐藏</button>
                 </div>`;
             } else {
                 let upgradeBtn = '';
@@ -9635,18 +9619,19 @@ ${transition.buff.desc}`);
                     const fragCost = pointCost;
                     const upgradeTagFrags = this.getTagFragmentCount(t.talentTag, t.quality);
                     const canUpgrade = (this.permanent.talentPoints || 0) >= pointCost && upgradeTagFrags >= fragCost;
-                    upgradeBtn = `<button onclick="game.upgradeTalentAndRefreshInRun('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:10px;padding:4px 8px">升级至${t.lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;
+                    upgradeBtn = `<button onclick="game.upgradeTalentAndRefreshInRun('${t.id}')" ${canUpgrade?'':'disabled'} style="font-size:12px;padding:5px 10px;border-radius:8px">升级至${t.lv+1}级（${pointCost}点+${fragCost}碎片）</button>`;
                 }
                 if (t.isEquipped) {
-                    actionBtn = `<div style="display:flex;gap:6px;flex-wrap:wrap">${upgradeBtn}<button onclick="game.unequipTalentAndRefreshInRun('${t.id}')" style="font-size:11px;padding:5px 10px;background:var(--accent-danger)">卸下</button></div>`;
+                    actionBtn = `<div style="display:flex;gap:6px;flex-wrap:wrap">${upgradeBtn}<button onclick="game.unequipTalentAndRefreshInRun('${t.id}')" style="font-size:11px;padding:5px 10px;background:var(--accent-danger);border-radius:8px">卸下</button></div>`;
                 } else {
                     const canEquip = equipped.length < passiveSlots;
-                    actionBtn = `<div style="display:flex;gap:6px;flex-wrap:wrap">${upgradeBtn}<button onclick="game.equipTalentAndRefreshInRun('${t.id}')" ${canEquip?'':'disabled'} style="font-size:11px;padding:5px 10px">装备</button></div>`;
+                    actionBtn = `<div style="display:flex;gap:6px;flex-wrap:wrap">${upgradeBtn}<button onclick="game.equipTalentAndRefreshInRun('${t.id}')" ${canEquip?'':'disabled'} style="font-size:11px;padding:5px 10px;border-radius:8px">装备</button></div>`;
                 }
             }
             
             const canUnlockGlow = t.canUnlock ? 'box-shadow:0 0 12px rgba(0,229,176,0.4);border-color:var(--accent-primary);' : '';
-            html += `<div class="talent-card quality-${t.quality}" style="${t.isEquipped?'box-shadow:0 0 15px rgba(100,255,150,0.3);border-color:var(--accent-success);':canUnlockGlow}margin-bottom:12px">
+            const eqBorders = ['', 'var(--accent-success)', 'var(--accent-info)', 'var(--accent-purple)', 'var(--accent-warning)', 'var(--accent-danger)'];
+            html += `<div class="talent-card quality-${t.quality}" style="${t.isEquipped?'box-shadow:0 0 15px rgba(100,255,150,0.3);border-color:' + (eqBorders[t.quality] || 'var(--accent-success)') + ';':canUnlockGlow}margin-bottom:10px">
                 <div>
                     <div class="talent-name" data-talent-id="${t.id}">${t.name}
                         <span style="font-size:10px;opacity:0.7">[${this.qualityNames[t.quality]}]</span>
@@ -9658,7 +9643,7 @@ ${transition.buff.desc}`);
                     <div class="talent-desc" style="font-size:11px">${t.effectText}</div>
                     ${inRunSetProgressHtml}
                 </div>
-                <div style="margin-top:8px">${actionBtn}</div>
+                <div style="flex-shrink:0">${actionBtn}</div>
             </div>`;
         });
         html += `<div style="height:80px"></div>`;
@@ -10129,7 +10114,7 @@ ${transition.buff.desc}`);
                     if (target && !unlocked.includes(target.id)) {
                         const fragCost = this.talentEvolveCost[t.quality] || 10;
                         const canEvolve = (this.permanent.universalFragments[target.quality] || 0) >= fragCost;
-                        evolveBtn = `<button onclick="game.evolveTalent('${t.id}')" ${canEvolve?'':'disabled'} style="font-size:11px;background:var(--accent-purple);color:white" title="进化为【${target.name}】，消耗${fragCost}个${this.qualityNames[target.quality]}碎片">进化→${target.name}</button>`;
+                        evolveBtn = `<button onclick="game.evolveTalent('${t.id}')" ${canEvolve?'':'disabled'} style="font-size:11px;background:var(--accent-purple);color:white">进化→${target.name}</button>`;
                     }
                 }
                 if (isEquipped) {
@@ -10140,7 +10125,7 @@ ${transition.buff.desc}`);
                 }
             }
 
-            html += `<div class="talent-card" style="${isEquipped?'border-color:var(--accent-success)':''}">
+            html += `<div class="talent-card" style="${isEquipped?'border-color:' + (['','var(--accent-success)','var(--accent-info)','var(--accent-purple)','var(--accent-warning)','var(--accent-danger)'][t.quality] || 'var(--accent-success)') : ''}">
                 <div>
                     <div class="talent-name quality-${t.quality}" data-talent-id="${t.id}">${t.name}
                         <span style="font-size:12px;color:var(--text-muted)">[${this.qualityNames[t.quality]}]</span>
@@ -10313,7 +10298,7 @@ ${transition.buff.desc}`);
             draft.forEach(id => {
                 const t = all.find(x => x.id === id);
                 if (!t) return;
-                html += '<span style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg-primary);border:1px solid ' + this.qualityColors[t.quality] + ';border-radius:6px;font-size:12px;color:' + this.qualityColors[t.quality] + '">' + t.name + '<button onclick="game.togglePresetTalent(\'' + t.id + '\')" style="padding:0 4px;font-size:11px;background:none;border:none;color:var(--accent-danger);cursor:pointer" title="移除">✕</button></span>';
+                html += '<span style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg-primary);border:1px solid ' + this.qualityColors[t.quality] + ';border-radius:6px;font-size:12px;color:' + this.qualityColors[t.quality] + '">' + t.name + '<button onclick="game.togglePresetTalent(\'' + t.id + '\')" style="padding:0 4px;font-size:11px;background:none;border:none;color:var(--accent-danger);cursor:pointer">✕</button></span>';
             });
             html += '</div>';
         }
@@ -10389,12 +10374,14 @@ ${transition.buff.desc}`);
     // 切换天赋面板标签（解锁/装备）
     setTalentPanelTab(tab) {
         this.talentPanelTab = tab;
+        if (typeof Render !== 'undefined' && Render.Tooltip && Render.Tooltip.hide) Render.Tooltip.hide();
         this.openTalentPanel();
     },
     
     // 切换局内天赋面板标签
     setInRunTalentPanelTab(tab) {
         this.inRunTalentPanelTab = tab;
+        if (typeof Render !== 'undefined' && Render.Tooltip && Render.Tooltip.hide) Render.Tooltip.hide();
         this.openInRunTalentPanel();
     },
 
@@ -10607,7 +10594,7 @@ ${transition.buff.desc}`);
             return false;
         }
         if (!progress.canAfford) {
-            this.showGameAlert('精粹不足', '手动扩充天赋槽需要${progress.cost || 50}局外精粹！\n当前精粹：' + progress.essence);
+            this.showGameAlert('精粹不足', `手动扩充天赋槽需要${progress.cost || 50}局外精粹！\n当前精粹：` + progress.essence);
             return false;
         }
         this.permanent.essence -= progress.cost;
@@ -10968,7 +10955,7 @@ ${transition.buff.desc}`);
     // 解析被动效果文本（支持五维+衍生属性）
     // 显示天赋套装Tooltip（type: set=同体系套装, cross=跨体系组合, combo=共生体联动）
     showTalentSetTooltip(type, id, event) {
-        if (event) { event.stopPropagation(); event.preventDefault(); }
+        if (event && typeof event === 'object') { event.stopPropagation(); event.preventDefault(); }
         const setsData = this.data.talentSets || {};
         const sets = setsData.sets || [];
         const crossSets = setsData.crossSets || [];
@@ -10986,125 +10973,73 @@ ${transition.buff.desc}`);
             }
         });
 
-        let html = '';
+        let title = '', titleColor = '#ffb74d';
+        const sections = [];
 
         if (type === 'set') {
             const set = sets.find(s => s.id === id);
             if (!set) return;
+            title = set.name;
             const count = tagCounts[set.tag] || 0;
             const setTalents = all.filter(t => t.tags && Array.isArray(t.tags) && t.tags.includes(set.tag));
             const equippedSetTalents = setTalents.filter(t => equippedIds.includes(t.id));
             const maxCount = Math.max.apply(null, set.thresholds.map(th => th.count));
 
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-            html += '<div class="tooltip-title" style="color:var(--accent-warning);margin:0">' + set.name + '</div>';
-            html += '<span onclick="game.hideTooltip()" style="cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;line-height:1" title="关闭">✕</span>';
-            html += '</div>';
-            html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">当前进度：' + count + '/' + maxCount + '件' + (count >= maxCount ? '（已满级）' : '') + '</div>';
-
+            sections.push({ label: '当前进度', value: count + '/' + maxCount + '件' + (count >= maxCount ? '（已满级）' : '') });
             set.thresholds.forEach(th => {
                 const active = count >= th.count;
-                const color = active ? 'var(--accent-success)' : 'var(--text-muted)';
-                const status = active ? '✓ 已激活' : '还差' + (th.count - count) + '件';
-                html += '<div style="font-size:12px;color:' + color + ';margin-bottom:4px;padding:5px 8px;background:var(--bg-secondary);border-radius:4px;' + (active ? 'border:1px solid rgba(0,229,176,0.3)' : '') + '">' + th.count + '件效果：' + th.effect + ' <span style="font-size:10px">（' + status + '）</span></div>';
+                sections.push({ label: th.count + '件', value: th.effect + '（' + (active ? '✓ 已激活' : '还差' + (th.count - count) + '件') + '）' });
             });
-
-            html += '<div style="font-size:12px;color:var(--text-muted);margin:10px 0 4px">该套装包含的天赋（' + equippedSetTalents.length + '/' + setTalents.length + ' 已装备）：</div>';
-            html += '<div style="max-height:180px;overflow-y:auto;padding-right:4px">';
-            setTalents.forEach(t => {
-                const isEquipped = equippedIds.includes(t.id);
-                const color = isEquipped ? 'var(--accent-success)' : 'var(--text-secondary)';
-                html += '<div style="font-size:11px;color:' + color + ';padding:2px 0">' + (isEquipped ? '✓ ' : '· ') + t.name + (isEquipped ? '（已装备）' : '') + '</div>';
-            });
-            html += '</div>';
-
+            sections.push({ label: '包含', value: setTalents.map(t => t.name).join('、') + '（已装备 ' + equippedSetTalents.length + '/' + setTalents.length + '）' });
             const nextThreshold = set.thresholds.find(th => th.count > count);
-            html += '<div style="font-size:11px;color:var(--accent-info);margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">' + (nextThreshold ? '提示：还差' + (nextThreshold.count - count) + '件，装备该体系的任意天赋即可激活' + nextThreshold.count + '件效果' : '已达成全部套装效果！') + '</div>';
+            sections.push({ value: nextThreshold ? '提示：还差' + (nextThreshold.count - count) + '件，装备该体系的任意天赋即可激活' + nextThreshold.count + '件效果' : '已达成全部套装效果！' });
         } else if (type === 'cross') {
             const cross = crossSets.find(c => c.id === id);
             if (!cross) return;
+            title = cross.name;
+            titleColor = '#ab47bc';
             const allMet = cross.requires.every(r => (tagCounts[r] || 0) >= 1);
-
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-            html += '<div class="tooltip-title" style="color:var(--accent-purple);margin:0">' + cross.name + '</div>';
-            html += '<span onclick="game.hideTooltip()" style="cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;line-height:1" title="关闭">✕</span>';
-            html += '</div>';
-            html += '<div style="font-size:12px;color:' + (allMet ? 'var(--accent-success)' : 'var(--accent-warning)') + ';margin-bottom:8px">' + (allMet ? '✓ 已激活' : '未激活（跨体系组合）') + '</div>';
-            html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">效果：' + cross.effect + '</div>';
-
+            sections.push({ value: (allMet ? '✓ 已激活' : '未激活（跨体系组合）') });
+            sections.push({ label: '效果', value: cross.effect });
             cross.requires.forEach(r => {
                 const tagName = tagNames[r] || ('体系' + r);
                 const count = tagCounts[r] || 0;
-                const reqTalents = all.filter(t => t.tags && Array.isArray(t.tags) && t.tags.includes(r));
                 const met = count >= 1;
-                html += '<div style="font-size:12px;color:' + (met ? 'var(--accent-success)' : 'var(--text-muted)') + ';margin:6px 0 2px">' + tagName + '：' + count + '个' + (met ? ' ✓' : '（还缺）') + '</div>';
-                html += '<div style="max-height:100px;overflow-y:auto;padding-right:4px">';
-                reqTalents.forEach(t => {
-                    const isEquipped = equippedIds.includes(t.id);
-                    const color = isEquipped ? 'var(--accent-success)' : 'var(--text-secondary)';
-                    html += '<div style="font-size:11px;color:' + color + ';padding:1px 0">' + (isEquipped ? '✓ ' : '· ') + t.name + (isEquipped ? '（已装备）' : '') + '</div>';
-                });
-                html += '</div>';
+                sections.push({ label: tagName, value: count + '个' + (met ? ' ✓' : '（还缺）') });
             });
-
             const missing = cross.requires.filter(r => !tagCounts[r]);
-            html += '<div style="font-size:11px;color:var(--accent-info);margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">' + (missing.length > 0 ? '提示：还需装备' + missing.map(r => (tagNames[r] || ('体系' + r)) + '天赋').join('、') : '已满足全部条件！') + '</div>';
+            sections.push({ value: missing.length > 0 ? '提示：还需装备' + missing.map(r => (tagNames[r] || ('体系' + r)) + '天赋').join('、') : '已满足全部条件！' });
         } else if (type === 'combo') {
             const combo = combos.find(c => c.id === id);
             if (!combo) return;
+            title = combo.name;
+            titleColor = '#ff7043';
             const symData = this.data.symbionts;
             const symList = symData ? (symData.symbionts || symData) : [];
             const sym = symList.find(s => s.id === combo.symbiontId);
             const symEquipped = Object.values(this.permanent.equippedSymbionts || {}).includes(combo.symbiontId);
             const allMet = combo.requires.every(r => (tagCounts[r] || 0) >= 1);
             const active = symEquipped && allMet;
-
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-            html += '<div class="tooltip-title" style="color:var(--accent-orange);margin:0">' + combo.name + '</div>';
-            html += '<span onclick="game.hideTooltip()" style="cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;line-height:1" title="关闭">✕</span>';
-            html += '</div>';
-            html += '<div style="font-size:12px;color:' + (active ? 'var(--accent-success)' : 'var(--accent-warning)') + ';margin-bottom:8px">' + (active ? '✓ 已激活' : '未激活（共生体×天赋联动）') + '</div>';
-            html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">效果：' + combo.effect + '</div>';
-            const symNameText = sym ? sym.name : (combo.symbiontId + '（数据缺失）');
-            html += '<div style="font-size:12px;color:' + (symEquipped ? 'var(--accent-success)' : 'var(--text-muted)') + ';margin-bottom:6px">共生体：' + symNameText + (symEquipped ? '（已装备）✓' : '（未装备）') + '</div>';
-
+            sections.push({ value: (active ? '✓ 已激活' : '未激活（共生体×天赋联动）') });
+            sections.push({ label: '效果', value: combo.effect });
+            sections.push({ label: '共生体', value: (sym ? sym.name : (combo.symbiontId + '（数据缺失）')) + (symEquipped ? '（已装备）✓' : '（未装备）') });
             combo.requires.forEach(r => {
                 const tagName = tagNames[r] || ('体系' + r);
                 const count = tagCounts[r] || 0;
-                const reqTalents = all.filter(t => t.tags && Array.isArray(t.tags) && t.tags.includes(r));
                 const met = count >= 1;
-                html += '<div style="font-size:12px;color:' + (met ? 'var(--accent-success)' : 'var(--text-muted)') + ';margin:6px 0 2px">' + tagName + '：' + count + '个' + (met ? ' ✓' : '（还缺）') + '</div>';
-                html += '<div style="max-height:100px;overflow-y:auto;padding-right:4px">';
-                reqTalents.forEach(t => {
-                    const isEquipped = equippedIds.includes(t.id);
-                    const color = isEquipped ? 'var(--accent-success)' : 'var(--text-secondary)';
-                    html += '<div style="font-size:11px;color:' + color + ';padding:1px 0">' + (isEquipped ? '✓ ' : '· ') + t.name + (isEquipped ? '（已装备）' : '') + '</div>';
-                });
-                html += '</div>';
+                sections.push({ label: tagName, value: count + '个' + (met ? ' ✓' : '（还缺）') });
             });
-
             const missingTags = combo.requires.filter(r => !tagCounts[r]);
             const hintParts = [];
-            if (!symEquipped) hintParts.push('装备共生体「' + symNameText + '」');
+            if (!symEquipped) hintParts.push('装备共生体「' + (sym ? sym.name : combo.symbiontId) + '」');
             if (missingTags.length > 0) hintParts.push('还需装备' + missingTags.map(r => (tagNames[r] || ('体系' + r)) + '系天赋').join('、'));
-            html += '<div style="font-size:11px;color:var(--accent-info);margin-top:10px;border-top:1px solid var(--text-faint);padding-top:8px">' + (hintParts.length > 0 ? '提示：' + hintParts.join('，') : '已满足全部条件！') + '</div>';
+            sections.push({ value: hintParts.length > 0 ? '提示：' + hintParts.join('，') : '已满足全部条件！' });
         }
 
-        const tooltipBox = __gid('tooltipBox');
-        if (tooltipBox) {
-            tooltipBox.innerHTML = html;
-            tooltipBox.classList.add('show');
-            const rect = event ? event.target.getBoundingClientRect() : {top: 100, left: 100, height: 0};
-            const tooltipRect = tooltipBox.getBoundingClientRect();
-            let top = rect.top + rect.height + 8;
-            let left = rect.left;
-            if (left + tooltipRect.width > SCREEN_W - 10) left = SCREEN_W - tooltipRect.width - 10;
-            if (top + tooltipRect.height > SCREEN_H - 10) top = rect.top - tooltipRect.height - 8;
-            if (left < 10) left = 10;
-            if (top < 10) top = 10;
-            tooltipBox.style.top = top + 'px';
-            tooltipBox.style.left = left + 'px';
-        }
+        if (!this.tooltipData) this.tooltipData = {};
+        const key = (type === 'set' ? 'set_' : type === 'cross' ? 'cross_' : 'combo_') + id;
+        this.tooltipData[key] = { title: title, titleColor: titleColor, sections: sections };
+        this.showTooltip(key);
     },
 
 
@@ -12019,7 +11954,7 @@ ${transition.buff.desc}`);
         if (this.inBattle) {
             html += '<div style="margin-bottom:15px;padding:10px;background:var(--bg-card);border-radius:8px;border-left:3px solid var(--accent-success);display:flex;justify-content:space-between;align-items:center">';
             html += '<span style="color:var(--accent-success);font-size:13px"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:1em;height:1em;vertical-align:middle\"><polyline points=\"14.5 17.5 3 6 3 3 6 3 17.5 14.5\"/><line x1=\"13\" y1=\"19\" x2=\"19\" y2=\"13\"/><line x1=\"16\" y1=\"16\" x2=\"20\" y2=\"20\"/><line x1=\"19\" y1=\"21\" x2=\"21\" y2=\"19\"/></svg>️ 战斗中 - 使用物品后请返回战斗</span>';
-            html += '<button onclick="game.showScreen(\'battleScreen\')" style="padding:8px 16px;font-size:13px;font-weight:bold;background:var(--accent-success);color:white;border-radius:6px;border:none;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> 返回战斗</button>';
+            html += '<button onclick="game.showScreen(\'battleScreen\')" style="padding:8px 16px;font-size:13px;font-weight:bold;background:var(--accent-success);color:white;border-radius:4px;border:none;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> 返回战斗</button>';
             html += '</div>';
         }
 
@@ -12887,11 +12822,23 @@ ${transition.buff.desc}`);
             ${specialHtml}
             <div style="display:flex;gap:10px;margin-top:15px">
                 <button onclick="game.closePop();setTimeout(function(){game.openSymbiontPanel()},50)" style="flex:1;padding:10px;border-radius:6px;background:var(--text-faint);color:var(--text-secondary);font-size:13px">取消</button>
-                <button onclick="game.doEquipSymbiont('${newId}');game.closePop()" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white;font-size:13px;font-weight:bold">确认替换</button>
+                <button onclick="game.doEquipSymbiont('${newId}');game.closePop();setTimeout(function(){game.openSymbiontPanel()},50)" style="flex:1;padding:10px;border-radius:6px;background:var(--accent-success);color:white;font-size:13px;font-weight:bold">确认替换</button>
             </div>
         </div>`;
         
         this.showPopup(html);
+        // P9-8：替换确认弹窗点叉号/遮罩关闭后，回到共生体面板而非主页
+        this._returnToSymbiont = true;
+        const self = this;
+        if (this._symReplacePoll) clearInterval(this._symReplacePoll);
+        this._symReplacePoll = setInterval(function () {
+            if (!self._returnToSymbiont) { clearInterval(self._symReplacePoll); return; }
+            if (typeof Render !== 'undefined' && Render.Popup && !Render.Popup.isVisible()) {
+                clearInterval(self._symReplacePoll);
+                self._returnToSymbiont = false;
+                self.openSymbiontPanel();
+            }
+        }, 150);
     },
 
     // 渲染人物状态-天赋标签页
