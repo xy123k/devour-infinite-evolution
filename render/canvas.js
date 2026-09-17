@@ -58,9 +58,23 @@
     }
 
     // DPR 适配：物理像素 = 逻辑像素 × DPR
-    const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
-    canvas.width = Math.round(SCREEN_W * DPR);
-    canvas.height = Math.round(SCREEN_H * DPR);
+    // 2026-09-17 P0：高分屏防御——DPR 上限 2 + 画布物理宽上限 1080，
+    // 防止容器返回物理分辨率×DPR(3) 时产生 6792px 级超大画布导致部分设备黑屏。
+    function calcCanvasSize(w, h) {
+        const dprRaw = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+        const dpr = Math.min(dprRaw, 2);
+        let cw = Math.round(w * dpr);
+        let ch = Math.round(h * dpr);
+        const MAX_W = 1080;
+        if (cw > MAX_W) {
+            ch = Math.round(ch * MAX_W / cw);
+            cw = MAX_W;
+        }
+        return { cw: cw, ch: ch, scaleX: cw / w, scaleY: ch / h };
+    }
+    const cs = calcCanvasSize(SCREEN_W, SCREEN_H);
+    canvas.width = cs.cw;
+    canvas.height = cs.ch;
     canvas.style.width = SCREEN_W + 'px';
     canvas.style.height = SCREEN_H + 'px';
     if (!isTTEnv) {
@@ -72,7 +86,7 @@
     }
 
     const ctx = canvas.getContext('2d');
-    ctx.scale(DPR, DPR);
+    ctx.scale(cs.scaleX, cs.scaleY);
 
     // ============================================================
     //  resize 适配（P1-4）：监听视口变化，重算画布尺寸（含 DPR）并触发当前界面重绘
@@ -82,14 +96,15 @@
         if (!s.w || !s.h) return;
         SCREEN_W = s.w;
         SCREEN_H = s.h;
-        canvas.width = Math.round(SCREEN_W * DPR);
-        canvas.height = Math.round(SCREEN_H * DPR);
+        const cs2 = calcCanvasSize(SCREEN_W, SCREEN_H);
+        canvas.width = cs2.cw;
+        canvas.height = cs2.ch;
         if (canvas.style) {
             canvas.style.width = SCREEN_W + 'px';
             canvas.style.height = SCREEN_H + 'px';
         }
-        // 重置变换后再按新 DPR 缩放（canvas 尺寸变化会重置画布状态）
-        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        // 重置变换后再按新缩放（canvas 尺寸变化会重置画布状态）
+        ctx.setTransform(cs2.scaleX, 0, 0, cs2.scaleY, 0, 0);
         // 清空文本测量/换行缓存（尺寸变化影响换行结果）
         if (typeof _measureCache !== 'undefined' && _measureCache.clear) _measureCache.clear();
         if (typeof _wrapCache !== 'undefined' && _wrapCache.clear) _wrapCache.clear();
@@ -862,7 +877,7 @@
         ctx: ctx,
         get SCREEN_W() { return SCREEN_W; },
         get SCREEN_H() { return SCREEN_H; },
-        DPR: DPR,
+        DPR: cs.scaleX,
         isTTEnv: isTTEnv,
         Theme: Theme,
         // 绘制
