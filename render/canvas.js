@@ -43,10 +43,30 @@
     let SCREEN_W = size.w;
     let SCREEN_H = size.h;
 
-    // 创建 canvas：容器环境用 tt.createCanvas，浏览器用 DOM
+    // 创建 canvas：容器环境用 tap/tt.createCanvas，浏览器用 DOM
     let canvas;
     if (isTTEnv) {
         canvas = tt.createCanvas();
+        // P0-5 v9: 部分设备（OnePlus6T/Redmi Turbo3/vivo PD2068 黑白屏）容器未自动显示 canvas——
+        // 若容器实现了 document，则强制挂载；并统一设置显示属性（position/display/zIndex）。
+        try {
+            if (typeof document !== 'undefined' && document.body && !canvas.parentNode) {
+                document.body.appendChild(canvas);
+                if (typeof console !== 'undefined') { try { console.log('[Canvas] mounted to body'); } catch (_e) {} }
+            }
+        } catch (_e) {}
+        try {
+            if (canvas.style) {
+                canvas.style.display = 'block';
+                canvas.style.position = 'fixed';
+                canvas.style.left = '0';
+                canvas.style.top = '0';
+                canvas.style.zIndex = '0';
+                canvas.style.margin = '0';
+                canvas.style.padding = '0';
+                canvas.style.border = '0';
+            }
+        } catch (_e) {}
     } else {
         canvas = window.__gid('gameCanvas');
         if (!canvas) {
@@ -77,13 +97,16 @@
     canvas.height = cs.ch;
     canvas.style.width = SCREEN_W + 'px';
     canvas.style.height = SCREEN_H + 'px';
-    if (!isTTEnv) {
-        canvas.style.position = 'fixed';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.zIndex = '0'; // 位于 .container(z-index:1) 之下、body 背景之上
-        canvas.style.pointerEvents = 'auto';
-    }
+    try {
+        if (canvas.style) {
+            canvas.style.display = 'block';
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.zIndex = '0'; // 位于 .container(z-index:1) 之下、body 背景之上
+            canvas.style.pointerEvents = 'auto';
+        }
+    } catch (_e) {}
 
     const ctx = canvas.getContext('2d');
     ctx.scale(cs.scaleX, cs.scaleY);
