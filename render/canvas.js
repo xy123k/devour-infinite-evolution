@@ -88,6 +88,13 @@
     const ctx = canvas.getContext('2d');
     ctx.scale(cs.scaleX, cs.scaleY);
 
+    // P0-4 v7: base fill (non-black) for MIUI/Redmi where RAF may never fire
+    try {
+        ctx.fillStyle = '#0a0e17';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (typeof console !== 'undefined') { try { console.log('[Canvas] base fill drawn, size=' + canvas.width + 'x' + canvas.height); } catch (_e) {} }
+    } catch (_e) {}
+
     // ============================================================
     //  resize 适配（P1-4）：监听视口变化，重算画布尺寸（含 DPR）并触发当前界面重绘
     // ============================================================

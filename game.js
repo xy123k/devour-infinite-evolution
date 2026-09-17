@@ -13792,6 +13792,18 @@ setTimeout(() => {
     try {
         game.init();
         try { console.log('[Boot] game.init OK, canvas=' + (typeof Render !== 'undefined' && Render.canvas ? (Render.canvas.width + 'x' + Render.canvas.height) : 'none')); } catch (_e) {}
+        // P0-4 v7: first-frame sync draw + ensure loop started (MIUI/Redmi RAF may not fire,
+        // so draw one frame synchronously right after init and start the loop explicitly).
+        try {
+            if (typeof Render !== 'undefined' && Render.ScreenManager) {
+                if (Render.ScreenManager.draw) Render.ScreenManager.draw();
+                if (Render.ScreenManager.startLoop && !window._tunshiLoopStarted) {
+                    window._tunshiLoopStarted = true;
+                    Render.ScreenManager.startLoop();
+                }
+                try { console.log('[Boot] first frame drawn, loop started, screen=' + (Render.ScreenManager.current || 'none')); } catch (_e) {}
+            }
+        } catch (_e) {}
     } catch (e) {
         try { console.error('[Boot] game.init FAILED:', e && e.message ? e.message : e); } catch (_e) {}
     }

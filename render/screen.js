@@ -75,6 +75,11 @@
 
     // 单帧绘制：清屏 + 当前 canvas 屏 + 模态框 + 弹窗层 + tooltip + toast
     function draw() {
+        // P0-4 v7: draw-alive tick (device js_log verifies the render loop runs on MIUI/Redmi)
+        try {
+            window._drawTick = (window._drawTick || 0) + 1;
+            if (window._drawTick % 120 === 0) { console.log('[Render] draw alive, screen=' + (current || 'none')); }
+        } catch (_e) {}
         Render.clear();
         if (currentMode === 'canvas' && current && screens[current]) {
             const r = screens[current];
@@ -108,6 +113,7 @@
         const LOOP_MAX = 0;             // 无帧数上限
 
         function loop(ts) {
+            try { _lastLoopAt = Date.now(); } catch (_e) {}
             if (last) {
                 const dt = ts - last;
                 frameTimes.push(dt);
@@ -131,6 +137,18 @@
             requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
+        // P0-4 v7: RAF fallback — on some devices (MIUI WebView) requestAnimationFrame may never
+        // fire; if no new frame within 120ms, drive the loop via setInterval as a backup.
+        let _lastLoopAt = Date.now();
+        const _loopGuard = setInterval(function () {
+            try {
+                if (Date.now() - _lastLoopAt > 120) {
+                    _lastLoopAt = Date.now();
+                    loop(performance && performance.now ? performance.now() : Date.now());
+                }
+            } catch (_e) {}
+        }, 100);
+        try { console.log('[Render] startLoop with RAF fallback'); } catch (_e) {}
     }
 
     // ---- 与 game.js 的桥接：DOM 弹窗在 canvas 模式下的兼容 ----
