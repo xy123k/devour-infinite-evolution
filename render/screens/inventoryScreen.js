@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 //  render/screens/inventoryScreen.js — 阶段 3：背包界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
@@ -17,7 +17,8 @@
     }
 
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
     }
 
     function stripHtml(s) {
@@ -76,7 +77,8 @@
 
         // 消耗品
         box(x, y, w, 36, t.bgCard, 8);
-        R.drawText('消耗品（' + items.length + '）', x + 8, y + 11, { fontSize: 13, color: t.success, bold: true });
+        R.drawRect(x + 8, y + 4, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('消耗品（' + items.length + '）', x + 22, y + 11, { fontSize: 16, color: t.accent, bold: true });
         y += 44;
         if (items.length === 0) {
             R.drawText('背包空空如也，去商店购买吧！', x + 8, y + 10, { fontSize: 12, color: t.textFaint });
@@ -113,7 +115,8 @@
         const symbionts = game.permanent.symbionts || [];
         const equippedSym = game.permanent.equippedSymbionts || {};
         box(x, y, w, 36, t.bgCard, 8);
-        R.drawText('共生体（' + symbionts.length + '）', x + 8, y + 11, { fontSize: 13, color: t.purple, bold: true });
+        R.drawRect(x, y + 4, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('共生体（' + symbionts.length + '）', x + 22, y + 11, { fontSize: 16, color: t.accent, bold: true });
         y += 44;
         if (symbionts.length === 0) {
             R.drawText('共生体背包为空，击败敌人有几率获得共生体', x + 8, y + 10, { fontSize: 12, color: t.textFaint });
@@ -142,7 +145,8 @@
         const coreCount = Object.keys(bossCores).reduce(function (a, b) { return a + (bossCores[b] || 0); }, 0);
         if (coreCount > 0) {
             box(x, y, w, 36, t.bgCard, 8);
-            R.drawText('首领核心（' + coreCount + '）', x + 8, y + 11, { fontSize: 13, color: t.danger, bold: true });
+            R.drawRect(x, y + 4, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('首领核心（' + coreCount + '）', x + 22, y + 11, { fontSize: 16, color: t.accent, bold: true });
             y += 44;
             R.drawText('用于解锁神话天赋和高级合成', x + 8, y, { fontSize: 12, color: t.textSecondary });
             y += 22;
@@ -169,7 +173,8 @@
 
         // 基因碎片管理（按品质+体系分类）
         box(x, y, w, 36, t.bgCard, 8);
-        R.drawText('基因碎片管理', x + 8, y + 11, { fontSize: 13, color: t.purple, bold: true });
+        R.drawRect(x, y + 4, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('基因碎片管理', x + 22, y + 11, { fontSize: 16, color: t.accent, bold: true });
         y += 44;
         {
             const uf = game.permanent.universalFragments || {};
@@ -207,7 +212,7 @@
                     fy += 20;
                 }
                 if (universalCount > 0) {
-                    R.drawText('通用碎片：' + universalCount, x + 8, fy, { fontSize: 11, color: t.textMuted });
+                    R.drawText('万能碎片：' + universalCount + '（可用于任意体系）', x + 8, fy, { fontSize: 11, color: t.textMuted });
                     fy += 16;
                 }
                 y += (tagDetails.length > 0 ? 46 : 30) + (universalCount > 0 ? 16 : 0) + 6;

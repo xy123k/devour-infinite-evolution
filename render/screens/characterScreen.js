@@ -1,8 +1,8 @@
-﻿// ============================================================
+// ============================================================
 //  render/screens/characterScreen.js — 阶段 3：角色界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
-//  设计：5 个标签页（状态/装备/天赋/技能/背包），渲染器每帧
+//  设计：4 个标签页（状态/装备/天赋/技能）+ 背包居中子按钮，渲染器每帧
 //        读 game 状态绘制；交互回调直调 game 原函数。
 // ============================================================
 (function () {
@@ -19,7 +19,8 @@
     }
 
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
     }
 
     function stripHtml(s) {
@@ -32,6 +33,40 @@
     const SLOT_NAMES = { core: '核心', predator: '捕食', sensor: '感知', motor: '运动', energy: '能量', evolution: '进化' };
     const SLOT_ORDER = ['core', 'predator', 'sensor', 'motor', 'energy', 'evolution'];
     const QUALITY_NAMES = ['', '普通', '稀有', '史诗', '传说', '神话'];
+    // P7-2：共生体 special 中文名映射（对齐 DOM renderCharacterInventory specialNames）
+    const SPECIAL_NAMES = {
+        hpRegen:'每回合回血', healOnKill:'击杀回血', damageReduction:'减伤',
+        lifeSteal:'吸血', critDamage:'暴击伤害', dodge:'闪避率', dodgeBonus:'闪避加成',
+        firstStrike:'先手攻击伤害', hit:'命中率', energyRegen:'能量回复',
+        maxHp:'生命', attack:'攻击', defense:'防御', crit:'暴击',
+        speed:'速度', agility:'敏捷', strength:'力量', perception:'感知',
+        evolution:'进化', maxEnergy:'能量', dotDamage:'持续伤害',
+        cooldownReduction:'冷却缩减', talentPower:'天赋强度',
+        dotOnHit:'攻击附加中毒', critChance:'暴击率', extraAttack:'额外行动概率',
+        energyOnHit:'攻击回能', damagePct:'伤害加成', expBonus:'经验加成',
+        allStatPct:'全属性加成', extraAttackChance:'额外攻击概率',
+        reflectDamage:'反伤', reflectPct:'反伤百分比', armorPenetration:'护甲穿透',
+        critResistance:'暴击抗性', shield:'护盾', thorns:'荆棘',
+        hpOnHit:'攻击回血', hpOnKill:'击杀回血', energyOnKill:'击杀回能',
+        talentPointsOnKill:'击杀获得天赋点', fragmentsOnKill:'击杀获得碎片',
+        goldBonus:'金币加成', essenceBonus:'进化精粹加成', fragmentBonus:'碎片加成',
+        talentPointBonus:'天赋点加成', allStats:'全属性', allResist:'全抗性',
+        physicalResist:'物理抗性', fireResist:'火焰抗性', iceResist:'冰霜抗性',
+        poisonResist:'毒素抗性', lightningResist:'雷电抗性', shadowResist:'暗影抗性',
+        holyResist:'神圣抗性', arcaneResist:'奥术抗性',
+        physicalPenetration:'物理穿透', firePenetration:'火焰穿透', icePenetration:'冰霜穿透',
+        poisonPenetration:'毒素穿透', lightningPenetration:'雷电穿透', shadowPenetration:'暗影穿透',
+        holyPenetration:'神圣穿透', arcanePenetration:'奥术穿透',
+        bleedOnHit:'攻击附带流血', poisonOnHit:'攻击附带中毒', burnOnHit:'攻击附带灼烧',
+        freezeOnHit:'攻击附带冰冻', stunOnHit:'攻击附带眩晕', paralyzeOnHit:'攻击附带麻痹',
+        slowOnHit:'攻击附带减速', healMod:'治疗效果', damageMod:'伤害加成',
+        damageTakenMod:'受到伤害', hitMod:'命中加成', speedMod:'速度加成',
+        perTurnHealPct:'每回合回血百分比', healOnKillPct:'击杀回血百分比',
+        vitality:'体质', first_strike:'先手值', talent_power:'天赋强度',
+        energy_regen:'能量恢复', hp_regen:'生命恢复', life_steal:'吸血',
+        reflect_damage:'反伤', crit_damage:'暴击伤害', armor_penetration:'护甲穿透',
+        dot_damage:'持续伤害', cooldown_reduction:'冷却缩减'
+    };
 
     let _scrollY = 0;
 
@@ -43,10 +78,11 @@
         const t = R.Theme.get();
         const tabs = [
             { k: 'status', label: '状态' }, { k: 'equipment', label: '装备' },
-            { k: 'talents', label: '天赋' }, { k: 'skills', label: '技能' }, { k: 'inventory', label: '背包' }
+            { k: 'talents', label: '天赋' }, { k: 'skills', label: '技能' }
         ];
         const x = PX + 12, w = MAX_W - 24;
-        const tw = (w - 4 * 6) / 5;
+        // P1-E：5 tab 改 4 tab（状态/装备/天赋/技能），宽度改为 4 等分
+        const tw = (w - 3 * 6) / 4;
         tabs.forEach(function (tab, i) {
             const selected = game.characterTab === tab.k;
             R.drawButton({
@@ -57,6 +93,16 @@
                 border: selected ? null : t.borderSoft,
                 onTap: (function (k) { return function () { try { game.setCharacterTab(k); } catch (e) {} }; })(tab.k)
             });
+        });
+        // P1-E：背包改为 tab 栏下方居中子按钮
+        const invSelected = game.characterTab === 'inventory';
+        R.drawButton({
+            id: 'charTabInventory', x: PX + MAX_W / 2 - 45, y: y + 40, w: 90, h: 30,
+            text: '背包', fontSize: 13,
+            bg: invSelected ? t.accent : t.bgCard,
+            color: invSelected ? '#0a0e17' : t.textSecondary,
+            border: invSelected ? null : t.borderSoft,
+            onTap: function () { try { game.setCharacterTab('inventory'); } catch (e) {} }
         });
     }
 
@@ -102,7 +148,8 @@
         h += 26 + activeLines.length * 23 + 8;
 
         box(x, y, w, h, t.bgCard, 10);
-        R.drawText('槽位扩充', x + 8, y + 22, { fontSize: 14, color: t.textPrimary, bold: true });
+        R.drawRect(x + 8, y + 18, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('槽位扩充', x + 22, y + 22, { fontSize: 16, color: t.accent, bold: true });
         let iy = y + 46;
         // 被动槽
         R.drawText('天赋槽（被动）：' + equippedTalents.length + '/' + passiveSlots, x + 8, iy, { fontSize: 12, color: t.success, bold: true });
@@ -143,7 +190,7 @@
             iy += 34;
         }
         iy += 18;
-        R.drawText('槽位满足条件后自动扩充，无需手动操作', x + 8, iy, { fontSize: 11, color: t.textFaint });
+        R.drawText('槽位满足条件后自动扩充，无需手动操作', x + 8, iy, { fontSize: 11, color: t.textMuted });
         h += 20;
         return y + h + 10;
     }
@@ -164,7 +211,8 @@
             + activeCombos.length * (44 + 16 * 1) + 30;
         const h = Math.max(emptyH, 60);
         box(x, y, w, h, t.bgCard, 10);
-        R.drawText('天赋套装', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
+        R.drawRect(x + 8, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('天赋套装', x + 22, y + 12, { fontSize: 16, color: t.accent, bold: true });
         let iy = y + 36;
         if (sections === 0) {
             R.drawText('暂无激活的天赋套装', x + 8, iy, { fontSize: 12, color: t.textMuted, bold: true });
@@ -207,7 +255,8 @@
         // 基本信息
         box(x, y, w, 96, t.bgCard, 10);
         let iy = y + 12;
-        R.drawText('基本信息', x + 8, iy, { fontSize: 14, color: t.textPrimary, bold: true });
+        R.drawRect(x + 8, iy - 4, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('基本信息', x + 22, iy, { fontSize: 16, color: t.accent, bold: true });
         iy += 24;
         const pairs = [
             ['等级', p.level || 1, t.textPrimary], ['经验', (p.exp || 0) + '/' + (p.expToNext || 20), t.textPrimary],
@@ -227,7 +276,8 @@
 
         // 五维 + 永久成长
         box(x, y, w, 110, t.bgCard, 10);
-        R.drawText('基础属性（基础 + 永久成长）', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
+        R.drawRect(x + 8, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('基础属性（基础 + 永久成长）', x + 22, y + 12, { fontSize: 16, color: t.accent, bold: true });
         const b = game.permanent.bonusStats;
         const eu = game.permanent.essenceUpgrades || {};
         const permStats = {
@@ -249,6 +299,13 @@
             R.drawText(st.label + '：', cx, cy, { fontSize: 12, color: st.color, bold: true });
             R.drawText(String(p[st.k] || 0), cx + 48, cy, { fontSize: 12, color: t.textPrimary, bold: true });
             if (perm > 0) R.drawText('+' + perm + '永久', cx + 96, cy, { fontSize: 10, color: t.accent });
+            // P5-2: 属性行点击显示 tooltip（DOM stat-row onclick=showTooltip(key,event)）
+            if (game.showTooltip) {
+                Input.registerButton({
+                    id: 'attr_' + st.k, x: cx, y: cy - 12, w: w / 2 - 8, h: 24,
+                    onTap: (function (k) { return function () { try { game.showTooltip(k); } catch (e) {} }; })(st.k)
+                });
+            }
         });
         // 属性点
         if (p.statPoints > 0) {
@@ -258,18 +315,26 @@
 
         // 战斗属性（P3-1：补回"闪避率"）
         box(x, y, w, 120, t.bgCard, 10);
-        R.drawText('战斗属性（基础 + 永久成长）', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
+        R.drawRect(x + 8, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('战斗属性（基础 + 永久成长）', x + 22, y + 12, { fontSize: 16, color: t.accent, bold: true });
         const bStats = [
-            ['攻击', Math.floor(p.attack), t.orange], ['防御', Math.floor(p.defense * 10) / 10, t.info],
-            ['暴击', p.crit + '%', t.warning], ['暴伤', p.critDamage + '%', t.danger],
-            ['命中', p.hit + '%', t.success], ['闪避', (p.dodgeRate || 0) + '%', t.purple],
-            ['先手', p.speed, t.info]
+            ['攻击', Math.floor(p.attack), t.orange, 'attack'], ['防御', Math.floor(p.defense * 10) / 10, t.info, 'defense'],
+            ['暴击', p.crit + '%', t.warning, 'crit'], ['暴伤', p.critDamage + '%', t.danger, 'critDamage'],
+            ['命中', p.hit + '%', t.success, 'hit'], ['闪避', (p.dodgeRate || 0) + '%', t.purple, 'dodgeRate'],
+            ['先手', p.speed, t.info, 'speed']
         ];
         bStats.forEach(function (bs, i) {
             const cx = x + 8 + (i % 2) * (w / 2 - 8);
             const cy = y + 40 + Math.floor(i / 2) * 24;
             R.drawText(bs[0] + '：', cx, cy, { fontSize: 12, color: t.textMuted });
             R.drawText(String(bs[1]), cx + 48, cy, { fontSize: 12, color: bs[2], bold: true });
+            // P5-2: 属性行点击 tooltip（DOM stat-row）
+            if (game.showTooltip && bs[3]) {
+                Input.registerButton({
+                    id: 'attr_' + bs[3], x: cx, y: cy - 12, w: w / 2 - 8, h: 24,
+                    onTap: (function (k) { return function () { try { game.showTooltip(k); } catch (e) {} }; })(bs[3])
+                });
+            }
         });
         y += 128;
 
@@ -280,7 +345,8 @@
         const statusText = game.formatStatuses ? stripHtml(game.formatStatuses(p)) : '';
         if (statusText) {
             box(x, y, w, 60, t.bgCard, 10);
-            R.drawText('当前状态', x + 8, y + 12, { fontSize: 14, color: t.textPrimary, bold: true });
+            R.drawRect(x + 8, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('当前状态', x + 22, y + 12, { fontSize: 16, color: t.accent, bold: true });
             R.drawText(statusText, x + 8, y + 36, { fontSize: 12, color: t.purple, maxWidth: w - 16 });
             y += 68;
         }
@@ -312,11 +378,12 @@
         const allSym = game.data.symbionts ? (game.data.symbionts.symbionts || game.data.symbionts) : [];
 
         SLOT_ORDER.forEach(function (slot) {
-            box(x, y, w, 46, t.bgCard, 8);
+            R.drawRect(x, y, w, 46, { fill: t.bgCard, radius: 10, stroke: t.border, strokeWidth: 1 });
+            R.drawRect(x, y, 3, 46, { fill: t.accent, radius: 1.5 });
             const equippedId = equippedSym[slot];
             const equipped = equippedId ? allSym.find(function (s) { return s.id === equippedId; }) : null;
-            R.drawText('◆ ' + (SLOT_NAMES[slot] || slot), x + 8, y + 12, { fontSize: 13, color: t.success, bold: true });
-            R.drawText(equipped ? '已装备：' + equipped.name : '未装备', x + 8, y + 30, { fontSize: 11, color: equipped ? t.accent : t.textFaint });
+            R.drawText('◆ ' + (SLOT_NAMES[slot] || slot), x + 14, y + 12, { fontSize: 13, color: t.accent, bold: true });
+            R.drawText(equipped ? '已装备：' + equipped.name : '未装备', x + 14, y + 30, { fontSize: 11, color: equipped ? t.accent : t.textFaint });
             y += 52;
 
             const slotSym = allSym.filter(function (s) { return s.slot === slot && (symbiontIds.indexOf(s.id) >= 0 || equippedSym[slot] === s.id); });
@@ -367,7 +434,8 @@
         const levels = game.permanent.talentLevels || {};
 
         box(x, y, w, 44, t.bgCard, 8);
-        R.drawText('已装备天赋（' + equipped.length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 0) + '）', x + 8, y + 13, { fontSize: 13, color: t.success, bold: true });
+        R.drawRect(x + 8, y + 9, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('已装备天赋（' + equipped.length + '/' + (game.getPassiveSlots ? game.getPassiveSlots() : 0) + '）', x + 22, y + 13, { fontSize: 16, color: t.accent, bold: true });
         R.drawText('天赋点：' + (game.permanent.talentPoints || 0), x + 8, y + 35, { fontSize: 11, color: t.warning });
         y += 52;
 
@@ -380,7 +448,12 @@
                 if (!tl) return;
                 const lv = levels[tid] || 1;
                 const qColor = t.quality[QUALITY_NAMES[tl.quality || 1].toLowerCase()] || t.textSecondary;
-                const effText = stripHtml(game.getTalentEffectText ? game.getTalentEffectText(tl) : (tl.description || tl.desc || ''));
+                // P1-E：已装备天赋补效果文字（getTalentEffect(id).passive）
+                let effText = '';
+                try {
+                    const eff = game.getTalentEffect ? game.getTalentEffect(tid) : null;
+                    effText = stripHtml(eff ? (eff.passive || eff.description || eff.desc || '') : (tl.description || tl.desc || ''));
+                } catch (e) { effText = stripHtml(tl.description || tl.desc || ''); }
                 const lines = R.wrapText('[' + QUALITY_NAMES[tl.quality || 1] + '] ' + tl.name + '  Lv.' + lv + '  ' + effText, w - 24, 11, false).slice(0, 3);
                 const cardH = 16 + lines.length * 15 + 8;
                 box(x, y, w, cardH, t.bgSecondary, 8);
@@ -394,23 +467,7 @@
             });
         }
 
-        box(x, y, w, 44, t.bgCard, 8);
-        R.drawText('💡 完整天赋管理与碎片合成', x + 8, y + 13, { fontSize: 12, color: t.info });
-        R.drawText('请到底部导航「天赋」界面操作', x + 8, y + 35, { fontSize: 10, color: t.textFaint });
-        y += 52;
-
-        // 预构筑
-        const sets = game.data.talentSets ? (game.data.talentSets.sets || game.data.talentSets) : [];
-        if (sets.length) {
-            R.drawText('— 天赋预构筑 —', x + 8, y + 6, { fontSize: 12, color: t.textMuted });
-            y += 24;
-            sets.forEach(function (set) {
-                if (!set || !set.name) return;
-                box(x, y, w, 34, t.bgCard, 6);
-                R.drawText('📐 ' + set.name, x + 8, y + 12, { fontSize: 12, color: t.warning, bold: true });
-                y += 40;
-            });
-        }
+        // P1-E：删除「完整天赋管理与碎片合成」提示段与「— 天赋预构筑 —」列表（对齐 DOM 角色页）
         return y;
     }
 
@@ -424,18 +481,21 @@
         const allSkills = game.skillTable || {};
 
         box(x, y, w, 44, t.bgCard, 8);
-        R.drawText('已选技能（' + activeSkills.length + '/' + (game.getActiveSlots ? game.getActiveSlots() : 3) + '）', x + 8, y + 12, { fontSize: 13, color: t.success, bold: true });
+        R.drawRect(x + 8, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('已选技能（' + activeSkills.length + '/' + (game.getActiveSlots ? game.getActiveSlots() : 3) + '）', x + 22, y + 12, { fontSize: 16, color: t.accent, bold: true });
         y += 52;
         if (activeSkills.length === 0) {
-            R.drawText('还没有选择技能', x + 8, y + 10, { fontSize: 12, color: t.textFaint });
+            R.drawText('还没有选择技能，点击下方按钮选择技能！', x + 8, y + 10, { fontSize: 12, color: t.textFaint });
             y += 26;
         } else {
             activeSkills.forEach(function (sid) {
                 const s = allSkills[sid];
                 if (!s) return;
-                box(x, y, w, 44, t.bgCard, 8);
-                R.drawText('⚡ ' + s.name + (s.cost ? '（消耗' + s.cost + '能量）' : ''), x + 8, y + 12, { fontSize: 13, color: t.textPrimary, bold: true });
-                if (s.desc) R.drawText(stripHtml(s.desc), x + 8, y + 30, { fontSize: 10, color: t.textFaint, maxWidth: w - 16 });
+                // P7-2：已选技能卡 1px 青绿边框（对齐 DOM renderCharacterSkills）
+                R.drawRect(x, y, w, 44, { fill: t.bgCard, radius: 8, stroke: t.success, strokeWidth: 1 });
+                R.drawText(s.name, x + 8, y + 12, { fontSize: 13, color: t.textPrimary, bold: true });
+                if (s.cost) R.drawText('能量消耗：' + s.cost, x + w - 8, y + 12, { fontSize: 11, color: t.info, align: 'right' });
+                if (s.desc) R.drawText(stripHtml(s.desc), x + 8, y + 30, { fontSize: 12, color: t.textSecondary, maxWidth: w - 16 });
                 y += 50;
             });
         }
@@ -445,16 +505,21 @@
             onTap: function () { try { game.openSkillLoadoutPanel(); } catch (e) {} }
         });
         y += 48;
-        R.drawText('— 已学会技能 —', x + 8, y, { fontSize: 12, color: t.textMuted });
-        y += 22;
         const defaults = ['skill_power_strike', 'skill_heal', 'skill_attack_buff'];
         const learned = Array.from(new Set(defaults.concat(activeSkills)));
+        R.drawText('— 已学会技能（' + learned.length + '个）—', x + 8, y, { fontSize: 12, color: t.textMuted });
+        y += 22;
         learned.forEach(function (sid) {
             const s = allSkills[sid];
             if (!s) return;
             const equipped = activeSkills.indexOf(sid) >= 0;
-            R.drawText((equipped ? '✓ ' : '· ') + s.name, x + 8, y, { fontSize: 12, color: equipped ? t.success : t.textMuted });
-            y += 20;
+            // P7-2：已学会技能卡片化（1px 边框，已选青绿/未选边框色；名称+徽标+desc 11px）对齐 DOM
+            const cardH = 34 + (s.desc ? 15 : 0);
+            R.drawRect(x, y, w, cardH, { fill: t.bgCard, radius: 8, stroke: equipped ? t.success : t.border, strokeWidth: 1 });
+            R.drawText(s.name, x + 8, y + 9, { fontSize: 13, color: t.textPrimary, bold: true });
+            R.drawText(equipped ? '✓ 已选' : '未选', x + w - 8, y + 9, { fontSize: 10, color: equipped ? t.success : t.textFaint, align: 'right' });
+            if (s.desc) R.drawText(stripHtml(s.desc), x + 8, y + 25, { fontSize: 11, color: t.textMuted, maxWidth: w - 16 });
+            y += cardH + 6;
         });
         return y;
     }
@@ -514,28 +579,75 @@
                 if (!tpl) return;
                 const isEq = Object.values(equippedSym).indexOf(symId) >= 0;
                 const qColor = t.quality[QUALITY_NAMES[tpl.quality || 1].toLowerCase()] || t.textSecondary;
+                // P7-2：属性+特殊能力中文名映射（对齐 DOM renderCharacterInventory）
                 let statsText = '';
                 if (tpl.stats) {
                     for (var k in tpl.stats) { if (tpl.stats[k]) statsText += (STAT_NAMES[k] || k) + '+' + tpl.stats[k] + ' '; }
                 }
-                const lines = [];
-                lines.push('🦠 ' + tpl.name + ' [' + QUALITY_NAMES[tpl.quality || 1] + '·' + (game.symbiontSlotNames ? game.symbiontSlotNames[tpl.slot] : SLOT_NAMES[tpl.slot] || tpl.slot) + ']');
-                if (tpl.desc) lines.push(stripHtml(tpl.desc));
-                if (statsText) lines.push(statsText);
-                const cardH = 20 + lines.length * 15 + 6;
-                box(x, y, w, cardH, t.bgSecondary, 8);
+                if (tpl.special) {
+                    statsText += (SPECIAL_NAMES[tpl.special] || tpl.special) + (tpl.specialValue ? '+' + tpl.specialValue : '') + ' ';
+                }
+                statsText = statsText.trim();
+                const slotName = (game.symbiontSlotNames ? game.symbiontSlotNames[tpl.slot] : SLOT_NAMES[tpl.slot] || tpl.slot) || '';
+                const descTxt = tpl.desc ? stripHtml(tpl.desc) : '';
+                const descLines = descTxt ? R.wrapText(descTxt, w - 120, 11, false).length : 0;
+                const cardH = 26 + descLines * 14 + (statsText ? 14 : 0) + 4;
+                R.drawRect(x, y, w, cardH, { fill: t.bgSecondary, radius: 8, stroke: t.border, strokeWidth: 1 });
                 R.drawRect(x, y, 3, cardH, { fill: qColor, radius: 1.5 });
-                let iy = y + 10;
-                lines.forEach(function (ln, i) {
-                    R.drawText(ln, x + 10, iy, { fontSize: i === 0 ? 12 : 10, color: i === 0 ? qColor : t.textFaint, bold: i === 0, maxWidth: w - 110 });
-                    iy += 15;
-                });
+                R.drawText('🦠 ' + tpl.name + ' [' + QUALITY_NAMES[tpl.quality || 1] + '·' + slotName + ']', x + 10, y + 8, { fontSize: 12, color: qColor, bold: true, maxWidth: w - (isEq ? 90 : 24) });
                 if (isEq) {
-                    R.drawButton({ id: 'symEq_' + symId, x: x + w - 74, y: y + 10, w: 66, h: 28, text: '已装备', fontSize: 11, bg: t.success, color: '#ffffff', onTap: function () {} });
+                    R.drawText('已装备', x + w - 10, y + 8, { fontSize: 11, color: t.success, align: 'right' });
+                }
+                let iy = y + 24;
+                if (descTxt) {
+                    R.drawText(descTxt, x + 10, iy, { fontSize: 11, color: t.textMuted, maxWidth: w - 20 });
+                    iy += descLines * 14;
+                }
+                if (statsText) {
+                    R.drawText(statsText, x + 10, iy, { fontSize: 11, color: t.accent, maxWidth: w - 20 });
                 }
                 y += cardH + 6;
             });
         }
+
+        // 首领核心区（P7-2：对齐 DOM renderCharacterInventory，仅 coreCount>0 时显示）
+        const bossCores = game.permanent.bossCores || {};
+        let coreCount = 0;
+        for (var bk in bossCores) { if (bossCores[bk] > 0) coreCount += bossCores[bk]; }
+        if (coreCount > 0) {
+            box(x, y, w, 40, t.bgCard, 8);
+            R.drawRect(x + 8, y + 8, 3, 18, { fill: t.danger, radius: 1.5 });
+            R.drawText('首领核心（' + coreCount + '）', x + 22, y + 12, { fontSize: 13, color: t.danger, bold: true });
+            y += 48;
+            R.drawText('用于解锁神话天赋和高级合成', x + 8, y + 10, { fontSize: 12, color: t.textSecondary });
+            y += 24;
+            const allEnemies = game.data.enemies ? (game.data.enemies.enemies || game.data.enemies) : [];
+            for (var bossId in bossCores) {
+                const count = bossCores[bossId];
+                if (count <= 0) continue;
+                const bossData = allEnemies.find(function (e) { return e.id === bossId; });
+                const bossName = game.getBossCoreName ? game.getBossCoreName(bossId) : bossId;
+                const bossDesc = bossData ? (bossData.description || '') : '';
+                const cardH = 34 + (bossDesc ? 15 : 0);
+                R.drawRect(x, y, w, cardH, { fill: t.bgCard, radius: 8, stroke: t.border, strokeWidth: 1 });
+                R.drawRect(x, y, 3, cardH, { fill: t.danger, radius: 1.5 });
+                R.drawText(bossName, x + 10, y + 9, { fontSize: 13, color: t.textPrimary, bold: true });
+                R.drawText('×' + count, x + w - 10, y + 9, { fontSize: 14, color: t.danger, bold: true, align: 'right' });
+                if (bossDesc) {
+                    const d = bossDesc.length > 40 ? bossDesc.substring(0, 40) + '...' : bossDesc;
+                    R.drawText(stripHtml(d), x + 10, y + 25, { fontSize: 11, color: t.textFaint, maxWidth: w - 20 });
+                }
+                y += cardH + 6;
+            }
+        }
+
+        // 打开商店按钮（P7-2：对齐 DOM renderCharacterInventory 底部）
+        R.drawButton({
+            id: 'charInvOpenShop', x: x, y: y, w: w, h: 40,
+            text: '打开商店', fontSize: 14, bg: t.warning, color: '#ffffff',
+            onTap: function () { try { game.returnToScreen = 'characterScreen'; game.openShop(); } catch (e) {} }
+        });
+        y += 48;
         return y;
     }
 

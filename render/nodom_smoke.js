@@ -26,7 +26,7 @@ const ctx = new Proxy({}, {
     },
     set(t, k, v) { t[k] = v; return true; }
 });
-global.tt = {
+global.tap = {
     createCanvas: function () { return canvasMock; },
     getSystemInfoSync: function () { return { windowWidth: 375, windowHeight: 667, pixelRatio: 1 }; },
     setStorageSync: function () {}, getStorageSync: function () { return null; }, removeStorageSync: function () {},
@@ -42,6 +42,8 @@ global.tt = {
         };
     }
 };
+// 模拟真实容器：先注入 tap 命名空间，随后 game.js 顶部兼容逻辑把 tap 挂到 tt
+if (typeof global.tt === 'undefined' && typeof global.tap !== 'undefined') { global.tt = global.tap; }
 global.window = global;
 global.innerWidth = 375; global.innerHeight = 667; global.devicePixelRatio = 1;
 global.requestAnimationFrame = function (cb) { return setTimeout(cb, 16); };

@@ -31,6 +31,7 @@
     let _startX = 0, _startY = 0;
     let _lastX = 0, _lastY = 0;
     let _pressedId = null;          // 按下的按钮 id
+    let _lastTapAnchor = null;      // P1-F：最近一次点击的按钮锚点（tooltip 跟随定位用）
     let _hitListId = null;          // 按下点命中的列表 id
     let _dragging = false;          // 是否已进入列表拖拽模式
     let _moved = false;             // 本次手势是否发生过明显位移
@@ -136,9 +137,15 @@
     function hitButton(x, y) {
         const yy = hy(y);
         // 后注册的按钮优先（模拟 DOM 层叠）
+        // P9-9：弹窗矩形内拦截——只命中 popBtn_/popMask_/popInput_ 前缀，防止穿透到底层主页按钮/tooltip
+        const inPopup = !!(
+            _popScroll && x >= _popScroll.x && x <= _popScroll.x + _popScroll.w
+            && y >= _popScroll.y && y <= _popScroll.y + _popScroll.h
+        );
         for (let i = _buttonStack.length - 1; i >= 0; i--) {
             const btn = _buttons.get(_buttonStack[i]);
             if (!btn || btn.disabled) continue;
+            if (inPopup && btn.id && btn.id.indexOf('popBtn_') !== 0 && btn.id.indexOf('popMask_') !== 0 && btn.id.indexOf('popInput_') !== 0) continue;
             if (x >= btn.x && x <= btn.x + btn.w && yy >= btn.y && yy <= btn.y + btn.h) {
                 return btn;
             }
@@ -171,6 +178,7 @@
     let _pageScroll = null;   // { get(): 当前 offsetY, set(v), max(): 最大滚动 }
     let _pageMode = false;   // 本次手势是否处于页面滚动
     let _hoverId = null;     // P3-5：当前悬停按钮 id
+    let _hoverX = null, _hoverY = null;   // 桌面端悬停坐标（tooltip hover 命中用）
     let _popScroll = null;   // P3-4/P3-8：弹窗内滚动 {x,y,w,h,get,set,max}（弹窗内容超界时）
     let _popMode = false;    // 本次手势是否处于弹窗内容滚动
 
@@ -282,6 +290,8 @@
             if (_pressedId) {
                 const btn = _buttons.get(_pressedId);
                 if (btn && btn.onTap) {
+                    // P1-F：记录最近一次点击按钮的锚点（中心 x、底边 y），供 tooltip 跟随触发元素定位
+                    try { _lastTapAnchor = { x: btn.x + (btn.w || 0) / 2, y: btn.y + (btn.h || 0), w: btn.w || 0, h: btn.h || 0 }; } catch (e) {}
                     try { btn.onTap(); } catch (e) { if (typeof console !== 'undefined') console.error(e); }
                 }
             } else if (_hitListId) {
@@ -387,9 +397,26 @@
     // ============================================================
     //  事件源绑定
     // ============================================================
+    // P8-1：client 坐标 → Canvas 逻辑坐标换算。
+    // canvas 逻辑尺寸 SCREEN_W/H 与 CSS 尺寸通常 1:1（fixed 铺满视口），
+    // 但若容器/CSS 缩放或页面偏移导致不一致，直接拿 clientX/Y 命中会错位，
+    // 这里按 getBoundingClientRect 比例换算；无 DOM（TapTap）时降级直传。
+    function toLogic(cx, cy) {
+        try {
+            const cv = Render.canvas;
+            if (cv && typeof cv.getBoundingClientRect === 'function') {
+                const rect = cv.getBoundingClientRect();
+                if (rect && rect.width > 0 && (Math.abs(rect.width - SCREEN_W) > 0.5 || Math.abs(rect.left) > 0.5 || Math.abs(rect.top) > 0.5)) {
+                    return { x: (cx - rect.left) * SCREEN_W / rect.width, y: (cy - rect.top) * SCREEN_H / rect.height };
+                }
+            }
+        } catch (e) {}
+        return { x: cx, y: cy };
+    }
+
     function getTouchPoint(e) {
-        if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        if (e.touches && e.touches.length > 0) return toLogic(e.touches[0].clientX, e.touches[0].clientY);
+        if (e.changedTouches && e.changedTouches.length > 0) return toLogic(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
         return null;
     }
 
@@ -429,11 +456,13 @@
                 }, { passive: false });
             }
             // 鼠标降级（桌面浏览器调试）
-            canvas.addEventListener('mousedown', function (e) { onStart(e.clientX, e.clientY); });
+            canvas.addEventListener('mousedown', function (e) { const p2 = toLogic(e.clientX, e.clientY); onStart(p2.x, p2.y); });
             canvas.addEventListener('mousemove', function (e) {
-                if (_active) { onMove(e.clientX, e.clientY); return; }
+                const p2 = toLogic(e.clientX, e.clientY);
+                _hoverX = p2.x; _hoverY = p2.y;
+                if (_active) { onMove(p2.x, p2.y); return; }
                 // P3-5：悬停检测（桌面端 hover 反馈）
-                const btn = hitButton(e.clientX, e.clientY);
+                const btn = hitButton(p2.x, p2.y);
                 _hoverId = btn ? btn.id : null;
             });
             window.addEventListener('mouseup', function () { onEnd(); });
@@ -491,10 +520,14 @@
         hitButton: hitButton,
         hitList: hitList,
         bind: bind,
+        // P1-F：读取最近一次点击按钮的锚点（tooltip 跟随触发元素）
+        getLastTapAnchor: function () { return _lastTapAnchor; },
         // 调试
         _buttons: _buttons,
         _lists: _lists,
         get pressedId() { return _pressedId; },
-        get _hoverId() { return _hoverId; }
+        get _hoverId() { return _hoverId; },
+        get _hoverX() { return _hoverX; },
+        get _hoverY() { return _hoverY; }
     };
 })();

@@ -4,6 +4,19 @@
 // ============================================================
 
 // ============================================================
+//  TapTap 小游戏容器 API 命名空间兼容（P0-修复，2026-09-17）
+//  容器实际暴露的全局命名空间是 tap（日志: use a new namespace: tap），
+//  旧版文档/示例多用 tt。这里把 tap 挂到 tt 别名上，下方所有
+//  typeof tt 判断无需逐处改动即可同时兼容浏览器/容器。
+// ============================================================
+(function () {
+    var root = (typeof globalThis !== 'undefined') ? globalThis : (typeof window !== 'undefined') ? window : this;
+    if (typeof root.tt === 'undefined' && typeof root.tap !== 'undefined') {
+        try { root.tt = root.tap; } catch (e) {}
+    }
+})();
+
+// ============================================================
 //  Canvas 渲染层加载（阶段 5）：TapTap 容器无 DOM 且不加载 index.html，
 //  入口 game.js 用 require 拉取 render 层与内嵌数据。
 //  浏览器由 index.html 的 <script> 顺序加载，此处 Render 已存在则幂等跳过。
@@ -2062,7 +2075,7 @@ const game = {
         __qsa('.screen').forEach(s => s.classList.remove('active'));
         const target = __gid(screenId);
         if (target) target.classList.add('active');
-        window.scrollTo(0, 0);
+        if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') window.scrollTo(0, 0);
         
         // 底部导航栏切换
         const bottomNav = __gid('bottomNav');
@@ -13731,7 +13744,7 @@ ${transition.buff.desc}`);
 //  隐私政策（TapTap 小游戏行为规范：启动页须提供隐私政策入口）
 //  上线前请将 privacyPolicyUrl 替换为实际托管地址，文本同步更新
 // ============================================================
-game.privacyPolicyUrl = 'https://example.com/privacy.html';
+game.privacyPolicyUrl = 'https://xy123k.github.io/tunshi-privacy/privacy_policy.html';
 game.privacyPolicyText = [
     '《吞噬·无限进化》隐私政策',
     '更新日期：2026年9月11日',

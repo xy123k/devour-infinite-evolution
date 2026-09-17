@@ -36,9 +36,9 @@
     function box(x, y, w, h, fill, radius) {
         const t = R.Theme.get();
         if (fill === t.bgCard) {
-            R.drawRect(x, y, w, h, { gradient: { from: BOX_G_FROM, to: BOX_G_TO }, radius: radius == null ? 10 : radius });
+            R.drawRect(x, y, w, h, { gradient: { from: BOX_G_FROM, to: BOX_G_TO }, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
         } else {
-            R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+            R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
         }
     }
 
@@ -76,7 +76,9 @@
             // SVG 图标（P2-2：与 DOM 原版一致，18px）
             R.drawIcon(it.icon, ix + itemW / 2 - 9, y + (h - 18) / 2, 18, it.color);
             // 数值统一 accent-warning（DOM .top-bar-value {color: var(--accent-warning)}）
-            R.drawText(String(it.value), ix + itemW / 2 + 11, y + h / 2 + 1, { fontSize: 14, color: t.warning, align: 'left', bold: true, baseline: 'middle' });
+            // P1-I：第 5 项（层）值右对齐贴右缘，避免「1-1层」被右缘裁切
+            const valX = i === items.length - 1 ? ix + itemW - 6 : ix + itemW / 2 + 11;
+            R.drawText(String(it.value), valX, y + h / 2 + 1, { fontSize: 14, color: t.warning, align: i === items.length - 1 ? 'right' : 'left', bold: true, baseline: 'middle' });
             // tooltip 点击
             if (game.showTooltip) {
                 Input.registerButton({
@@ -122,7 +124,8 @@
 
         let yy = y + pad;
         // 玩家信息标题（DOM h3 16px bold，实测 glyph 顶 = box+pad）
-        R.drawText('玩家信息', x, yy, { fontSize: 16, color: t.textPrimary, bold: true });
+        R.drawRect(x, yy - 4, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('玩家信息', x + 14, yy, { fontSize: 16, color: t.accent, bold: true });
         yy += h3H + h3Mb;
         // flex space-between 分布助手（DOM playerInfo 全部是 justify-content:space-between）
         function flexRow(x0, y0, w0, items, bind) {
@@ -296,7 +299,7 @@
         R.drawRect(PX, y, MAX_W, h, { stroke: t.border, lineWidth: 1, radius: 10 });
         // 内侧绿色渐变卡（storyText = y+25 起，h172）
         const gx = PX + 14, gy = y + 25, gw = MAX_W - 28;
-        R.drawRect(gx, gy, gw, 172, { gradient: { from: 'rgba(0,60,50,0.6)', to: 'rgba(0,30,40,0.55)' }, radius: 8 });
+        R.drawRect(gx, gy, gw, 172, { gradient: { from: 'rgba(0,60,50,0.6)', to: 'rgba(0,30,40,0.55)' }, radius: 10, stroke: t.border, strokeWidth: 1 });
         // 标题行：剧情 16px bold accent + x/y 12px faint 右对齐
         R.drawText('剧情', gx + 15, gy + 15, { fontSize: 16, color: t.accent, bold: true });
         R.drawText(lineNum + '/' + totalLines, gx + gw - 15, gy + 19, { fontSize: 12, color: t.textFaint, align: 'right' });
@@ -519,8 +522,8 @@
         const h = 50;
         const x0 = PX + 15;
         const feats = [
-            { id: 'feat_talent', text: '天赋', icon: 'seedling', onTap: function () { game.openInRunTalentPanel(); } },
-            { id: 'feat_status', text: '状态', icon: 'user', onTap: function () { game.openStatus(); } },
+            { id: 'feat_talent', text: '天赋', icon: 'flask', onTap: function () { game.openInRunTalentPanel(); } },
+            { id: 'feat_status', text: '状态', icon: 'barChart', onTap: function () { game.openStatus(); } },
             { id: 'feat_inv', text: '背包', icon: 'bag', onTap: function () { game.openInventory(); } },
             { id: 'feat_sym', text: '共生体', icon: 'target', onTap: function () { game.openSymbiontPanel(); } }
         ];

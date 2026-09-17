@@ -9,6 +9,16 @@
 (function () {
     'use strict';
 
+    // Fix13: hex 明暗调整（html.js 内部，复刻 canvas.js shade）
+    function shadeHex(hex, ratio) {
+        var m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+        if (!m) return hex || '#000000';
+        var r = parseInt(m[1].substring(0,2),16), g = parseInt(m[1].substring(2,4),16), b = parseInt(m[1].substring(4,6),16);
+        var t = ratio < 0 ? 0 : 255, p = Math.abs(ratio);
+        r = Math.round((t - r) * p + r); g = Math.round((t - g) * p + g); b = Math.round((t - b) * p + b);
+        return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
     const R = window.Render;
     const Input = window.Input;
 
@@ -42,7 +52,7 @@
             }
             const attrsRaw = m[3] || '';
             const attrs = {};
-            const attrRe = /([a-zA-Z-]+)(?:\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+            const attrRe = /([a-zA-Z0-9-]+)(?:\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
             let am;
             while ((am = attrRe.exec(attrsRaw)) !== null) {
                 attrs[am[1].toLowerCase()] = am[3] != null ? am[3] : (am[4] != null ? am[4] : (am[5] != null ? am[5] : ''));
@@ -58,6 +68,7 @@
             if (text.trim()) root.children.push({ tag: '#text', text: text });
         }
         mergeInlineSvg(root);
+        applyClassDefaults(root);
         inheritFont(root, null);
         return root;
     }
@@ -90,6 +101,40 @@
             if (c.children && c.children.length) mergeInlineSvg(c);
         }
         node.children = out;
+    }
+
+    // 弹窗内 class 默认样式（对齐 DOM 全局 CSS，仅未设置行内样式时生效；P0-3：技能卡 talent-card 为 flex，释放按钮靠右）
+    function applyClassDefaults(node) {
+        const cls = node.attrs && node.attrs.class;
+        // .box 卡片（DOM 全局 CSS .box：bg-card 背景、1px 边框、radius10、pad14、margin10 0）
+        if (cls && String(cls).indexOf('box') >= 0 && node.tag === 'div') {
+            if (!node.style.background) node.style.background = 'var(--bg-card)';
+            if (!node.style.border) node.style.border = '1px solid var(--border-primary)';
+            if (!node.style['border-radius']) node.style['border-radius'] = '10px';
+            if (!node.style.padding) node.style.padding = '14px';
+            if (!node.style.margin) node.style.margin = '10px 0';
+        }
+        // h3 区块标题（DOM 全局 CSS h3：accent 青绿、左 3px 竖线、pad-left 14、600、16px、letter-spacing 2、mb 10）
+        if (node.tag === 'h3') {
+            if (!node.style.color) node.style.color = 'var(--accent-primary)';
+            if (!node.style['border-left']) node.style['border-left'] = '3px solid var(--accent-primary)';
+            if (!node.style['padding-left']) node.style['padding-left'] = '14px';
+            if (!node.style['font-weight']) node.style['font-weight'] = '600';
+            if (!node.style['margin-bottom']) node.style['margin-bottom'] = '10px';
+        }
+        if (cls && String(cls).indexOf('talent-card') >= 0) {
+            if (!node.style.display) node.style.display = 'flex';
+            if (!node.style.gap) node.style.gap = '12px';
+            if (!node.style.padding) node.style.padding = '12px';
+            if (!node.style['border-radius']) node.style['border-radius'] = '8px';
+            if (!node.style['margin-bottom']) node.style['margin-bottom'] = '10px';
+            if (!node.style.background) node.style.background = 'var(--bg-card)';
+            if (!node.style.border) node.style.border = '1px solid #2a3a4a';
+            const kids = (node.children || []).filter(function (cc) { return cc.tag !== '#text' || String(cc.text || '').trim(); });
+            // .talent-card > div:first-child { flex:1; min-width:0 }——文本区占满剩余宽度，按钮贴右
+            if (kids.length && kids[0].tag === 'div' && !kids[0].style.flex) kids[0].style.flex = '1';
+        }
+        (node.children || []).forEach(applyClassDefaults);
     }
 
     // svg 尺寸：style width/height（px 或 em），缺省 1em
@@ -133,7 +178,7 @@
             if (ch === '\n') { lines.push(cur); cur = ''; continue; }
             cur += ch;
             let cw = 0;
-            try { cw = R.measureText(cur, fontSize).width; } catch (e) { try { R.ctx.font = fontSize + 'px sans-serif'; cw = R.ctx.measureText(cur).width; } catch (e2) { cw = cur.length * fontSize; } }
+            try { cw = R.measureText(cur, fontSize); } catch (e) { try { R.ctx.font = fontSize + 'px sans-serif'; cw = R.ctx.measureText(cur).width; } catch (e2) { cw = cur.length * fontSize; } }
             if (cw > maxW) {
                 // 回退到最后一个空格
                 const sp = cur.lastIndexOf(' ');
@@ -177,21 +222,51 @@
         return b;
     }
 
+    // Fix18: 解析 padding 简写 + button 默认 12px 16px（DOM 全局 button{padding:12px 16px}）
     function paddingOf(node) {
         const p = node.style;
+        const isBtn = node.tag === 'button';
+        const defTop = isBtn ? 12 : 0, defSide = isBtn ? 16 : 0;
         function px(v, def) { if (!v) return def; const n = parseFloat(v); return isNaN(n) ? def : n; }
+        // 解析 padding 简写
+        var padShorthand = { t: NaN, r: NaN, b: NaN, l: NaN };
+        if (p.padding) {
+            var parts = String(p.padding).split(/\s+/).map(function (s) { return parseFloat(s); });
+            if (parts.length === 1) { padShorthand = { t: parts[0], r: parts[0], b: parts[0], l: parts[0] }; }
+            else if (parts.length === 2) { padShorthand = { t: parts[0], r: parts[1], b: parts[0], l: parts[1] }; }
+            else if (parts.length === 3) { padShorthand = { t: parts[0], r: parts[1], b: parts[2], l: parts[1] }; }
+            else if (parts.length === 4) { padShorthand = { t: parts[0], r: parts[1], b: parts[2], l: parts[3] }; }
+        }
         return {
-            top: px(p['padding-top'], px(p.padding, 0)),
-            right: px(p['padding-right'], px(p.padding, 0)),
-            bottom: px(p['padding-bottom'], px(p.padding, 0)),
-            left: px(p['padding-left'], px(p.padding, 0))
+            top: px(p['padding-top'], isNaN(padShorthand.t) ? defTop : padShorthand.t),
+            right: px(p['padding-right'], isNaN(padShorthand.r) ? defSide : padShorthand.r),
+            bottom: px(p['padding-bottom'], isNaN(padShorthand.b) ? defTop : padShorthand.b),
+            left: px(p['padding-left'], isNaN(padShorthand.l) ? defSide : padShorthand.l)
         };
     }
 
-    function marginTop(node) { const v = node.style['margin-top']; const n = parseFloat(v || '0'); return isNaN(n) ? 0 : n; }
+    // Fix16: 解析 margin 简写（margin:1px 2px / margin:1px 2px 3px / margin:1px 2px 3px 4px）
+    function parseMarginShorthand(node) {
+        var m = node.style && node.style.margin;
+        if (!m) return { t: NaN, r: NaN, b: NaN, l: NaN };
+        var parts = String(m).split(/\s+/).map(function (s) { return parseFloat(s); });
+        if (parts.length === 1) return { t: parts[0], r: parts[0], b: parts[0], l: parts[0] };
+        if (parts.length === 2) return { t: parts[0], r: parts[1], b: parts[0], l: parts[1] };
+        if (parts.length === 3) return { t: parts[0], r: parts[1], b: parts[2], l: parts[1] };
+        if (parts.length === 4) return { t: parts[0], r: parts[1], b: parts[2], l: parts[3] };
+        return { t: NaN, r: NaN, b: NaN, l: NaN };
+    }
+    function marginTop(node) {
+        var v = node.style['margin-top'];
+        if (v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+        var sh = parseMarginShorthand(node);
+        return isNaN(sh.t) ? 0 : sh.t;
+    }
     function marginBottom(node) {
-        const v = node.style['margin-bottom'];
-        if (v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+        var v = node.style['margin-bottom'];
+        if (v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+        var sh = parseMarginShorthand(node);
+        if (!isNaN(sh.b)) return sh.b;
         // DOM 全局默认：h3 {margin-bottom:10px} / h2 {margin:16px 0}
         if (node.tag === 'h3') return 10;
         if (node.tag === 'h2') return 16;
@@ -205,8 +280,38 @@
         result.nodes.push(item);
     }
 
+    // 行内元素判定（模块级，供 naturalWidth/layoutBlock 共用）
+    const INLINE_TAGS = { span: 1, button: 1, a: 1, label: 1, em: 1, strong: 1, b: 1, small: 1, i: 1 };
+    function isInlineish(c) {
+        if (!c) return false;
+        if (c.tag === '#text' || c.tag === 'svgtext' || c.tag === 'svg') return true;
+        if (!c.style) return false;
+        const d = c.style.display;
+        if (d === 'inline' || d === 'inline-block' || d === 'inline-flex') return true;
+        if (INLINE_TAGS[c.tag]) {
+            if (d === 'block') return false;
+            const w = c.style.width;
+            if (w && (w === '100%' || (w.indexOf('%') === 0))) return false;
+            return true;
+        }
+        return false;
+    }
+
     // flex 布局辅助：无 flex 声明的子项按内容自然宽度（修复：图标/标签不再被平分整行而撑爆/截断）
-    function naturalWidth(node) {
+    function naturalWidth(node, parentFs) {
+        parentFs = parentFs || 13;
+        if (!node) return 0;
+        if (node.tag === '#text') {
+            // 文本节点：按最大行宽测量（fontSizeOf 会继承父级字号）
+            node.style = node.style || {};
+            const fs = fontSizeOf(node, parentFs);
+            let w = 0;
+            let full = String(node.text || '').replace(/[ \t\r\n]+/g, ' ').trim();
+            if (full) w = Math.max(w, textW(full, fs));
+            return w;
+        }
+        if (node.tag === 'br') return 0;
+        node.style = node.style || {};
         const pad = paddingOf(node);
         // DOM 全局 button{margin:4px}：未行内覆盖的边补 4px（影响行内流换行/间距）
         const btnGlob = node.tag === 'button' ? 4 : 0;
@@ -215,41 +320,64 @@
         const ml = (isNaN(mlRaw) ? 0 : mlRaw) + (node.style['margin-left'] ? 0 : btnGlob);
         const mr = (isNaN(mrRaw) ? 0 : mrRaw) + (node.style['margin-right'] ? 0 : btnGlob);
         function textW(t, fs) {
-            try { return R.measureText(t, fs).width; } catch (e) { try { R.ctx.font = fs + 'px sans-serif'; return R.ctx.measureText(t).width; } catch (e2) { return t.length * fs; } }
+            try { return R.measureText(t, fs); } catch (e) { try { R.ctx.font = fs + 'px sans-serif'; return R.ctx.measureText(t).width; } catch (e2) { return t.length * fs; } }
         }
-        let tw = 0;
+        // 按行内流逐段累加：同一行内 #text/svg/svgtext/行内容器宽度求和，
+        // br 与块级子元素结算换行，取最大行宽（根治：<button>普通<span>(27)</span></button> 折行）
+        let maxLine = 0, curLine = 0;
         (function walk(n, parentFs) {
             if (!n) return;
             n.style = n.style || {};
             const fs = fontSizeOf(n, parentFs);
             if (n.tag === '#text') {
                 const t = n.text || '';
-                if (t.trim()) tw = Math.max(tw, textW(t, fs));
+                const segs = t.split('\n');
+                segs.forEach(function (s, i) {
+                    if (i > 0) { maxLine = Math.max(maxLine, curLine); curLine = 0; }
+                    if (s.trim()) curLine += textW(s, fs);
+                });
                 return;
             }
             if (n.tag === 'svgtext') {
-                const t = n.text || '';
-                if (n.svg) { const size = svgSize(n.svg, fs); tw = Math.max(tw, size.w + 5 + textW(t, fs)); }
-                else tw = Math.max(tw, textW(t, fs));
+                if (n.svg) curLine += svgSize(n.svg, fs).w + 5;
+                curLine += textW(n.text || '', fs);
                 return;
             }
-            if (n.tag === 'svg') {
-                tw = Math.max(tw, svgSize(n, fs).w);
-                return;
+            if (n.tag === 'svg') { curLine += svgSize(n, fs).w; return; }
+            if (n.tag === 'br') { maxLine = Math.max(maxLine, curLine); curLine = 0; return; }
+            // 行内容器：继续累加；flex(row) 容器：宽 = Σ子项自然宽 + Σgap（flex:1 项按内容宽参与，避免容器被低估导致子项 wrap 竖排）；块级：结算换行再递归
+            if (isInlineish(n)) {
+                (n.children || []).forEach(function (c) { walk(c, fs); });
+            } else if (n.style && (n.style.display === 'flex' || n.style.display === 'inline-flex')) {
+                const g = parseFloat(n.style.gap || '0') || 0;
+                let sum = 0, cnt = 0;
+                (n.children || []).forEach(function (c) {
+                    if (c.tag === '#text' && !String(c.text || '').trim()) return;
+                    sum += naturalWidth(c, fs) + (cnt > 0 ? g : 0);
+                    cnt++;
+                });
+                maxLine = Math.max(maxLine, sum);
+                curLine = 0;
+            } else {
+                maxLine = Math.max(maxLine, curLine);
+                curLine = 0;
+                (n.children || []).forEach(function (c) { walk(c, fs); });
+                maxLine = Math.max(maxLine, curLine);
+                curLine = 0;
             }
-            (n.children || []).forEach(function (c) { walk(c, fs); });
-        })(node, fontSizeOf(node, 13));
-        return tw + pad.left + pad.right + ml + mr;
+        })(node, parentFs);
+        maxLine = Math.max(maxLine, curLine);
+        return maxLine + pad.left + pad.right + ml + mr;
     }
 
     function layoutBlock(node, x, y, w, result, inherit) {
-        inherit = inherit || { fs: 13, lh: 1.6 };
+        inherit = inherit || { fs: 13, lh: 1.6, ptag: null, pcolor: null };
         node.style = node.style || {};
         node.attrs = node.attrs || {};
         // font-size / line-height 继承（DOM inline style 只写在容器上，文本节点需继承）
-        const fsNow = (function () { const f = node.style['font-size']; if (f) { const n = parseFloat(f); if (!isNaN(n)) return n; } if (node.tag === 'h3') return 17; if (node.tag === 'h2') return 22; if (node.tag === 'button') return 13; return inherit.fs; })();
+        const fsNow = (function () { const f = node.style['font-size']; if (f) { const n = parseFloat(f); if (!isNaN(n)) return n; } if (node.tag === 'h3') return 16; if (node.tag === 'h2') return 26; if (node.tag === 'button') return 15; return inherit.fs; })();
         const lhNow = (function () { const l = node.style['line-height']; if (l) { const n = parseFloat(l); if (!isNaN(n)) return n; } return inherit.lh; })();
-        const childInherit = { fs: fsNow, lh: lhNow };
+        const childInherit = { fs: fsNow, lh: lhNow, ptag: node.tag, pcolor: node.style.color };
         // display:none：不占空间、不绘制
         if (node.style.display === 'none' && node.tag !== 'root') {
             result.height = Math.max(result.height, y);
@@ -262,9 +390,11 @@
         if (node.tag === 'br') { result.height = Math.max(result.height, y + 14); return y + 14; }
         if (node.tag === '#text') {
             const fs = inherit.fs;
+            // DOM 空白折叠：模板字面量产生的 \n/缩进空白折叠为单空格（根治：天赋名/说明因 \n+空格 高度膨胀、折行错位）
+            node.text = String(node.text || '').replace(/[ \t\r\n]+/g, ' ').trim();
             const lines = textLines(node, innerW, fs);
             const h = lines.length * Math.round(fs * inherit.lh);
-            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: h, lines: lines, fs: fs });
+            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: innerW, h: h, lines: lines, fs: fs, ptag: inherit.ptag, pcolor: inherit.pcolor });
             return cursorY + h + pad.bottom + marginBottom(node);
         }
 
@@ -276,12 +406,12 @@
             // 自然宽（svg + 文本），不撑满整行（否则行内流中独占一行导致换行）
             const textStr = (node.text && node.text.text != null) ? String(node.text.text) : String(node.text || '');
             let tw = 0;
-            try { tw = R.measureText(textStr, fs).width; } catch (e) { try { R.ctx.font = fs + 'px sans-serif'; tw = R.ctx.measureText(textStr).width; } catch (e2) { tw = textStr.length * fs; } }
+            try { tw = R.measureText(textStr, fs); } catch (e) { try { R.ctx.font = fs + 'px sans-serif'; tw = R.ctx.measureText(textStr).width; } catch (e2) { tw = textStr.length * fs; } }
             const w = size.w + gap + tw;
             const lines = textLines({ text: textStr }, w - size.w - gap, fs);
             const th = lines.length * Math.round(fs * inherit.lh);
             const h = Math.max(size.h, th);
-            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: w, h: h, lines: lines, fs: fs, svgSize: size, svgGap: gap });
+            result.nodes.push({ node: node, x: x + pad.left, y: cursorY, w: w, h: h, lines: lines, fs: fs, svgSize: size, svgGap: gap, ptag: inherit.ptag, pcolor: inherit.pcolor });
             return cursorY + h + pad.bottom + marginBottom(node);
         }
 
@@ -316,7 +446,7 @@
             const flexNums = items.filter(function (c) { return c.style.flex && c.style.flex !== '1'; });
             const naturals = items.filter(function (c) { return !c.style.flex; });
             const fixedTotal = flexNums.reduce(function (sum, c) { return sum + (parseFloat(c.style.flex) || 0); }, 0);
-            const naturalTotal = naturals.reduce(function (sum, c) { return sum + naturalWidth(c); }, 0);
+            const naturalTotal = naturals.reduce(function (sum, c) { return sum + naturalWidth(c, childInherit.fs); }, 0);
             const gapTotal = (items.length - 1) * gap;
             const remain = Math.max(0, innerW - naturalTotal - fixedTotal - gapTotal);
             const flexW = remain / Math.max(1, flexOnes.length);
@@ -327,9 +457,12 @@
                 let cw;
                 if (child.style.flex === '1' || child.style['flex:1']) cw = flexW;
                 else if (child.style.flex) cw = parseFloat(child.style.flex) || flexW;
-                else cw = naturalWidth(child);
+                else cw = naturalWidth(child, childInherit.fs);
                 if (child.style.width) { const v = child.style.width; const n = parseFloat(v); if (!isNaN(n)) cw = (v.indexOf('%') >= 0) ? innerW * n / 100 : n; }
                 if (child.style['min-width']) { const n = parseFloat(child.style['min-width']); if (!isNaN(n)) cw = Math.max(cw, n); }
+                // P0-2/P0-3：按钮自然宽测量兜底（NaN/0 时给最小宽 44px），避免 flex 容器内按钮不可见
+                if (cw == null || !isFinite(cw) || cw <= 0) cw = 44;
+                if (cx == null) cx = x + pad.left;
                 // flex-wrap：放不下则换行（行首不强制换行，超宽内容允许溢出）
                 if (cx + cw > x + w - pad.right && cx > x + pad.left) {
                     rowY += maxH + gap;
@@ -366,19 +499,6 @@
         }
 
         // 块级：纵向堆叠；子元素含行内元素（span/button/inline-block）时横向流式排列（修复：碎片行竖排拆开）
-        const INLINE_TAGS = { span: 1, button: 1, a: 1, label: 1, em: 1, strong: 1, b: 1, small: 1, i: 1 };
-        function isInlineish(c) {
-            if (!c || !c.style) return false;
-            const d = c.style.display;
-            if (d === 'inline' || d === 'inline-block' || d === 'inline-flex') return true;
-            if (INLINE_TAGS[c.tag]) {
-                if (d === 'block') return false;
-                const w = c.style.width;
-                if (w && (w === '100%' || (w.indexOf('%') === 0))) return false;
-                return true;
-            }
-            return false;
-        }
         const kids = node.children.filter(function (c) { return !(c.tag === '#text' && !String(c.text || '').trim()); });
         let by = cursorY;
         const hasInlineKids = kids.some(isInlineish);
@@ -396,9 +516,19 @@
                     curRow = { items: [], rowW: 0, rowH: 0 };
                     rows.push(curRow);
                     curRow.block = child;
+                    rx = x + pad.left;
                     return;
                 }
-                const cw = naturalWidth(child);
+                let cw = naturalWidth(child, childInherit.fs);
+                // 长 #text：折行于容器剩余宽内（根治：效果文本按自然宽排布溢出覆盖右列按钮/卡）
+                if (child.tag === '#text' && cw > x + w - pad.right - rx) {
+                    if (rx > x + pad.left) {
+                        curRow = { items: [], rowW: 0, rowH: 0 };
+                        rows.push(curRow);
+                        rx = x + pad.left;
+                    }
+                    cw = Math.max(0, x + w - pad.right - rx);
+                }
                 if (rx + cw > x + w - pad.right && rx > x + pad.left) {
                     curRow = { items: [], rowW: 0, rowH: 0 };
                     rows.push(curRow);
@@ -414,7 +544,19 @@
             // 逐行对齐 + 真实布局
             const ta = node.style['text-align'];
             rows.forEach(function (row) {
-                if (row.block) { ry = layoutBlock(row.block, x + pad.left, ry, innerW, result, childInherit); return; }
+                if (row.block) {
+                    ry = layoutBlock(row.block, x + pad.left, ry, innerW, result, childInherit);
+                    // P0-3：混排行（块级+行内项，如技能卡文本+释放按钮）——块级排完后继续排同排行内项，避免按钮被丢弃
+                    if (row.items && row.items.length) {
+                        let rowBottom = ry;
+                        row.items.forEach(function (it) {
+                            const ch = layoutBlock(it.node, it.x, ry, it.w, result, childInherit);
+                            rowBottom = Math.max(rowBottom, ry + it.h);
+                        });
+                        ry = rowBottom;
+                    }
+                    return;
+                }
                 if (!row.items.length) return;
                 let shift = 0;
                 if (ta === 'right') shift = Math.max(0, innerW - row.rowW);
@@ -434,11 +576,14 @@
             });
         }
         let bh = by + pad.bottom + marginBottom(node);
-        // DOM 全局 button{min-height:44px;margin:4px}：按钮无行内 min-height 时按 44+上下 margin 布局
-        if (node.tag === 'button' && !node.style['min-height']) {
+        // DOM 全局 button{min-height:44px;margin:4px;border-radius:8px;font-size:15px;padding:12px 16px}
+        // 内联样式只覆盖 padding/font-size/background，min-height:44px 全局生效
+        if (node.tag === 'button' && !node.style['min-height'] && !node.style.height) {
             if (bh - y < 44) bh = y + 44;
-            if (!node.style['margin-top']) bh += 4;
-            if (!node.style['margin-bottom']) bh += 4;
+            var shT = parseMarginShorthand(node).t;
+            var shB = parseMarginShorthand(node).b;
+            if (!node.style['margin-top'] && isNaN(shT)) bh += 4;
+            if (!node.style['margin-bottom'] && isNaN(shB)) bh += 4;
         }
         pushItem(node, x, y, w, bh - y, result);
         return bh;
@@ -447,13 +592,14 @@
     // 抽奖动画模拟：逻辑层 goldGacha 的 interval 依赖 DOM（无 document 时不推进），
     // 渲染层按时间推进进度条/状态文本，100% 后显示结果摘要
     function animateGacha(root) {
-        if (!state.openedAt) state.openedAt = Date.now();
         const flat = [];
         (function walk(n) { flat.push(n); (n.children || []).forEach(walk); })(root);
         const byId = {};
         flat.forEach(function (n) { if (n.attrs && n.attrs.id) byId[n.attrs.id] = n; });
         const prog = byId.gachaProgress;
+        // 无 gacha 进度条：不进入动画态（否则 openedAt 置位 → drawModal 每帧重布局，大弹窗卡死）
         if (!prog) return;
+        if (!state.openedAt) state.openedAt = Date.now();
         const elapsed = Date.now() - state.openedAt;
         const dur = 1200; // 单抽动画时长（十连 2000，html 内无法区分，统一 1200 可接受）
         const p = Math.min(100, (elapsed / dur) * 100);
@@ -487,13 +633,15 @@
             if (align === 'center') ax = x + w / 2;
             else if (align === 'right') ax = x + w;
             n.lines.forEach(function (ln, i) {
+                const ptag = n.ptag || '';
+                const defCol = (ptag === 'h2' || ptag === 'h3') ? t.accent : t.textPrimary;
                 R.drawText(ln, ax, y + i * Math.round(n.fs * 1.6), {
                     fontSize: n.fs,
-                    color: colorOf(node, node.tag === 'h2' ? t.accent : t.textPrimary),
+                    color: n.pcolor ? colorOf({ style: { color: n.pcolor } }, defCol) : defCol,
                     align: align === 'center' ? 'center' : (align === 'right' ? 'right' : 'left'),
-                    bold: node.style['font-weight'] === 'bold' || node.tag === 'strong' || node.tag === 'b' || node.tag === 'h2' || node.tag === 'h3',
-                    letterSpacing: node.tag === 'h2' ? 4 : 0,
-                    glow: node.tag === 'h2' ? 'rgba(0,229,176,0.35)' : null
+                    bold: node.style['font-weight'] === 'bold' || node.tag === 'strong' || node.tag === 'b' || ptag === 'h2' || ptag === 'h3',
+                    letterSpacing: ptag === 'h2' ? 4 : (ptag === 'h3' ? 2 : 0),
+                    glow: ptag === 'h2' ? 'rgba(0,229,176,0.35)' : null
                 });
             });
             return;
@@ -530,7 +678,21 @@
             R.drawRect(x, y, w, h, { fill: null, radius: isNaN(radius) ? 0 : radius, stroke: bc || t.borderSoft, strokeWidth: bw });
         }
         if (node.style['border-left']) {
-            R.drawRect(x, y, 3, h, { fill: t.success, radius: 1.5 });
+            // DOM h3/区块标题左竖线：解析 border-left 行内颜色（accent/success/info/quality 等），未匹配默认 accent
+            const bl = node.style['border-left'];
+            let bc = t.accent;
+            const blm = bl.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|var\([^)]+\))/);
+            if (blm) {
+                if (blm[1].indexOf('var(') === 0) {
+                    const t2 = R.Theme.get();
+                    const nm = blm[1].replace('var(', '').replace(')', '').trim();
+                    const map = { '--accent-primary': t2.accent, '--accent-warning': t2.warning, '--accent-success': t2.success, '--accent-info': t2.info, '--accent-danger': t2.danger, '--accent-purple': t2.purple, '--accent-orange': t2.orange, '--text-primary': t2.textPrimary, '--text-secondary': t2.textSecondary, '--text-muted': t2.textMuted, '--text-faint': t2.textFaint, '--bg-card': t2.bgCard, '--bg-secondary': t2.bgSecondary, '--border-primary': t2.border, '--bg-hover': t2.bgHover };
+                    bc = map[nm] || t.accent;
+                } else {
+                    bc = blm[1];
+                }
+            }
+            R.drawRect(x, y, 3, h, { fill: bc, radius: 1.5 });
         }
         // 子节点绘制由 drawNodesRecursive 统一递归，避免双重绘制
     }
@@ -554,12 +716,14 @@
         drawSVG(node.svg, x, y + (h - size.h) / 2, size.w, size.h);
         const tx = x + size.w + n.svgGap;
         n.lines.forEach(function (ln, i) {
+            const ptag2 = n.ptag || '';
+            const defCol2 = (ptag2 === 'h2' || ptag2 === 'h3') ? t.accent : t.textPrimary;
             R.drawText(ln, tx, y + (h - n.lines.length * Math.round(fs * 1.6)) / 2 + i * Math.round(fs * 1.6), {
                 fontSize: fs,
-                color: colorOf(node, node.tag === 'h2' ? t.accent : t.textPrimary),
-                bold: node.style['font-weight'] === 'bold' || node.tag === 'h2' || node.tag === 'h3',
-                letterSpacing: node.tag === 'h2' ? 4 : 0,
-                glow: node.tag === 'h2' ? 'rgba(0,229,176,0.35)' : null
+                color: n.pcolor ? colorOf({ style: { color: n.pcolor } }, defCol2) : defCol2,
+                bold: node.style['font-weight'] === 'bold' || ptag2 === 'h2' || ptag2 === 'h3',
+                letterSpacing: ptag2 === 'h2' ? 4 : (ptag2 === 'h3' ? 2 : 0),
+                glow: ptag2 === 'h2' ? 'rgba(0,229,176,0.35)' : null
             });
         });
     }
@@ -869,7 +1033,7 @@
         const isActive = inputState.activeId === id;
         R.drawRect(x, y, w, h, {
             fill: t.bgSecondary,
-            radius: 4,
+            radius: 8,
             stroke: isActive ? t.accent : t.border,
             lineWidth: isActive ? 1.5 : 1
         });
@@ -907,13 +1071,18 @@
     }
 
     function show(html) {
+        const wasVisible = state.visible;
         state.visible = true;
         state.html = String(html || '');
         state.buttons = [];
         state.openedAt = 0;
         state.gachaDone = false;
-        state.popScroll = 0;
-        state.popScrollMax = 0;
+        // P9-4：弹窗已可见时仅更新内容（如图鉴展开/收起卡片重渲染），保留当前滚动位置，
+        // 避免"点卡片瞬间弹回顶端再由 scrollIntoView 滚下去"的回弹闪烁；仅首次打开才归零
+        if (!wasVisible) {
+            state.popScroll = 0;
+            state.popScrollMax = 0;
+        }
         setNavInteractive(false);
         // 弹窗遮罩压暗 DOM 底部导航（DOM 版 #overlay z99 > bottomNav z50；Canvas 遮罩画在 canvas 内盖不住 DOM 导航）
         try { const nav = document.getElementById('bottomNav'); if (nav) nav.style.filter = 'brightness(0.25)'; } catch (e) {}
@@ -930,6 +1099,7 @@
         state.buttons = [];
         state.popScroll = 0;
         state.popScrollMax = 0;
+        Input.setPopupScroll(null);  // P9-9
         blurInput();
         try { const nav = document.getElementById('bottomNav'); if (nav) nav.style.filter = ''; } catch (e) {}
         setNavInteractive(true);
@@ -993,7 +1163,8 @@
         state.clipRect = { x: x, y: y, w: maxW, h: h };
 
         // P3-8：内容超界时弹窗内滚动（含列表底部元素）
-        state.popScrollMax = Math.max(0, lay.height - h);
+        // P9-6：popScrollMax 需含 padT+padB，否则滚到底时内容底部差 padding 被裁
+        state.popScrollMax = Math.max(0, lay.height + padT + padB - h);
         if (state.popScrollMax <= 0) state.popScroll = 0;
         else state.popScroll = Math.min(state.popScrollMax, Math.max(0, state.popScroll));
         Input.setPopupScroll({
@@ -1003,12 +1174,26 @@
             max: function () { return state.popScrollMax; }
         });
 
-        // 遮罩拦截（P1-2）：全屏按钮先注册（栈底），内容按钮后注册优先命中；
-        // 弹窗打开期间任何未命中内容按钮的点击都落在遮罩上（关闭弹窗），不穿透到底层。
-        Input.registerButton({
-            id: 'popMask_0', x: 0, y: 0, w: R.SCREEN_W, h: R.SCREEN_H,
-            disabled: false, onTap: function () { blurInput(); closePopup(); }
-        });
+        // 遮罩拦截（P1-2/P8-1）：注册为弹窗四周的 4 条边带（弹窗矩形区域不注册遮罩）。
+        // 弹窗打开期间：点弹窗外部任意区域 → 落在边带遮罩上关闭弹窗；
+        // 点弹窗内部（含内容空白区）→ 不命中遮罩 → 不关闭（可拖拽滚动/命中内容按钮）。
+        {
+            const mz = 4;
+            const _mx = x, _my = y, _mw = maxW, _mh = h;
+            const bands = [
+                { x: 0, y: 0, w: R.SCREEN_W, h: Math.max(0, _my - mz) },
+                { x: 0, y: _my + _mh + mz, w: R.SCREEN_W, h: Math.max(0, R.SCREEN_H - (_my + _mh + mz)) },
+                { x: 0, y: Math.max(0, _my - mz), w: Math.max(0, _mx - mz), h: Math.min(R.SCREEN_H, _mh + mz * 2) },
+                { x: _mx + _mw + mz, y: Math.max(0, _my - mz), w: Math.max(0, R.SCREEN_W - (_mx + _mw + mz)), h: Math.min(R.SCREEN_H, _mh + mz * 2) }
+            ];
+            bands.forEach(function (b, bi) {
+                if (b.w <= 0 || b.h <= 0) return;
+                Input.registerButton({
+                    id: 'popMask_' + bi, x: b.x, y: b.y, w: b.w, h: b.h,
+                    disabled: false, onTap: function () { blurInput(); closePopup(); }
+                });
+            });
+        }
 
         // 背景遮罩（DOM #overlay = rgba(0,0,0,0.78)）
         R.ctx.globalAlpha = 0.78;
@@ -1030,7 +1215,8 @@
         R.ctx.beginPath();
         R.ctx.rect(x + padL, y + padT, maxW - padL * 2, h - padT - padB);
         R.ctx.clip();
-        R.ctx.translate(0, -state.popScroll);
+        // P9-2：滚动偏移只应用一次（oy 已含 -popScroll），不再画布 translate，否则视觉位移=2×popScroll，
+        // 与按钮注册坐标（item.y+oy）错位 popScroll 像素，导致点击视觉位置不命中
         drawNodesRecursive(root, lay, x + padL, y + padT - state.popScroll);
         R.ctx.restore();
 
@@ -1046,9 +1232,36 @@
                 disabled: false, onTap: (function (id) { return function () { try { if (typeof game !== 'undefined') game.showSkillTooltip(id); } catch (e) {} }; })(sid)
             });
         });
+        // tooltip 悬停区注册（onmouseover="game.showTooltip(event,'TEXT')" / title / data-talent-id）：
+        // 用鼠标坐标命中（Input._hoverX/_hoverY），不注册按钮（避免拦截下层点击）
+        state._hoverTips = {};
+        lay.nodes.forEach(function (it, _tipIdx) {
+            const node = it.node;
+            if (!node) return;
+            const attrs = node.attrs || {};
+            let tipText = null;
+            const ov = attrs.onmouseover;
+            if (ov && typeof ov === 'string') {
+                const mm = ov.match(/'([^']*)'/);
+                if (mm && mm[1]) tipText = mm[1];
+            }
+            if (tipText == null && attrs.title) tipText = String(attrs.title);
+            const tid = attrs['data-talent-id'];
+            if (!tipText && !tid) return;
+            const bx = it.x + x + padL, by = it.y + y + padT - state.popScroll - 4, bh = Math.max(20, it.h + 8);
+            if (!insideClip(bx, by, it.w, bh)) return;
+            const key = tid ? ('talent_' + tid) : ('tip_' + _tipIdx + '_' + tipText.slice(0, 14));
+            // 锚点：下方空间不足时上翻（避免压住下方卡片/内容）
+            let ax = bx + it.w / 2, ay = by + bh + 2;
+            const cr = state.clipRect;
+            if (cr && ay + 130 > cr.y + cr.h) ay = Math.max(cr.y + 8, by - 6);
+            state._hoverTips[key] = { text: tipText, talentId: tid || null, x: bx, y: by, w: it.w, h: bh, ax: ax, ay: ay };
+        });
+
 
         // 右上角关闭按钮 ×（P1-1）：点击关闭弹窗
-        const cx = x + maxW + 10 - 14, cy = y - 10 + 14;
+        // P9-5：叉号收进弹窗内部右上角（原 cx=x+maxW-4/cy=y+4 浮在框外，太靠外）
+        const cx = x + maxW - 20, cy = y + 20;
         R.ctx.strokeStyle = t.textMuted;
         R.ctx.lineWidth = 1.8;
         R.ctx.lineCap = 'round';
@@ -1057,9 +1270,38 @@
         R.ctx.moveTo(cx + 5, cy - 5); R.ctx.lineTo(cx - 5, cy + 5);
         R.ctx.stroke();
         Input.registerButton({
-            id: 'popBtn_close', x: cx - 12, y: cy - 12, w: 24, h: 24,
+            id: 'popBtn_close', x: cx - 22, y: cy - 22, w: 44, h: 44,  // 命中区 44×44（TapTap 移动端最小点击标准），视觉 × 仍为 10px
             disabled: false, onTap: function () { blurInput(); closePopup(); }
         });
+        // P7-1：删除关闭叉 hover 提示（对齐用户要求：关闭按钮不显示 tooltip）
+        // 桌面端 hover tooltip 触发（坐标命中 tooltip 悬停区；鼠标离开后隐藏）
+        // P6-2: 点击触发的 tooltip（key 前缀 click_）不被 hover 检测覆盖/关闭（DOM 点击 tooltip 固定显示）
+        const _clickTip = tooltipState.key && tooltipState.key.indexOf('click_') === 0;
+        if (window.Input && typeof Input._hoverX === 'number' && !_clickTip) {
+            const mx = Input._hoverX, my = Input._hoverY;
+            let hit = null;
+            for (const hk in state._hoverTips) {
+                const r = state._hoverTips[hk];
+                if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) { hit = r; hit.key = hk; break; }
+            }
+            const curKey = hit ? hit.key : null;
+            if (curKey !== state._lastHoverKey) {
+                state._lastHoverKey = curKey;
+                if (hit) {
+                    if (hit.talentId) {
+                        const d = buildTalentTooltip(hit.talentId);
+                        if (d) { tooltipState.data = d; tooltipState.x = hit.ax; tooltipState.y = hit.ay; tooltipState.key = 'talent_' + hit.talentId; }
+                    } else if (hit.text) {
+                        tooltipState.data = { title: hit.text };
+                        tooltipState.x = hit.ax; tooltipState.y = hit.ay;
+                        tooltipState.key = 'hover_' + hit.text.slice(0, 16);
+                    }
+                } else {
+                    hideTooltip();
+                }
+            }
+        }
+
     }
 
     function drawNodesRecursive(root, lay, ox, oy) {
@@ -1067,11 +1309,53 @@
         root.children.forEach(function (child) {
             const item = findNode(lay, child);
             if (!item) return;
-            drawNode(item, item.x + ox, item.y + oy, item.w, item.h);
-            if (child.tag === 'button') { drawButtonNode(child, item, ox, oy); return; }
+            const hasPtr = typeof window !== 'undefined' && window.Input && Input._hoverX != null && Input._hoverY != null;
+            const isTalentCard = child.tag === 'div' && child.attrs && child.attrs.class && String(child.attrs.class).indexOf('talent-card') >= 0;
+            let offY = 0;
+            if (isTalentCard && hasPtr) {
+                const hx = item.x + ox, hy = item.y + oy, hw = item.w, hh = item.h;
+                if (Input._hoverX >= hx && Input._hoverX <= hx + hw && Input._hoverY >= hy && Input._hoverY <= hy + hh) offY = -1;
+            }
+            drawNode(item, item.x + ox, item.y + oy + offY, item.w, item.h);
+            // P6-1: talent-card hover 反馈——背景提亮 ~10%、边框发光、卡片上移 1px（DOM transition 0.15s 等效即时绘制）
+            if (offY !== 0) {
+                const t2 = R.Theme.get();
+                const rr = parseFloat(child.style['border-radius'] || '8') || 8;
+                R.ctx.save();
+                R.drawRect(item.x + ox, item.y + oy + offY, item.w, item.h, {
+                    fill: 'rgba(255,255,255,0.07)',
+                    stroke: t2.accent,
+                    lineWidth: 1.4,
+                    radius: rr
+                });
+                R.ctx.restore();
+            }
+            if (child.tag === 'button') { drawButtonNode(child, item, ox, oy + offY); return; }
             // 带 onclick 的非 button 节点（div/span 等）：只注册点击区域，不覆盖绘制
-            if (child.attrs && child.attrs.onclick) { registerNodeTap(child, item, ox, oy); }
-            drawNodesRecursive(child, lay, ox, oy);
+            if (child.attrs && child.attrs.onclick) { registerNodeTap(child, item, ox, oy + offY); }
+            // data-talent-id 天赋名：点击弹完整 tooltip（对齐 DOM bindItemTooltips click；tooltip 内容 buildTalentTooltip）
+            if (child.attrs && child.attrs['data-talent-id']) {
+                const _tid = child.attrs['data-talent-id'];
+                const _bx = item.x + ox, _by = item.y + oy + offY, _bw = item.w, _bh = item.h;
+                Input.registerButton({
+                    id: 'popBtn_' + (state.buttons.length),
+                    x: _bx, y: _by, w: _bw, h: _bh,
+                    disabled: false, onTap: (function (id2, bxx, byy, bww, bhh) {
+                        return function () {
+                            if (tooltipState.key === 'click_talent_' + id2) { hideTooltip(); return; }
+                            const d2 = buildTalentTooltip(id2);
+                            if (!d2) return;
+                            tooltipState.data = d2;
+                            const an2 = window.Input.getLastTapAnchor();
+                            tooltipState.x = an2 ? an2.x : bxx + bww / 2;
+                            tooltipState.y = an2 ? an2.y + 8 : byy + bhh + 8;
+                            tooltipState.key = 'click_talent_' + id2;
+                        };
+                    })(_tid, _bx, _by, _bw, _bh)
+                });
+                state.buttons.push({ x: _bx, y: _by, w: _bw, h: _bh, disabled: false });
+            }
+            drawNodesRecursive(child, lay, ox, oy + offY);
         });
     }
 
@@ -1112,23 +1396,154 @@
         return textLines({ text: text }, maxW, fs);
     }
 
+    // 收集按钮内容片段（图标 svg + 文本，按 DOM 行内流顺序）
+    function buttonContent(node) {
+        const pieces = [];
+        (function walk(n) {
+            (n.children || []).forEach(function (c) {
+                if (c.tag === '#text') {
+                    if (String(c.text || '').trim()) pieces.push({ type: 'text', text: String(c.text) });
+                } else if (c.tag === 'svgtext') {
+                    if (c.svg) pieces.push({ type: 'icon', svg: c.svg });
+                    if (c.text && String(c.text.text || '').trim()) pieces.push({ type: 'text', text: String(c.text.text) });
+                } else if (c.tag === 'svg') {
+                    pieces.push({ type: 'icon', svg: c });
+                } else if (c.tag === 'br') {
+                    pieces.push({ type: 'br' });
+                } else if (c.tag !== 'input') {
+                    walk(c);
+                }
+            });
+        })(node);
+        return pieces;
+    }
+
+    function btnTextW(t, fs) {
+        try { return R.measureText(t, fs); } catch (e) { try { R.ctx.font = fs + 'px sans-serif'; return R.ctx.measureText(t).width; } catch (e2) { return String(t).length * fs; } }
+    }
+
     function drawButtonNode(node, item, ox, oy) {
         const t = R.Theme.get();
         const x = item.x + ox, y = item.y + oy, w = item.w, h = item.h;
-        const bg = bgColorOf(node) || t.accent;
+        // P0-2/P0-3：布局异常防御——无效/非正尺寸直接跳过，避免脏矩形或不可点按钮
+        if (!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
         const disabled = node.attrs.disabled === '' || node.attrs.disabled === 'disabled' || node.attrs.disabled === 'true';
-        const radius = parseFloat(node.style['border-radius'] || '0');
-        // DOM button:disabled {background:var(--bg-hover);opacity:0.6}
-        if (disabled) R.ctx.save(), R.ctx.globalAlpha = 0.6;
-        R.drawRect(x, y, w, h, { fill: disabled ? t.bgHover : bg, radius: isNaN(radius) ? 8 : radius });
-        // 按钮文本居中（flex 布局内按钮宽度由布局决定）
+        // P5-1: hover / pressed 检测（弹窗按钮；坐标命中 + Input.pressedId）
+        const btnId = 'popBtn_' + (state.buttons.length);
+        const hasPtr = typeof window !== 'undefined' && window.Input && Input._hoverX != null && Input._hoverY != null;
+        const hovered = !disabled && hasPtr && Input._hoverX >= x && Input._hoverX <= x + w && Input._hoverY >= y && Input._hoverY <= y + h;
+        const pressed = !disabled && hasPtr && Input.pressedId === btnId;
+        // DOM button:hover translateY(-1px) / :active translateY(1px)
+        const shiftY = pressed ? 1 : (hovered ? -1 : 0);
+        const yy = y + shiftY;
+        const rawBg = bgColorOf(node) || t.accent;
+        const bg = pressed ? (R.shade ? R.shade(rawBg, -0.2) : rawBg)
+            : (hovered ? (R.shade ? R.shade(rawBg, 0.14) : rawBg) : rawBg);
+        const radiusRaw = parseFloat(node.style['border-radius'] || '0');
+        const radius = isNaN(radiusRaw) ? 8 : radiusRaw;
+        // Fix13: 语义色 → 主界面按钮视觉包络（对齐 canvas.js drawButton）
+        // Fix20: data-noglow 标记的按钮（如关闭小按钮）纯平涂，无边/发光/渐变
+        var plain = node.attrs && (node.attrs['data-noglow'] === '' || node.attrs['data-noglow'] === 'true');
+        let borderColor = null, glow = null, grad = null;
+        if (!disabled && !plain) {
+            if (bg === t.accent) {
+                grad = { from: t.accent, to: t.accentDark };
+                borderColor = 'rgba(0,255,170,0.3)';
+                glow = 'rgba(0,212,170,0.3)';
+            } else if (bg === t.success) {
+                borderColor = 'rgba(0,255,170,0.3)';
+            } else if (bg === t.danger) {
+                borderColor = 'rgba(255,82,82,0.4)';
+                glow = 'rgba(255,82,82,0.3)';
+            } else if (bg === t.warning) {
+                grad = { from: t.warning, to: t.orange };
+                borderColor = 'rgba(255,183,77,0.4)';
+                glow = 'rgba(255,183,77,0.3)';
+            } else if (bg === t.purple) {
+                borderColor = 'rgba(171,71,188,0.4)';
+            } else if (bg === t.info) {
+                borderColor = 'rgba(66,165,245,0.4)';
+            } else if (bg === t.orange) {
+                borderColor = 'rgba(255,112,67,0.4)';
+            } else {
+                // Fix17: 次要按钮（bgCard/textFaint 等）——DOM 原版所有按钮统一青绿边+青绿发光
+                borderColor = 'rgba(0,255,170,0.3)';
+                glow = 'rgba(0,212,170,0.3)';
+            }
+        }
+        // P5-1: 渐变跟随 hover 提亮 / pressed 变暗
+        if (grad && R.shade) grad = hovered ? { from: R.shade(grad.from, 0.14), to: R.shade(grad.to, 0.14) } : (pressed ? { from: R.shade(grad.from, -0.2), to: R.shade(grad.to, -0.2) } : grad);
+        R.ctx.save();
+        // P5-1: 按下缩放 0.98（DOM button:active scale(.98)）
+        if (pressed) {
+            const scx = x + w / 2, scy = y + h / 2;
+            R.ctx.translate(scx, scy);
+            R.ctx.scale(0.98, 0.98);
+            R.ctx.translate(-scx, -scy);
+        }
+        if (disabled) R.ctx.globalAlpha = 0.6;
+        if (glow) {
+            R.ctx.shadowColor = glow;
+            // P5-1: hover 外发光增强（DOM hover box-shadow 0 4px 15px ≈ shadowBlur 15）
+            R.ctx.shadowBlur = hovered ? 15 : 5;
+            R.ctx.shadowOffsetY = 2;
+        }
+        R.drawRect(x, yy, w, h, {
+            fill: grad ? null : (disabled ? t.bgHover : bg),
+            gradient: grad,
+            stroke: borderColor,
+            lineWidth: 1,
+            radius: radius
+        });
+        // 顶部内高光（主界面按钮同款 inset 0 1px 0 rgba(255,255,255,0.2)）
+        if (!disabled && radius > 0) {
+            R.ctx.save();
+            R.ctx.globalAlpha = 0.2;
+            R.ctx.fillStyle = '#ffffff';
+            R.ctx.fillRect(x + 1, yy + 1, w - 2, 1);
+            R.ctx.restore();
+        }
+        R.ctx.restore();
+        // 按钮内容：收集图标 + 文本（DOM 行内流顺序），图标与文字同组水平居中垂直对齐
         const fs = fontSizeOf(node, 15);
-        const lines = buttonLines(node, w - 8, fs);
+        const btnColor = colorOf(node, '#ffffff');
+        const pieces = buttonContent(node);
+        let text = '';
+        pieces.forEach(function (p) { if (p.type === 'br') text += '\n'; else if (p.type === 'text') text += p.text; });
+        const lines = textLines({ text: text }, Math.max(8, w - 8), fs);
+        const icons = [];
+        let iconW = 0;
+        pieces.forEach(function (p) { if (p.type === 'icon') { icons.push(p.svg); iconW += svgSize(p.svg, fs).w; } });
+        const gap = (icons.length && lines[0]) ? 5 : 0;
+        const firstW = lines[0] ? btnTextW(lines[0], fs) : 0;
+        const contentW = iconW + gap + firstW;
+        const textH = Math.round(fs * 1.6);
+        let ix = x + (w - contentW) / 2;
+        // 图标：垂直居中，颜色继承按钮文字色（根治：svg 画成空心圈/缺色）
+        icons.forEach(function (s) {
+            const size = svgSize(s, fs);
+            s.style = s.style || {};
+            if (!s.style.color) s.style.color = node.style.color || '#ffffff';
+            drawSVG(s, ix, yy + h / 2 - size.h / 2, size.w, size.h);
+            ix += size.w;
+        });
+        if (icons.length && lines.length) ix += 5;
+        // 文本：首行接图标后，其余行按按钮中心居中
+        // Fix13: 文字阴影（对齐主界面 button text-shadow 0 1px 2px rgba(0,0,0,0.3)）
+        R.ctx.save();
+        if (!disabled) {
+            R.ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            R.ctx.shadowBlur = 2;
+            R.ctx.shadowOffsetY = 1;
+        }
         lines.forEach(function (ln, i) {
-            R.drawText(ln, x + w / 2, y + h / 2 - ((lines.length - 1) * Math.round(fs * 1.6)) / 2 + i * Math.round(fs * 1.6), {
-                fontSize: fs, color: colorOf(node, '#ffffff'), align: 'center', bold: true
+            if (!ln) return;
+            const lx = (i === 0) ? ix + btnTextW(ln, fs) / 2 : x + w / 2;
+            R.drawText(ln, lx, yy + h / 2 - ((lines.length - 1) * textH) / 2 + i * textH, {
+                fontSize: fs, color: btnColor, align: 'center', bold: true
             });
         });
+        R.ctx.restore();
         if (disabled) R.ctx.restore();
         // 注册点击
         const onclick = node.attrs.onclick || '';
@@ -1150,7 +1565,8 @@
         const gameObj = (typeof game !== 'undefined') ? game : null;
         if (!gameObj || typeof gameObj[method] !== 'function') return null;
         const args = argsRaw.map(function (a) {
-            if (a === '') return undefined;
+            // P8-1: event 形参转 undefined（Canvas 无 DOM 事件对象），修复套装/组合/联动/碎片 tooltip 失效
+            if (a === '' || a === 'event') return undefined;
             if (a === 'true') return true;
             if (a === 'false') return false;
             if (/^-?\d+(\.\d+)?$/.test(a)) return parseFloat(a);
@@ -1163,12 +1579,58 @@
         };
     }
 
+    // P9-1：弹窗滚动到指定 id 元素可见（图鉴展开详情/长列表定位用）。
+    // 布局基于当前缓存树（与屏幕绘制同一份），节点 y 为弹窗内容坐标（未减 popScroll）。
+    // toggle 后 html 变化触发重布局是异步的（403KB 级 html 解析耗时），因此带重试：
+    // 目标节点尚未出现在布局中（收起态 display:none 或布局未就绪）时轮询等待，最长 ~1.6s。
+    function scrollIntoView(htmlId, tries) {
+        tries = tries || 0;
+        if (!state.visible) return;
+        if (!_cacheRoot || !_cacheLayout) {
+            // 弹窗刚打开/重渲染，drawModal 尚未完成首次 parse+layout：轮询重试
+            if (tries < 20) {
+                setTimeout(function () { scrollIntoView(htmlId, tries + 1); }, 80);
+            }
+            return;
+        }
+        let target = null;
+        (function walk(n) {
+            if (target) return;
+            if (n.attrs && n.attrs.id === htmlId) { target = n; return; }
+            (n.children || []).forEach(walk);
+        })(_cacheRoot);
+        if (!target) return;
+        const item = findNode(_cacheLayout, target);
+        if (!item || !item.h || item.h < 2) {
+            if (tries < 20) {
+                setTimeout(function () { scrollIntoView(htmlId, tries + 1); }, 80);
+            }
+            return;
+        }
+        const maxW = Math.min(R.SCREEN_W * 0.92, 500);
+        const padT = 16, padB = 40;
+        const h = Math.min(_cacheLayout.height + padT + padB, Math.round(R.SCREEN_H * 0.85));
+        const viewH = h - padT - padB;
+        const viewTop = state.popScroll;
+        const nodeTop = item.y;
+        const nodeBottom = item.y + item.h;
+        let targetScroll = state.popScroll;
+        if (nodeBottom > viewTop + viewH) {
+            targetScroll = Math.max(viewTop, nodeBottom - viewH + 6);
+        } else if (nodeTop < viewTop) {
+            targetScroll = Math.max(0, nodeTop - 6);
+        }
+        targetScroll = Math.min(state.popScrollMax, Math.max(0, targetScroll));
+        if (Math.abs(targetScroll - state.popScroll) > 1) state.popScroll = targetScroll;
+    }
+
     // 弹窗层集成：ScreenManager.draw 末尾调用
     R.Popup = {
         show: show,
         close: close,
         isVisible: isVisible,
         drawModal: drawModal,
+        scrollIntoView: scrollIntoView,
         getInputValue: getInputValue,
         _parse: parseHTML,   // 临时调试
         _layout: layout
@@ -1178,6 +1640,56 @@
     //  Tooltip 悬浮提示（阶段 4）：读 game.tooltipData[key] 绘制
     // ============================================================
     const tooltipState = { key: null, data: null, x: 0, y: 0 };
+
+
+    // 悬停天赋名时构造天赋详情 tooltip（对齐 DOM bindItemTooltips → showTalentTooltip）
+    function buildTalentTooltip(tid) {
+        const g = (typeof game !== 'undefined') ? game : null;
+        if (!g || !g.data || !g.data.talents || !g.data.talents.talents) return null;
+        let t = null;
+        g.data.talents.talents.forEach(function (x) { if (x.id === tid) t = x; });
+        if (!t) return null;
+        const qn = ['', '普通', '稀有', '史诗', '传说', '神话'];
+        const qc = ['', t.success, t.info, t.purple, t.warning, t.orange];
+        const typeNames = {1: '防御系', 2: '控制/辅助系', 3: '攻击系', passive: '纯被动', passive_active: '被动+主动技能'};
+        const sections = [];
+        sections.push({ label: '品质', value: qn[t.quality] || '' });
+        sections.push({ label: '类型', value: typeNames[t.type] || String(t.type) });
+        const isUnlocked = g.permanent && g.permanent.unlockedTalents && g.permanent.unlockedTalents.indexOf(tid) >= 0;
+        // 等级恒显（未解锁 0/x 级；已解锁实际等级）——P7-1 补全 tooltip 值
+        {
+            const lv = (isUnlocked && typeof g.getTalentLevel === 'function') ? g.getTalentLevel(tid) : 0;
+            sections.push({ label: '等级', value: lv + '/' + (t.maxLevel || 5) + '级' + (isUnlocked && g.player && g.player.equippedTalents && g.player.equippedTalents.indexOf(tid) >= 0 ? ' [已装备]' : '') });
+        }
+        let eff = '';
+        if (isUnlocked) { try { const e = g.getTalentEffect(tid); if (e) eff = e.passive || ''; } catch (e2) {} }
+        if (!eff && t.effects && t.effects.length > 0) eff = t.effects[0].passive || '';
+        sections.push({ label: '效果', value: eff || '暂无效果描述' });
+        // 解锁条件（未解锁时，对齐 DOM showTalentTooltip）
+        if (!isUnlocked) {
+            const cost = t.unlockCost || { fragQuality: t.quality, fragCount: 10 };
+            const talentTag = (t.tags && t.tags.length > 0) ? t.tags[0] : 1;
+            const tagName = g.tagNames ? (g.tagNames[talentTag] || ('标签' + talentTag)) : ('标签' + talentTag);
+            let ex = 0, un = 0;
+            if (g.permanent && g.permanent.tagFragments && g.permanent.tagFragments[talentTag]) ex = g.permanent.tagFragments[talentTag][cost.fragQuality] || 0;
+            if (g.permanent && g.permanent.universalFragments) un = g.permanent.universalFragments[cost.fragQuality] || 0;
+            let ut = cost.fragCount + '个【' + tagName + '】' + qn[cost.fragQuality] + '碎片（专属' + ex + '，万能' + un + '）';
+            if (cost.bossCore) ut += ' + 1个对应首领核心';
+            sections.push({ label: '解锁条件', value: ut });
+        }
+        // 进化路线（对齐 DOM advanceTo）
+        if (t.advanceTo) {
+            let nt = null;
+            g.data.talents.talents.forEach(function (x) { if (x.id === t.advanceTo) nt = x; });
+            if (nt) sections.push({ label: '进化路线', value: '可进化为：' + nt.name + '（' + qn[nt.quality] + '）' });
+        }
+        // 融合配方（对齐 DOM isFusion/fusionRecipe）
+        if (t.isFusion && t.fusionRecipe) {
+            const names = t.fusionRecipe.map(function (id) { let x = null; g.data.talents.talents.forEach(function (y) { if (y.id === id) x = y; }); return x ? x.name : '未知天赋'; }).join(' + ');
+            sections.push({ label: '融合配方', value: '融合配方：' + names + '（均需5级）' });
+        }
+        return { title: t.name, titleColor: qc[t.quality] || null, sections: sections };
+    }
 
     function showTooltip(dataKeyOrObj) {
         const gameObj = (typeof game !== 'undefined') ? game : null;
@@ -1189,8 +1701,15 @@
         if (typeof dataKeyOrObj === 'string' && tooltipState.key === dataKeyOrObj) { hideTooltip(); return; }
         tooltipState.key = typeof dataKeyOrObj === 'string' ? dataKeyOrObj : ('_obj_' + String(data.title || '').slice(0, 20));
         tooltipState.data = data;
-        tooltipState.x = R.SCREEN_W / 2;
-        tooltipState.y = Math.max(90, R.SCREEN_H / 2 - 60);
+        // P1-F：tooltip 跟随触发元素（最近一次 onTap 的按钮中心），元素下方 +8px；无锚点回退屏幕居中
+        const anchor = (typeof window !== 'undefined' && window.Input && window.Input.getLastTapAnchor) ? window.Input.getLastTapAnchor() : null;
+        if (anchor && isFinite(anchor.x) && isFinite(anchor.y)) {
+            tooltipState.x = anchor.x;
+            tooltipState.y = anchor.y + 8;
+        } else {
+            tooltipState.x = R.SCREEN_W / 2;
+            tooltipState.y = Math.max(90, R.SCREEN_H / 2 - 60);
+        }
     }
 
     function hideTooltip() {
@@ -1217,43 +1736,77 @@
         const data = tooltipState.data;
         if (!data || !R.ctx) return;
         const t = R.Theme.get();
-        const maxW = Math.min(R.SCREEN_W - 40, 330);
+        const maxW = Math.min(R.SCREEN_W - 40, 360);
         // 计算内容行
         const rows = [];
-        if (data.title) rows.push({ text: cleanTitleText(data.title), fs: 14, color: t.warning, bold: true });
+        if (data.title) rows.push({ text: cleanTitleText(data.title), fs: 14, color: data.titleColor || t.warning, bold: true });
         if (data.sections) {
             data.sections.forEach(function (sec) {
-                if (sec.label) rows.push({ text: String(sec.label), fs: 12, color: t.textSecondary, bold: true });
-                if (sec.value) rows.push({ text: String(sec.value), fs: 12, color: t.textSecondary, bold: false });
+                if (sec.label && sec.value) rows.push({ twoCol: true, label: String(sec.label), value: String(sec.value), fs: 13 });
+                else if (sec.label) rows.push({ text: String(sec.label), fs: 13, color: t.textSecondary, bold: true });
+                else if (sec.value) rows.push({ text: String(sec.value), fs: 13, color: t.textSecondary, bold: false });
             });
         }
-        if (data.desc) rows.push({ text: String(data.desc), fs: 12, color: t.textMuted, bold: false });
+        if (data.desc) rows.push({ text: String(data.desc), fs: 13, color: t.textMuted, bold: false });
         if (!rows.length) return;
 
         // 布局
         const lineH = 20;
         let totalH = 16;
-        rows.forEach(function (r) {
-            const lines = R.wrapText(r.text, maxW - 24, r.fs, r.bold);
-            totalH += lines.length * lineH;
+        rows.forEach(function (r, ri) {
+            if (r.twoCol) {
+                const vlines = R.wrapText(r.value, maxW - 28, r.fs, false);
+                totalH += lineH + vlines.length * lineH;
+            } else {
+                const lines = R.wrapText(r.text, maxW - 28, r.fs, r.bold);
+                totalH += lines.length * lineH + (ri === 0 && r.bold ? 5 : 0);
+            }
         });
-        const x = (R.SCREEN_W - maxW) / 2;
-        let y = tooltipState.y - totalH / 2;
-        if (y < 60) y = 60;
-        if (y + totalH > R.SCREEN_H - 20) y = R.SCREEN_H - totalH - 20;
+        // P1-F：tooltip 定位跟随锚点（水平居中于触发元素，贴左右边缘 clamp；垂直在元素下方，底部贴边时上翻）
+        let x = tooltipState.x - maxW / 2;
+        if (x < 8) x = 8;
+        if (x + maxW > R.SCREEN_W - 8) x = R.SCREEN_W - maxW - 8;
+        let y = tooltipState.y;
+        // P8-2：避开覆盖 canvas 的底部 DOM 导航层（约 55px）——tooltip 底部超出安全区下缘时上翻到触发元素上方，
+        // 避免长 tooltip（如碎片各体系明细）后段被 DOM 导航遮挡（canvas z-index 0 < DOM 导航）
+        const navSafeBottom = R.SCREEN_H - 62;
+        if (y + totalH > navSafeBottom) {
+            y = Math.max(8, tooltipState.y - totalH - 16);
+        }
+        if (y < 8) y = 8;
 
-        // 背景
-        R.ctx.globalAlpha = 0.92;
-        R.drawRect(x, y, maxW, totalH, { fill: t.bgCard, radius: 10, stroke: t.borderSoft });
+        // 背景（DOM .tooltip-box: rgba(20,20,40,.98) + 1px accent-warning 橙边 + 8px 圆角）
+        R.ctx.globalAlpha = 0.98;
+        R.drawRect(x, y, maxW, totalH, { fill: 'rgba(20,20,40,0.98)', radius: 8, stroke: t.warning });
         R.ctx.globalAlpha = 1;
 
-        let iy = y + 10;
-        rows.forEach(function (r) {
-            const lines = R.wrapText(r.text, maxW - 24, r.fs, r.bold);
-            lines.forEach(function (ln) {
-                R.drawText(ln, x + 12, iy, { fontSize: r.fs, color: r.color, bold: r.bold });
+        let iy = y + 12;
+        rows.forEach(function (r, ri) {
+            if (r.twoCol) {
+                // 对齐 DOM 参考图：section 标签单独一行（橙色小字 bold），值在下一行（白色正文）
+                R.drawText(r.label, x + 14, iy, { fontSize: r.fs, color: t.warning, bold: true });
                 iy += lineH;
-            });
+                const vlines = R.wrapText(r.value, maxW - 28, r.fs, false);
+                vlines.forEach(function (ln, li) {
+                    R.drawText(ln, x + 14, iy + li * lineH, { fontSize: r.fs, color: t.textPrimary, bold: false });
+                });
+                iy += vlines.length * lineH;
+            } else {
+                const lines = R.wrapText(r.text, maxW - 28, r.fs, r.bold);
+                lines.forEach(function (ln) {
+                    R.drawText(ln, x + 14, iy, { fontSize: r.fs, color: r.color, bold: r.bold });
+                    iy += lineH;
+                });
+            }
+            // DOM .tooltip-title border-bottom: 1px solid rgba(255,213,79,.3)（标题行下方分隔线）
+            if (ri === 0 && r.bold && iy + 4 < y + totalH - 2) {
+                R.ctx.save();
+                R.ctx.globalAlpha = 0.3;
+                R.ctx.fillStyle = '#ffd54f';
+                R.ctx.fillRect(x + 14, iy + 1, maxW - 28, 1);
+                R.ctx.restore();
+                iy += 5;
+            }
         });
     }
 

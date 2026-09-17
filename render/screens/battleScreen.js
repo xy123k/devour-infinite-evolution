@@ -21,7 +21,8 @@
     }
 
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
     }
 
     function stripHtml(s) {
@@ -62,7 +63,10 @@
             else if (e.stats.hp !== _lastEnemyHp) {
                 const d = e.stats.hp - _lastEnemyHp;
                 if (d !== 0) {
-                    _floats.push({ x: PX + MAX_W - 24, y: 112, text: (d > 0 ? '+' : '') + d, color: d > 0 ? t.success : t.danger, t0: now });
+                    // P1-H：敌人 HP 变化 = 玩家打出的伤害，暴击标记取 _lastPlayerHitCrit
+                    const crit = !!(game._lastPlayerHitCrit);
+                    game._lastPlayerHitCrit = false;
+                    _floats.push({ x: PX + MAX_W - 24, y: 112, text: (d > 0 ? '+' : '') + d, color: d > 0 ? t.success : t.danger, t0: now, crit: crit });
                 }
                 _lastEnemyHp = e.stats.hp;
             }
@@ -73,7 +77,10 @@
             else if (p.hp !== _lastPlayerHp) {
                 const d = p.hp - _lastPlayerHp;
                 if (d !== 0) {
-                    _floats.push({ x: PX + MAX_W - 24, y: 396, text: (d > 0 ? '+' : '') + d, color: d > 0 ? t.success : t.danger, t0: now });
+                    // P1-H：玩家 HP 变化 = 敌人打出的伤害，暴击标记取 _lastEnemyHitCrit
+                    const crit = !!(game._lastEnemyHitCrit);
+                    game._lastEnemyHitCrit = false;
+                    _floats.push({ x: PX + MAX_W - 24, y: 396, text: (d > 0 ? '+' : '') + d, color: d > 0 ? t.success : t.danger, t0: now, crit: crit });
                 }
                 _lastPlayerHp = p.hp;
             }
@@ -86,9 +93,18 @@
         _floats.forEach(function (f) {
             const age = (now - f.t0) / 1200;
             if (age >= 1) return;
+            // P1-H：普通 24px，暴击 32px 金黄 #ffd93d；ease-out 上浮 + 弹跳缩放（0.5 倍时最大 1.2 倍）
+            const easeOutCubic = function (a) { const v = 1 - a; return 1 - v * v * v; };
+            const fy = f.y - 60 * easeOutCubic(age);
+            const scale = 1 + 0.2 * Math.sin(Math.PI * age);
+            const fs = f.crit ? 32 : 24;
+            const col = f.crit ? '#ffd93d' : f.color;
+            R.ctx.save();
             R.ctx.globalAlpha = 1 - age;
-            R.drawText(f.text, f.x, f.y - 34 * age, { fontSize: 18, color: f.color, align: 'right', bold: true });
-            R.ctx.globalAlpha = 1;
+            R.ctx.translate(f.x, fy);
+            R.ctx.scale(scale, scale);
+            R.drawText(f.text, 0, 0, { fontSize: fs, color: col, align: 'right', bold: true });
+            R.ctx.restore();
         });
     }
 
@@ -101,17 +117,20 @@
         const p = game.player;
         const h = 46;
         const items = [
-            { icon: '❤', value: p.hp + '/' + p.maxHp, color: t.danger },
-            { icon: '⚡', value: p.energy + '/' + p.maxEnergy, color: t.info },
-            { icon: '🗺', value: (game.currentFloor || 1) + '-' + (game.currentLayer || 1) + '层', color: t.warning }
+            { icon: 'heart', value: p.hp + '/' + p.maxHp, color: t.danger },
+            { icon: 'bolt', value: p.energy + '/' + p.maxEnergy, color: t.info },
+            { icon: 'map', value: (game.currentFloor || 1) + '-' + (game.currentLayer || 1) + '层', color: t.warning }
         ];
         box(PX, 0, MAX_W, h, t.bgCard, 0);
         R.drawRect(PX, h - 1, MAX_W, 1, { fill: t.borderSoft });
+        // P1-G：三等分布局改左排 gap 4px（参考 DOM .top-bar-item flex gap:4px），图标 SVG 18px，数值金色 14px bold
         const itemW = MAX_W / items.length;
         items.forEach(function (it, i) {
             const ix = PX + i * itemW;
-            R.drawText(it.icon, ix + itemW / 2, 14, { fontSize: 15, color: it.color, align: 'center', bold: true });
-            R.drawText(String(it.value), ix + itemW / 2, 31, { fontSize: 12, color: t.textPrimary, align: 'center', bold: true });
+            const cx = ix + 8;
+            if (typeof R.drawIcon === 'function') R.drawIcon(it.icon, cx, 14, 18, it.color);
+            else R.drawText(it.icon, cx + 9, 14, { fontSize: 15, color: it.color, align: 'center', bold: true });
+            R.drawText(String(it.value), cx + 26, 20, { fontSize: 14, color: t.warning, bold: true });
         });
     }
 
@@ -195,7 +214,9 @@
         const maxRows = Math.floor((LOG_H - 26) / 13);
         let yy = y + 26;
         let drawn = 0;
-        for (let i = 0; i < logs.length && drawn < maxRows; i++) {
+        // P0-1：从尾部取最新 maxRows 条（窗口内自然顺序绘制，最新落底部，与 DOM appendChild+scrollTop 一致）
+        const start = Math.max(0, logs.length - maxRows);
+        for (let i = start; i < logs.length && drawn < maxRows; i++) {
             const l = logs[i];
             const text = stripHtml(l.text);
             const lines = R.wrapText(text, w - 20, 11, false);

@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 //  render/screens/talentScreen.js — 阶段 3：天赋界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
@@ -19,7 +19,8 @@
     }
 
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
     }
 
     function stripHtml(s) {
@@ -68,12 +69,12 @@
         const aa = game.getActiveSlotAutoProgress ? game.getActiveSlotAutoProgress() : { autoSlots: 0, maxAutoSlots: 2, level: 1, nextLevel: 25, remainingToNext: 24, isMaxAuto: false };
         const am = game.getActiveSlotManualProgress ? game.getActiveSlotManualProgress() : { manualSlots: 0, maxManualSlots: 1, cost: 0, essence: 0, canAfford: false, isMaxManual: false };
         // 资源区（DOM：bg-card y215-238 h23，☆天赋点）
-        R.drawRect(x, y, w, 23, { fill: t.bgCard, radius: 8 });
+        R.drawRect(x, y, w, 23, { fill: t.bgCard, radius: 8, stroke: t.border, strokeWidth: 1 });
         R.drawIcon('star', x + 14, y + 2, 13, t.warning);
-        R.drawText(' 天赋点：' + (game.permanent.talentPoints || 0), x + 30, y + 17, { fontSize: 13, color: t.warning, bold: true });
+        R.drawText(' 天赋点：' + (game.permanent.talentPoints || 0), x + 30, y + 11, { fontSize: 13, color: t.warning, bold: true, baseline: 'middle' });
         // 天赋槽（被动）扩充区（DOM：bg-secondary y239-368 h129, border-left 3px success）
         const y2 = y + 24;
-        R.drawRect(x, y2, w, 129, { fill: t.bgSecondary, radius: 8 });
+        R.drawRect(x, y2, w, 129, { fill: t.bgSecondary, radius: 10, stroke: t.border, strokeWidth: 1 });
         R.drawRect(x, y2, 3, 129, { fill: t.success, radius: 1.5 });
         R.drawIcon('heart', x + 8, y2 + 8, 13, t.success);
         R.drawText('天赋槽（被动）：' + equipped.length + '/' + passiveSlots, x + 21, y2 + 23, { fontSize: 13, color: t.success, bold: true });
@@ -96,7 +97,7 @@
         }
         // 技能槽（主动）区（DOM：bg-secondary y410-515 h105, border-left 3px info）
         const y3 = y2 + 129 + 8;
-        R.drawRect(x, y3, w, 105, { fill: t.bgSecondary, radius: 8 });
+        R.drawRect(x, y3, w, 105, { fill: t.bgSecondary, radius: 10, stroke: t.border, strokeWidth: 1 });
         R.drawRect(x, y3, 3, 105, { fill: t.info, radius: 1.5 });
         R.drawIcon('bolt', x + 8, y3 - 20, 13, t.info);
         R.drawText('技能槽（主动）：' + as + '/6（可扩充）', x + 21, y3 - 5, { fontSize: 13, color: t.info, bold: true });
@@ -106,7 +107,7 @@
         } else {
             R.drawText('自动扩充：当前等级' + aa.level + ' / ' + aa.nextLevel + '（再升' + aa.remainingToNext + '级+1槽，上限' + aa.maxAutoSlots + '）', x + 8, y3 + 20, { fontSize: 11, color: t.textMuted, maxWidth: w - 22 });
         }
-        R.drawText('默认3个基础技能不占槽，始终可用', x + 8, y3 + 25, { fontSize: 11, color: t.warning });
+        R.drawText('默认3个基础技能不占槽，始终可用', x + 8, y3 + 90, { fontSize: 11, color: t.warning });
         if (am.isMaxManual) {
             R.drawRect(x, y3 + 46, w, 40, { fill: t.bgPrimary, radius: 4 });
             R.drawText('手动扩充已达上限（' + am.manualSlots + '/' + am.maxManualSlots + '）', x + w / 2, y3 + 62, { fontSize: 12, color: t.textFaint, align: 'center' });
@@ -129,7 +130,7 @@
         const equipped = game.player.equippedTalents || [];
         const all = game.data.talents ? game.data.talents.talents : [];
         const passiveSlots = game.getPassiveSlots ? game.getPassiveSlots() : 0;
-        R.drawRect(x, y, w, 93, { fill: t.bgSecondary, radius: 8 });
+        R.drawRect(x, y, w, 93, { fill: t.bgSecondary, radius: 10, stroke: t.border, strokeWidth: 1 });
         R.drawRect(x, y, 3, 93, { fill: t.success, radius: 1.5 });
         R.drawText('已装备天赋（' + equipped.length + '/' + passiveSlots + '）', x + 14, y + 28, { fontSize: 13, color: t.success, bold: true });
         R.drawText('点击天赋卡片上的"装备/卸下"按钮可快速更换', x + w - 14, y + 28, { fontSize: 11, color: t.textFaint, align: 'right', maxWidth: w - 230 });
@@ -157,6 +158,40 @@
         return y + 93 + 12;
     }
 
+    // 天赋卡底部三行：套装/组合/联动（对齐 DOM 装备标签页 setProgressHtml；Canvas 版补齐在卡片底部）
+    function buildSetLines(game, tl, th) {
+        const lines = [];
+        try {
+            const sp = game.getTalentSetProgress ? game.getTalentSetProgress() : null;
+            if (!sp || !tl.tags || !tl.tags.length) return lines;
+            const myTagSet = {};
+            tl.tags.forEach(function (tagId) { myTagSet[tagId] = true; });
+            tl.tags.forEach(function (tagId) {
+                const setInfo = sp.sets.find(function (s) { return s.tag === tagId; });
+                if (setInfo && setInfo.count > 0) {
+                    const nextThreshold = setInfo.allThresholds.find(function (th2) { return th2.count > setInfo.count; });
+                    const progressText = nextThreshold
+                        ? setInfo.count + '/' + nextThreshold.count + '件,还差' + (nextThreshold.count - setInfo.count) + '件触发'
+                        : setInfo.count + '件,已满级';
+                    lines.push({ type: 'set', text: '套装: ' + setInfo.name + '(' + progressText + ')', active: setInfo.activeThresholds.length > 0 });
+                }
+            });
+            sp.crossSets.forEach(function (cross) {
+                if (!cross.requires.some(function (r) { return myTagSet[r]; })) return;
+                const relatedEquipped = cross.requires.some(function (r) { return (sp.tagCounts[r] || 0) > 0; });
+                if (!relatedEquipped) return;
+                lines.push({ type: 'cross', text: '组合: ' + cross.name + (cross.active ? '(已激活)' : '(未激活)'), active: cross.active });
+            });
+            sp.combos.forEach(function (combo) {
+                if (!combo.requires.some(function (r) { return myTagSet[r]; })) return;
+                const relatedEquipped = combo.requires.some(function (r) { return (sp.tagCounts[r] || 0) > 0; }) || combo.symEquipped;
+                if (!relatedEquipped) return;
+                lines.push({ type: 'combo', text: '联动: ' + combo.name + (combo.active ? '(已激活)' : '(未激活)'), active: combo.active });
+            });
+        } catch (e) {}
+        return lines;
+    }
+
     // 天赋卡
     function drawTalentCard(game, tl, th, y, mode) {
         const unlocked = (game.permanent.unlockedTalents || []).indexOf(tl.id) >= 0;
@@ -175,14 +210,29 @@
 
         const x = PX + 12, w = MAX_W - 24;
         const title = '[' + QNAMES[tl.quality || 1] + '] ' + tl.name + (unlocked ? ('  ' + lv + '/' + maxLv + '级') : '') + (equipped ? '  [已装备]' : '');
-        const lines = R.wrapText(effText || '（无效果描述）', w - 24, 11, false).slice(0, 2);
-        const cardH = 58 + lines.length * 14;
-        box(x, y, w, cardH, th.bgSecondary, 8);
-        R.drawRect(x, y, 3, cardH, { fill: qc, radius: 1.5 });
-        R.drawText(title, x + 10, y + 12, { fontSize: 13, color: th.textPrimary, bold: true, maxWidth: w - 120 });
-        let iy = y + 32;
+        const lines = R.wrapText(effText || '（无效果描述）', w - 48, 11, false).slice(0, 2);
+        const setLines = buildSetLines(game, tl, th);
+        // 卡片高度固定（不随滚动变化，P7-3）：上 padding12 + 标题行14 + 效果行 + 套装/组合/联动行 + 下 padding10
+        const cardH = 36 + lines.length * 14 + setLines.length * 14 + 10;
+        // 滚动裁剪（P7-2）：整卡完全超出可视区则不绘制（按钮也随卡隐藏，避免拦截下层点击）
+        if (y + cardH < _scrollY || y > _scrollY + R.SCREEN_H) return cardH + 10;
+        // 悬停反馈（P7-1：背景提亮 10% + 边框发光 + 上移 1px）
+        const hovered = !!(window.Input && typeof Input._hoverX === 'number'
+            && Input._hoverX >= x && Input._hoverX <= x + w
+            && Input._hoverY >= y - _scrollY && Input._hoverY <= y - _scrollY + cardH);
+        const cy = y + (hovered ? -1 : 0);
+        // 卡片：bg-card 底 + 1px #2a3a4a 边框 + 8px 圆角 + 12px padding + margin-bottom 10px（对齐 DOM talent-card）
+        box(x, cy, w, cardH, th.bgCard, 8);
+        R.drawRect(x, cy, 3, cardH, { fill: qc, radius: 1.5 });
+        R.drawText(title, x + 12, cy + 14, { fontSize: 13, color: th.textPrimary, bold: true, maxWidth: w - 130 });
+        let iy = cy + 34;
         lines.forEach(function (ln) {
-            R.drawText(ln, x + 10, iy, { fontSize: 11, color: th.textFaint, maxWidth: w - 24 });
+            R.drawText(ln, x + 12, iy, { fontSize: 11, color: th.textFaint, maxWidth: w - 48 });
+            iy += 14;
+        });
+        // 套装/组合/联动三行
+        setLines.forEach(function (sl) {
+            R.drawText(sl.text, x + 12, iy, { fontSize: 10, color: sl.active ? th.success : th.textMuted, maxWidth: w - 130 });
             iy += 14;
         });
         // 操作按钮
@@ -193,7 +243,7 @@
                 const tag = (tl.tags && tl.tags.length > 0) ? tl.tags[0] : 1;
                 const frag = game.getTagFragmentCount ? game.getTagFragmentCount(tag, cost.fragQuality) : 0;
                 btnText = '解锁（' + cost.fragCount + '碎片）';
-                btnBg = th.purple;
+                btnBg = th.accent;   // 青绿渐变（对齐 DOM 默认按钮 accent 渐变）
                 disabled = frag < cost.fragCount;
                 onTap = function () { try { game.unlockTalentAndRefresh(tl.id); } catch (e) {} };
             } else if (lv < maxLv) {
@@ -225,12 +275,21 @@
         }
         if (btnText) {
             R.drawButton({
-                id: 'talentOp_' + tl.id + '_' + mode, x: x + w - 118, y: y + cardH / 2 - 15, w: 108, h: 30,
+                id: 'talentOp_' + tl.id + '_' + mode, x: x + w - 118, y: cy + 10, w: 108, h: 30,
                 text: btnText, fontSize: 11, bg: disabled ? th.textFaint : btnBg, color: '#ffffff',
                 disabled: disabled, onTap: onTap
             });
         }
-        return cardH + 6;
+        // hover：背景提亮 + 边框发光（P7-1）
+        if (hovered) {
+            R.drawRect(x, cy, w, cardH, {
+                fill: 'rgba(255,255,255,0.07)',
+                stroke: th.accent,
+                lineWidth: 1.4,
+                radius: 8
+            });
+        }
+        return cardH + 10;
     }
 
     // 天赋列表
@@ -263,7 +322,7 @@
         y += 36;
         // 说明框（DOM：轮回开始时将自动装备【默认】预构筑的天赋...）
         const hint = '轮回开始时将自动装备【默认】预构筑的天赋（未标记默认则用第一套）。预构筑数量不限，可自由命名。';
-        R.drawRect(x, y, w, 36, { fill: t.bgSecondary, radius: 6 });
+        R.drawRect(x, y, w, 36, { fill: t.bgSecondary, radius: 6, stroke: t.border, strokeWidth: 1 });
         R.drawText(hint, x + 8, y + 9, { fontSize: 11, color: t.textMuted, maxWidth: w - 16, lineHeight: 16 });
         y += 44;
         if (!presets.length) {
@@ -379,7 +438,7 @@
         const game = g();
         const t = R.Theme.get();
         const x = PX + 12, w = MAX_W - 24;
-        R.drawText('🔷 当前碎片（点击品质查看体系详情）', x, y + 4, { fontSize: 11, color: t.textMuted });
+        R.drawText('🔷 当前碎片（点击品质查看系统详情）', x, y + 4, { fontSize: 11, color: t.textMuted });
         let exclusive = {};
         if (game.permanent && game.permanent.tagFragments) {
             for (let tag in game.permanent.tagFragments) {
@@ -393,8 +452,16 @@
             const qc = game.qualityColors ? (game.qualityColors[q] || t.textSecondary) : t.textSecondary;
             const qn = game.qualityNames ? game.qualityNames[q] : ('Q' + q);
             const txt = qn + '：' + (exclusive[q] || 0);
+            const tw = (R.ctx.measureText ? R.ctx.measureText(txt).width : txt.length * 12);
             R.drawText(txt, cx, y + 62, { fontSize: 12, color: qc });
-            cx += (R.ctx.measureText ? R.ctx.measureText(txt).width : txt.length * 12) + 12;
+            // P8-1：点击品质数字 → 弹各体系专属碎片 tooltip（Canvas tooltip）
+            if (window.Input && Input.registerButton) {
+                Input.registerButton({
+                    id: 'fragQ_' + q, x: cx, y: y + 50, w: tw, h: 16,
+                    disabled: false, onTap: (function (qq) { return function () { try { game.showQualityFragmentTooltip(null, qq); } catch (e) {} }; })(q)
+                });
+            }
+            cx += tw + 12;
         }
         R.drawText('万能碎片：', x, y + 88, { fontSize: 11, color: t.info });
         cx = x + (R.ctx.measureText ? R.ctx.measureText('万能碎片：').width : 60);
@@ -406,7 +473,7 @@
             R.drawText(txt, cx, y + 88, { fontSize: 11, color: qc });
             cx += (R.ctx.measureText ? R.ctx.measureText(txt).width : txt.length * 12) + 8;
         }
-        R.drawText('鼠标悬浮在品质上查看各体系专属碎片数量；专属碎片只能用于对应体系', x - 2, y + 114, { fontSize: 11, color: t.textFaint });
+        R.drawText('点击品质数字查看各体系专属碎片数量；专属碎片只能用于对应体系，万能碎片可用于任意体系', x - 2, y + 114, { fontSize: 11, color: t.textFaint });
         return y + 114;
     }
 

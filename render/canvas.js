@@ -257,7 +257,7 @@
     // ---- 文本测量与换行 ----
     let _fontCache = '';
     function setFont(fontSize, bold) {
-        const f = (bold ? 'bold ' : '') + fontSize + 'px "Microsoft YaHei","Segoe UI",sans-serif';
+        const f = (bold ? 'bold ' : '') + fontSize + 'px "ZCOOL XiaoWei","Noto Serif SC","PingFang SC","Microsoft YaHei",serif';
         if (f !== _fontCache) {
             ctx.font = f;
             _fontCache = f;
@@ -500,6 +500,9 @@
                 : (hovered ? shade(opt.bg || t.accent, 0.14) : (opt.bg || t.accent)));
         const color = opt.disabled ? (opt.colorDisabled || '#ffffff') : (opt.color || '#ffffff');
         const radius = opt.radius == null ? 8 : opt.radius;
+        // P5-1: hover 上移 1px / 按下下移 1px（DOM button:hover translateY(-1px); :active translateY(1px)）
+        const hoverShift = pressed ? 1 : (hovered ? -1 : 0);
+        const oy = opt.y + hoverShift;
 
         // DOM 按钮渐变映射：默认按钮 = accent 135° 渐变；.btn-warn = warning→orange 渐变；其余纯色
         // DOM index.html button 全局样式：1px rgba(0,255,170,.3) 边框 + box-shadow 0 2px 10px rgba(0,212,170,.3)
@@ -540,15 +543,23 @@
         }
 
         ctx.save();
+        // P5-1: 按下缩放 0.98（DOM button:active transform: translateY(1px) scale(.98)）
+        if (pressed) {
+            const scx = opt.x + opt.w / 2, scy = opt.y + opt.h / 2;
+            ctx.translate(scx, scy);
+            ctx.scale(0.98, 0.98);
+            ctx.translate(-scx, -scy);
+        }
         // DOM button:disabled {background:var(--bg-hover);opacity:0.6}
         if (opt.disabled) ctx.globalAlpha = 0.6;
         if (glow) {
             // DOM box-shadow 0 2px 10px：CSS blur 10 ≈ canvas shadowBlur 5（高斯半径一半）
             ctx.shadowColor = glow;
-            ctx.shadowBlur = 5;
+            // P5-1: hover 外发光增强（DOM button:hover box-shadow 0 4px 15px ≈ shadowBlur 15）
+            ctx.shadowBlur = hovered ? 15 : 5;
             ctx.shadowOffsetY = 2;
         }
-        drawRect(opt.x, opt.y, opt.w, opt.h, {
+        drawRect(opt.x, oy, opt.w, opt.h, {
             fill: gradient ? null : bg,
             gradient: gradient,
             stroke: opt.border === false ? null : (opt.border || borderColor),
@@ -559,7 +570,7 @@
         if (!opt.disabled && opt.inset !== false && radius > 0) {
             ctx.save();
             ctx.globalAlpha = 0.2;
-            roundRectPath(ctx, opt.x + 1, opt.y + 1, opt.w - 2, 1, Math.min(radius, 1));
+            roundRectPath(ctx, opt.x + 1, oy + 1, opt.w - 2, 1, Math.min(radius, 1));
             ctx.fillStyle = '#ffffff';
             ctx.fill();
             ctx.restore();
@@ -589,19 +600,19 @@
                 textAlign = 'left';
             }
             if (opt.subText) {
-                drawText(opt.text, textX, opt.y + opt.h / 2 - (opt.fontSize || 15) * 0.45, {
+                drawText(opt.text, textX, oy + opt.h / 2 - (opt.fontSize || 15) * 0.45, {
                     fontSize: fs, color: color, align: textAlign, baseline: 'middle', bold: true
                 });
-                drawText(opt.subText, textX, opt.y + opt.h / 2 + (opt.fontSize || 15) * 0.55, {
+                drawText(opt.subText, textX, oy + opt.h / 2 + (opt.fontSize || 15) * 0.55, {
                     fontSize: Math.max(10, fs - 3), color: color, align: textAlign, baseline: 'middle'
                 });
             } else {
-                drawText(opt.text, textX, opt.y + opt.h / 2, {
+                drawText(opt.text, textX, oy + opt.h / 2, {
                     fontSize: fs, color: color, align: textAlign, baseline: 'middle', bold: true
                 });
             }
             if (iconX != null) {
-                drawIcon(opt.icon, iconX, opt.y + (opt.h - iconSize) / 2, iconSize, color);
+                drawIcon(opt.icon, iconX, oy + (opt.h - iconSize) / 2, iconSize, color);
             }
             ctx.restore();
         }
@@ -804,7 +815,13 @@
             const colored = svg
                 .replace(/currentColor/g, color || '#ffffff')
                 .replace(/<svg /, '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" ');
-            img = new Image();
+            // P5-3: TapTap no global Image -> tt.createImage(); browser fallback new Image()
+            img = null;
+            try {
+                if (typeof tt !== 'undefined' && tt.createImage) img = tt.createImage();
+                else if (typeof Image !== 'undefined') img = new Image();
+            } catch (e) {}
+            if (!img) return false;
             img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(colored);
             iconCache.set(key, img);
         }

@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 //  render/screens/deathScreen.js — 阶段 4：死亡结算界面 Canvas 化
 //  《吞噬·无限进化》
 //  依赖：render/canvas.js、render/input.js、render/screen.js
@@ -18,7 +18,8 @@
     }
 
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
     }
 
     function stripHtml(s) {
@@ -61,6 +62,11 @@
         box(x, y, w, 36, t.bgCard, 8);
         R.drawText('本次轮回成绩', x + 8, y + 11, { fontSize: 13, color: t.textPrimary, bold: true });
         y += 44;
+        // P1-D：背景叙事 3 行（DOM 版文案，textMuted 12px），后续数据行 y 坐标顺延
+        R.drawText('你的身体崩溃了。', x, y + 2, { fontSize: 12, color: t.textMuted });
+        R.drawText('但基因记住了一切。', x, y + 20, { fontSize: 12, color: t.textMuted });
+        R.drawText('在虚无中，你重新开始——这一次，你比上次多知道了一点。', x, y + 38, { fontSize: 12, color: t.textMuted });
+        y += 52;
         const stats = [
             ['轮回难度/奖励加成', '难度 ×' + game.getReincarnationDifficulty().toFixed(2) + ' · 奖励 ×' + game.getGrowthMult().toFixed(2)],
             ['到达层数', '第 ' + game.currentFloor + ' 层'],

@@ -19,10 +19,11 @@
     }
 
     function box(x, y, w, h, fill, radius) {
+        const t = R.Theme.get();
         // DOM .box 背景为 linear-gradient(145deg, rgba(18,30,40,.85), rgba(12,22,30,.9))
         // 用 canvas 对角渐变近似（135deg），底色先垫深色再叠渐变避免半透明露出 canvas 底
         const g = { from: 'rgba(18,30,40,0.85)', to: 'rgba(12,22,30,0.9)' };
-        R.drawRect(x, y, w, h, { fill: 'rgba(10,14,23,1)', radius: radius == null ? 10 : radius, gradient: g });
+        R.drawRect(x, y, w, h, { fill: 'rgba(10,14,23,1)', radius: radius == null ? 10 : radius, gradient: g, stroke: t.border, strokeWidth: 1 });
     }
 
     const QNAMES = ['', '普通', '稀有', '史诗', '传说', '神话'];
@@ -47,7 +48,8 @@
         // ===== box1 前世记忆（DOM y91 h366）=====
         let y = 91;
         box(x, y, w, 366, t.bgCard, 10);
-        R.drawText('前世记忆', x + 8, y + 15, { fontSize: 17, color: t.textPrimary, bold: true });
+        R.drawRect(x + 8, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('前世记忆', x + 22, y + 15, { fontSize: 16, color: t.accent, bold: true });
         try {
             window.Input.registerButton({ id: 'growFreePoints', x: x + MAX_W / 2 - 80, y: y + 2, w: 160, h: 32, onTap: function () { try { game.showTooltip('freePoints'); } catch (e) {} } });
         } catch (e) {}
@@ -87,7 +89,8 @@
         // ===== box2 进化残留强化（DOM y467）=====
         y = 467;
         box(x, y, w, 720, t.bgCard, 10);
-        R.drawText('◆ 进化残留强化', x + 8, y + 15, { fontSize: 17, color: t.textPrimary, bold: true });
+        R.drawRect(x, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('进化残留强化', x + 22, y + 15, { fontSize: 16, color: t.accent, bold: true });
         try {
             window.Input.registerButton({ id: 'growEssence', x: x + MAX_W / 2 - 80, y: y + 2, w: 160, h: 32, onTap: function () { try { game.showTooltip('essence'); } catch (e) {} } });
         } catch (e) {}
@@ -154,7 +157,8 @@
         // ===== box3 基因碎片 =====
         y = 1737;
         box(x, y, w, 357, t.bgCard, 10);
-        R.drawText('基因碎片', x + 8, y + 15, { fontSize: 17, color: t.textPrimary, bold: true });
+        R.drawRect(x, y + 8, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('基因碎片', x + 22, y + 15, { fontSize: 16, color: t.accent, bold: true });
         let fx = x + 8;
         let fy = y + 51;
         for (let q = 1; q <= 5; q++) {
@@ -226,7 +230,8 @@
         // ===== box4 天赋图鉴（局外）=====
         fy += 8;
         box(x, fy, w, 147, t.bgCard, 10);
-        R.drawText('天赋图鉴（局外）', x + 8, fy + 15, { fontSize: 17, color: t.textPrimary, bold: true });
+        R.drawRect(x + 8, fy + 11, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText('天赋图鉴（局外）', x + 22, fy + 15, { fontSize: 16, color: t.accent, bold: true });
         R.drawText('按品质和体系标签筛选，解锁/升级/进化天赋', x + 8, fy + 47, { fontSize: 12, color: t.textMuted });
         R.drawButton({
             id: 'growTalentPanel', x: x, y: fy + 80, w: w, h: 44,

@@ -17,7 +17,8 @@
     }
 
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
     }
 
     function stripHtml(s) {
@@ -99,8 +100,9 @@
             R.drawText('能让你在进化之路上走得更远。', x, 173, { fontSize: 12, color: t.textSecondary });
         }
 
-        // ===== 资源行（flex-wrap 两行：基因精华 + 四种碎片）=====
+        // ===== 资源行（DOM 渐变卡：linear-gradient(bg-card,bg-secondary)+1px边框）=====
         let ry = 216;
+        box(x, 210, w, 52, t.bgCard, 8);
         let fx = x;
         const goldLabel = '基因精华：' + game.player.gold;
         R.drawText(goldLabel, fx, ry, { fontSize: 12, color: t.warning, bold: true });
@@ -154,6 +156,7 @@
         }
         let py = 445;
         filtered.forEach(function (item) {
+            box(x, py, w, 110, t.bgCard, 8);
             const price = item.price ? item.price.amount : 10;
             const currency = item.price ? item.price.currency : 'gold';
             const currName = CURR_NAMES[currency] || currency;

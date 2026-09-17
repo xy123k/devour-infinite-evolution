@@ -19,7 +19,8 @@
     }
 
     function box(x, y, w, h, fill, radius) {
-        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius });
+        const t = R.Theme.get();
+        R.drawRect(x, y, w, h, { fill: fill, radius: radius == null ? 10 : radius, stroke: t.border, strokeWidth: 1 });
     }
 
     // 两态按钮（选中高亮）
@@ -38,8 +39,9 @@
     // 小节标题
     function sectionTitle(y, text) {
         const t = R.Theme.get();
-        R.drawText(text, PX + 14, y, { fontSize: 15, color: t.accent, bold: true });
-        return y + 26;
+        R.drawRect(PX + 14, y - 3, 3, 18, { fill: t.accent, radius: 1.5 });
+        R.drawText(text, PX + 31, y, { fontSize: 16, color: t.accent, bold: true });
+        return y + 28;
     }
 
     function render() {
