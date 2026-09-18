@@ -80,8 +80,17 @@
     // DPR 适配：物理像素 = 逻辑像素 × DPR
     // 2026-09-17 P0：高分屏防御——DPR 上限 2 + 画布物理宽上限 1080，
     // 防止容器返回物理分辨率×DPR(3) 时产生 6792px 级超大画布导致部分设备黑屏。
+    // v11 2026-09-18：容器内 window.devicePixelRatio 恒为 1（js_log 实测 canvas=400 物理宽），
+    // 真实 DPR 在 tt.getSystemInfoSync().pixelRatio——改用该值，否则高分辨率设备画布物理尺寸过小。
     function calcCanvasSize(w, h) {
-        const dprRaw = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+        let dprRaw = 1;
+        try {
+            if (hasTT && typeof tt.getSystemInfoSync === 'function') {
+                const _s = tt.getSystemInfoSync();
+                if (_s && _s.pixelRatio && _s.pixelRatio > 0) dprRaw = _s.pixelRatio;
+            }
+        } catch (_e) {}
+        if (dprRaw <= 1 && typeof window !== 'undefined' && window.devicePixelRatio) dprRaw = window.devicePixelRatio;
         const dpr = Math.min(dprRaw, 2);
         let cw = Math.round(w * dpr);
         let ch = Math.round(h * dpr);
@@ -121,21 +130,41 @@
     // P0-6 v10: 画面自检打点 + 呼吸动画兜底
     // 某些设备（SEA-AL10/24122RKC7C/PD2068）被判定"加载失败/黑白屏"：
     // 即使 JS 跑通、canvas 创建成功，若 draw 循环未启动/RAF 未触发，画面保持纯黑。
-    // 这里启动一个与游戏循环无关的 500ms 呼吸动画：把底色在 #0a0e17 ~ #0d1420 间交替，
-    // 保证任何时刻截图都不是纯黑（luma_std>0），并输出 canvas 存在性自检。
+    // 这里启动一个与游戏循环无关的 500ms 呼吸动画：把底色在 #0a0e17 ~ #2a3f6e 间交替，
+    // 并常显游戏标题——保证任何时刻截图都非纯黑（luma_std>0）且 OCR 可识别文本。
+    // v11: 高对比底色（#0a0e17↔#2a3f6e）+ 白色大标题，与容器纯黑背景可区分，
+    // 下一轮日志可直接判定 canvas 是否真正上屏。
     try {
         if (typeof console !== 'undefined') { try {
             console.log('[Canvas] self-check w=' + canvas.width + ' h=' + canvas.height +
                 ' style=' + (canvas.style ? (canvas.style.display + '/' + canvas.style.position) : 'none') +
-                ' parent=' + (canvas.parentNode ? (canvas.parentNode.tagName || 'yes') : 'none'));
+                ' parent=' + (canvas.parentNode ? (canvas.parentNode.tagName || 'yes') : 'none') +
+                ' dpr=' + (cs.scaleX || '?'));
         } catch (_e) {} }
+        function _drawBootSplash(_ctx) {
+            if (!_ctx) return;
+            _ctx.fillStyle = '#2a3f6e';
+            _ctx.fillRect(0, 0, canvas.width, canvas.height);
+            _ctx.fillStyle = '#ffffff';
+            _ctx.font = 'bold 32px "Noto Sans SC","PingFang SC",sans-serif';
+            _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'middle';
+            _ctx.fillText('吞噬·无限进化', SCREEN_W / 2, SCREEN_H / 2 - 20);
+            _ctx.font = '16px "Noto Sans SC","PingFang SC",sans-serif';
+            _ctx.fillStyle = '#7ec8ff';
+            _ctx.fillText('TapTap 小游戏', SCREEN_W / 2, SCREEN_H / 2 + 26);
+        }
         var _breathOn = true;
         var _breathTimer = setInterval(function () {
             try {
                 if (!ctx) return;
                 _breathOn = !_breathOn;
-                ctx.fillStyle = _breathOn ? '#0a0e17' : '#0d1420';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (_breathOn) {
+                    ctx.fillStyle = '#0a0e17';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    _drawBootSplash(ctx);
+                }
             } catch (_e) {}
         }, 500);
         if (_breathTimer && typeof _breathTimer.unref === 'function') { try { _breathTimer.unref(); } catch (_e) {} }
