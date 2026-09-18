@@ -143,6 +143,7 @@
         } catch (_e) {} }
         function _drawBootSplash(_ctx) {
             if (!_ctx) return;
+            _ctx.save();
             _ctx.fillStyle = '#2a3f6e';
             _ctx.fillRect(0, 0, canvas.width, canvas.height);
             _ctx.fillStyle = '#ffffff';
@@ -153,6 +154,7 @@
             _ctx.font = '16px "Noto Sans SC","PingFang SC",sans-serif';
             _ctx.fillStyle = '#7ec8ff';
             _ctx.fillText('TapTap 小游戏', SCREEN_W / 2, SCREEN_H / 2 + 26);
+            _ctx.restore();
         }
         var _breathOn = true;
         var _breathTimer = setInterval(function () {
@@ -169,6 +171,11 @@
         }, 500);
         if (_breathTimer && typeof _breathTimer.unref === 'function') { try { _breathTimer.unref(); } catch (_e) {} }
     } catch (_e) {}
+
+    // 游戏循环确认运行后调用：停止呼吸动画兜底（避免每 500ms 全画布重绘浪费性能）
+    function stopBreath() {
+        try { if (typeof _breathTimer !== 'undefined' && _breathTimer) { clearInterval(_breathTimer); _breathTimer = null; } } catch (_e) {}
+    }
 
     // ============================================================
     //  resize 适配（P1-4）：监听视口变化，重算画布尺寸（含 DPR）并触发当前界面重绘
@@ -500,6 +507,9 @@
         setFont(fontSize, bold);
         ctx.fillStyle = color;
         ctx.textBaseline = baseline;
+        // 关键：显式重置为 left 对齐。drawText 通过预计算 tx 自行处理 center/right，
+        // 若外部（如启动呼吸动画）改了 ctx.textAlign 而未还原，会导致整段文字被偏移半个字宽。
+        ctx.textAlign = 'left';
 
         let startY = y;
         if (baseline === 'middle') startY = y - (lines.length - 1) * lineHeight / 2;
@@ -988,6 +998,7 @@
         // 性能管理（P0-2）
         get quality() { return _quality; },
         setQuality: setQuality,
-        get isLowQuality() { return isLowQuality(); }
+        get isLowQuality() { return isLowQuality(); },
+        stopBreath: stopBreath
     };
 })();

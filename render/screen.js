@@ -79,6 +79,8 @@
         try {
             window._drawTick = (window._drawTick || 0) + 1;
             if (window._drawTick % 120 === 0) { console.log('[Render] draw alive, screen=' + (current || 'none')); }
+            // 性能优化：前 5 帧确认游戏循环正常后，停止启动呼吸动画的全画布重绘
+            if (window._drawTick === 5 && Render.stopBreath) { try { Render.stopBreath(); } catch (_e) {} }
         } catch (_e) {}
         Render.clear();
         if (currentMode === 'canvas' && current && screens[current]) {
